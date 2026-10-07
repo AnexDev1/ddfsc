@@ -1,0 +1,11 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_ddfsc_shift_user,ddfsc.shift.user,model_ddfsc_shift,mrp.group_mrp_user,1,0,0,0
+access_ddfsc_shift_manager,ddfsc.shift.manager,model_ddfsc_shift,mrp.group_mrp_manager,1,1,1,1
+access_ddfsc_quality_check_user,ddfsc.quality.check.user,model_ddfsc_quality_check,stock.group_stock_user,1,1,1,0
+access_ddfsc_quality_check_manager,ddfsc.quality.check.manager,model_ddfsc_quality_check,mrp.group_mrp_manager,1,1,1,1
+access_ddfsc_transfer_user,ddfsc.transfer.user,model_ddfsc_transfer,stock.group_stock_user,1,1,1,0
+access_ddfsc_transfer_manager,ddfsc.transfer.manager,model_ddfsc_transfer,mrp.group_mrp_manager,1,1,1,1
+access_ddfsc_transfer_line_user,ddfsc.transfer.line.user,model_ddfsc_transfer_line,stock.group_stock_user,1,1,1,0
+access_ddfsc_transfer_line_manager,ddfsc.transfer.line.manager,model_ddfsc_transfer_line,mrp.group_mrp_manager,1,1,1,1
+access_ddfsc_quality_report_user,ddfsc.quality.report.user,model_ddfsc_quality_report,mrp.group_mrp_user,1,1,1,0
+access_ddfsc_quality_report_manager,ddfsc.quality.report.manager,model_ddfsc_quality_report,mrp.group_mrp_manager,1,1,1,1

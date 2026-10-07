@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="ddfsc_transfer_view_list" model="ir.ui.view">
+        <field name="name">ddfsc.transfer.list</field>
+        <field name="model">ddfsc.transfer</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="document_type"/>
+                <field name="location_id"/>
+                <field name="location_dest_id"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="ddfsc_transfer_view_form" model="ir.ui.view">
+        <field name="name">ddfsc.transfer.form</field>
+        <field name="model">ddfsc.transfer</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_confirm" type="object" string="Validate" invisible="state == 'done'" class="btn-primary"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="document_type" readonly="state == 'done'"/>
+                            <field name="note" readonly="state == 'done'"/>
+                            <field name="board_open" invisible="document_type != 'silo_issue'" readonly="state == 'done'"/>
+                            <field name="board_close" invisible="document_type != 'silo_issue'" readonly="state == 'done'"/>
+                            <field name="impurity_qtl" invisible="document_type != 'silo_issue'" readonly="state == 'done'"/>
+                            <field name="wheat_qtl" invisible="document_type != 'silo_issue'"/>
+                            <field name="cleaned_qtl" invisible="document_type != 'silo_issue'"/>
+                        </group>
+                        <group>
+                            <field name="location_id" readonly="state == 'done'"/>
+                            <field name="location_dest_id" readonly="state == 'done'"/>
+                            <field name="picking_id" invisible="not picking_id"/>
+                        </group>
+                    </group>
+                    <field name="line_ids" readonly="state == 'done'">
+                        <list editable="bottom">
+                            <field name="product_id"/>
+                            <field name="lot_id"/>
+                            <field name="product_uom_qty"/>
+                            <field name="product_uom_id"/>
+                        </list>
+                    </field>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_ddfsc_store_requisition" model="ir.actions.act_window">
+        <field name="name">Store Requisitions</field>
+        <field name="res_model">ddfsc.transfer</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('document_type', '=', 'store_requisition')]</field>
+        <field name="context">{'default_document_type': 'store_requisition'}</field>
+    </record>
+    <record id="action_ddfsc_wheat_receiving" model="ir.actions.act_window">
+        <field name="name">Wheat Receiving</field>
+        <field name="res_model">ddfsc.transfer</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('document_type', '=', 'wheat_receiving')]</field>
+        <field name="context">{'default_document_type': 'wheat_receiving'}</field>
+    </record>
+    <record id="action_ddfsc_silo_issue" model="ir.actions.act_window">
+        <field name="name">Silo Issues</field>
+        <field name="res_model">ddfsc.transfer</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('document_type', '=', 'silo_issue')]</field>
+        <field name="context">{'default_document_type': 'silo_issue'}</field>
+    </record>
+    <record id="action_ddfsc_flour_transfer" model="ir.actions.act_window">
+        <field name="name">Flour Transfers</field>
+        <field name="res_model">ddfsc.transfer</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('document_type', '=', 'flour_transfer')]</field>
+        <field name="context">{'default_document_type': 'flour_transfer'}</field>
+    </record>
+    <record id="action_ddfsc_byproduct_return" model="ir.actions.act_window">
+        <field name="name">By-product to Store</field>
+        <field name="res_model">ddfsc.transfer</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('document_type', '=', 'byproduct_return')]</field>
+        <field name="context">{'default_document_type': 'byproduct_return'}</field>
+    </record>
+    <record id="action_ddfsc_fg_receiving" model="ir.actions.act_window">
+        <field name="name">Finished Goods Receiving</field>
+        <field name="res_model">ddfsc.transfer</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('document_type', '=', 'fg_receiving')]</field>
+        <field name="context">{'default_document_type': 'fg_receiving'}</field>
+    </record>
+
+    <menuitem id="menu_ddfsc_transfers" name="Plant Transfers" parent="mrp.menu_mrp_manufacturing" sequence="15"/>
+    <menuitem id="menu_ddfsc_store_requisition" name="Store Requisition" parent="menu_ddfsc_transfers" action="action_ddfsc_store_requisition" sequence="10"/>
+    <menuitem id="menu_ddfsc_wheat_receiving" name="Wheat Receiving" parent="menu_ddfsc_transfers" action="action_ddfsc_wheat_receiving" sequence="15"/>
+    <menuitem id="menu_ddfsc_silo_issue" name="Silo Issue" parent="menu_ddfsc_transfers" action="action_ddfsc_silo_issue" sequence="20"/>
+    <menuitem id="menu_ddfsc_flour_transfer" name="Flour Transfer" parent="menu_ddfsc_transfers" action="action_ddfsc_flour_transfer" sequence="30"/>
+    <menuitem id="menu_ddfsc_byproduct_return" name="By-product to Store" parent="menu_ddfsc_transfers" action="action_ddfsc_byproduct_return" sequence="35"/>
+    <menuitem id="menu_ddfsc_fg_receiving" name="Finished Goods Receiving" parent="menu_ddfsc_transfers" action="action_ddfsc_fg_receiving" sequence="40"/>
+</odoo>

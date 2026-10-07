@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="mrp_production_form_ddfsc" model="ir.ui.view">
+        <field name="name">mrp.production.form.ddfsc</field>
+        <field name="model">mrp.production</field>
+        <field name="inherit_id" ref="mrp.mrp_production_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='miscellaneous']" position="before">
+                <page string="Shift Report" name="ddfsc_shift">
+                    <group>
+                        <group string="Shift">
+                            <field name="ddfsc_shift_id"/>
+                            <field name="ddfsc_supervisor_id"/>
+                            <field name="ddfsc_line_id"/>
+                            <field name="variation_qty"/>
+                            <field name="yield_ratio"/>
+                            <field name="flour_consumed_qtl"/>
+                            <field name="yield_per_quintal"/>
+                        </group>
+                        <group string="Milling" invisible="ddfsc_line_code != 'MILL'">
+                            <field name="ddfsc_line_code" invisible="1"/>
+                            <field name="conditioning_1_hours"/>
+                            <field name="conditioning_2_hours"/>
+                            <field name="moisture_initial"/>
+                            <field name="moisture_final"/>
+                            <field name="wheat_consumed_qtl"/>
+                            <field name="flour_produced_qtl"/>
+                            <field name="byproduct_qtl"/>
+                            <field name="extraction_ratio"/>
+                        </group>
+                        <group string="Losses">
+                            <field name="ddfsc_flour_request_qtl"/>
+                            <field name="downtime_hours"/>
+                            <field name="downtime_reason"/>
+                            <field name="ddfsc_maintenance_request_id" readonly="1"/>
+                            <button name="action_log_downtime" type="object" string="Log maintenance"
+                                    invisible="downtime_reason not in ('mixer', 'die', 'oven', 'packing')"/>
+                            <field name="scrap_qty"/>
+                            <field name="sweeping_qty"/>
+                            <field name="bread_scrap_low" invisible="ddfsc_line_code != 'BREAD'"/>
+                            <field name="bread_scrap_high" invisible="ddfsc_line_code != 'BREAD'"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="mrp_production_list_shift_report" model="ir.ui.view">
+        <field name="name">mrp.production.list.shift.report</field>
+        <field name="model">mrp.production</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="ddfsc_shift_id"/>
+                <field name="ddfsc_line_id"/>
+                <field name="ddfsc_supervisor_id"/>
+                <field name="product_id"/>
+                <field name="product_qty" string="Target"/>
+                <field name="qty_produced" string="Actual"/>
+                <field name="variation_qty"/>
+                <field name="yield_ratio"/>
+                <field name="flour_consumed_qtl"/>
+                <field name="yield_per_quintal"/>
+                <field name="downtime_reason"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_ddfsc_shift_report" model="ir.actions.act_window">
+        <field name="name">Shift Report</field>
+        <field name="res_model">mrp.production</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="mrp_production_list_shift_report"/>
+        <field name="context">{'search_default_todo': 1}</field>
+    </record>
+
+    <menuitem id="menu_ddfsc_shift_report"
+              name="Shift Report"
+              parent="mrp.menu_mrp_reporting"
+              action="action_ddfsc_shift_report"
+              sequence="5"/>
+</odoo>
