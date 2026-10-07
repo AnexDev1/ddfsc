@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="hr_equipment_view_form_ddfsc" model="ir.ui.view">
+        <field name="name">maintenance.equipment.form.ddfsc</field>
+        <field name="model">maintenance.equipment</field>
+        <field name="inherit_id" ref="maintenance.hr_equipment_view_form"/>
+        <field name="arch" type="xml">
+            <field name="category_id" position="after">
+                <field name="ddfsc_workcenter_id"/>
+                <field name="ddfsc_downtime_code"/>
+            </field>
+        </field>
+    </record>
+
+    <function model="maintenance.equipment" name="_sync_plant_maintenance"/>
+</odoo>

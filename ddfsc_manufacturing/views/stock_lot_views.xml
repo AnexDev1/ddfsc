@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="stock_lot_form_ddfsc" model="ir.ui.view">
+        <field name="name">stock.lot.form.ddfsc</field>
+        <field name="model">stock.lot</field>
+        <field name="inherit_id" ref="stock.view_production_lot_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='main_group']" position="after">
+                <group string="Quality">
+                    <field name="ddfsc_quality_state" widget="badge"
+                           decoration-danger="ddfsc_quality_state == 'hold'"
+                           decoration-success="ddfsc_quality_state in ('pass', 'released')"/>
+                    <field name="ddfsc_wheat_use"/>
+                    <field name="ddfsc_hectoliter"/>
+                    <field name="ddfsc_gm_approved"/>
+                    <button name="action_gm_approve" type="object" string="General Manager Approval"
+                            invisible="ddfsc_gm_approved"/>
+                    <field name="quality_release_note"/>
+                    <button name="action_quality_hold" type="object" string="Hold" invisible="ddfsc_quality_state == 'hold'"/>
+                    <button name="action_quality_release" type="object" string="Release" invisible="ddfsc_quality_state != 'hold'"/>
+                </group>
+                <field name="quality_check_ids">
+                    <list editable="bottom">
+                        <field name="check_type"/>
+                        <field name="measured_value"/>
+                        <field name="apply_min"/>
+                        <field name="standard_min"/>
+                        <field name="apply_max"/>
+                        <field name="standard_max"/>
+                        <field name="result"/>
+                        <field name="note"/>
+                        <field name="production_id"/>
+                    </list>
+                </field>
+            </xpath>
+        </field>
+    </record>
+</odoo>

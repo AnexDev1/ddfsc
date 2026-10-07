@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="uom_quintal" model="uom.uom">
+        <field name="name">Quintal</field>
+        <field name="relative_uom_id" ref="uom.product_uom_kgm"/>
+        <field name="relative_factor">100</field>
+    </record>
+
+    <record id="loc_silo" model="stock.location">
+        <field name="name">Wheat Silo</field>
+        <field name="location_id" ref="stock.stock_location_stock"/>
+        <field name="usage">internal</field>
+    </record>
+    <record id="loc_flour" model="stock.location">
+        <field name="name">Flour Store</field>
+        <field name="location_id" ref="stock.stock_location_stock"/>
+        <field name="usage">internal</field>
+    </record>
+    <record id="loc_biscuit" model="stock.location">
+        <field name="name">Biscuit Floor</field>
+        <field name="location_id" ref="stock.stock_location_stock"/>
+        <field name="usage">internal</field>
+    </record>
+    <record id="loc_bread" model="stock.location">
+        <field name="name">Bread Floor</field>
+        <field name="location_id" ref="stock.stock_location_stock"/>
+        <field name="usage">internal</field>
+    </record>
+    <record id="loc_pasta" model="stock.location">
+        <field name="name">Pasta Floor</field>
+        <field name="location_id" ref="stock.stock_location_stock"/>
+        <field name="usage">internal</field>
+    </record>
+    <record id="loc_finished" model="stock.location">
+        <field name="name">Finished Goods Store</field>
+        <field name="location_id" ref="stock.stock_location_stock"/>
+        <field name="usage">internal</field>
+    </record>
+
+    <record id="wc_mill" model="mrp.workcenter">
+        <field name="name">Flour Mill</field>
+        <field name="code">MILL</field>
+    </record>
+    <record id="wc_biscuit_china" model="mrp.workcenter">
+        <field name="name">Biscuit Line China</field>
+        <field name="code">BISC-CN</field>
+    </record>
+    <record id="wc_biscuit_orland" model="mrp.workcenter">
+        <field name="name">Biscuit Line Orland</field>
+        <field name="code">BISC-OR</field>
+    </record>
+    <record id="wc_bread" model="mrp.workcenter">
+        <field name="name">Bread Line</field>
+        <field name="code">BREAD</field>
+    </record>
+    <record id="wc_pasta" model="mrp.workcenter">
+        <field name="name">Pasta Line</field>
+        <field name="code">PASTA</field>
+    </record>
+
+    <record id="product_wheat" model="product.template">
+        <field name="name">Wheat</field>
+        <field name="is_storable" eval="True"/>
+        <field name="tracking">lot</field>
+        <field name="uom_id" ref="uom_quintal"/>
+    </record>
+    <record id="product_flour_g1" model="product.template">
+        <field name="name">Wheat Flour Grade 1</field>
+        <field name="is_storable" eval="True"/>
+        <field name="tracking">lot</field>
+        <field name="uom_id" ref="uom_quintal"/>
+    </record>
+    <record id="product_flour_g2" model="product.template">
+        <field name="name">Wheat Flour Grade 2</field>
+        <field name="is_storable" eval="True"/>
+        <field name="tracking">lot</field>
+        <field name="uom_id" ref="uom_quintal"/>
+    </record>
+    <record id="product_sugar" model="product.template">
+        <field name="name">Sugar</field>
+        <field name="is_storable" eval="True"/>
+        <field name="uom_id" ref="uom.product_uom_kgm"/>
+    </record>
+    <record id="product_shortening" model="product.template">
+        <field name="name">Shortening</field>
+        <field name="is_storable" eval="True"/>
+        <field name="uom_id" ref="uom.product_uom_kgm"/>
+    </record>
+    <record id="product_zebib" model="product.template">
+        <field name="name">New Zebib Biscuit 78x4</field>
+        <field name="is_storable" eval="True"/>
+        <field name="tracking">lot</field>
+        <field name="uom_id" ref="uom.product_uom_unit"/>
+    </record>
+
+    <function model="ddfsc.shift" name="_load_starter_bom"/>
+</odoo>

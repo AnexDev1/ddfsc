@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="ddfsc_shift_view_list" model="ir.ui.view">
+        <field name="name">ddfsc.shift.list</field>
+        <field name="model">ddfsc.shift</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="hour_from" widget="float_time"/>
+                <field name="hour_to" widget="float_time"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="ddfsc_shift_action" model="ir.actions.act_window">
+        <field name="name">Shifts</field>
+        <field name="res_model">ddfsc.shift</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_ddfsc_shift"
+              name="Shifts"
+              parent="mrp.menu_mrp_configuration"
+              action="ddfsc_shift_action"
+              sequence="50"/>
+</odoo>
