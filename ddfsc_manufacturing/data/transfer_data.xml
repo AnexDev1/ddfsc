@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<odoo>
-    <record id="seq_ddfsc_transfer" model="ir.sequence">
-        <field name="name">Plant Transfer</field>
-        <field name="code">ddfsc.transfer</field>
-        <field name="prefix">PT/</field>
-        <field name="padding">4</field>
-    </record>
-</odoo>

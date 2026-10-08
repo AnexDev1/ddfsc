@@ -11,17 +11,6 @@
         </field>
     </record>
 
-    <record id="view_picking_form_ddfsc_store_request" model="ir.ui.view">
-        <field name="name">stock.picking.form.ddfsc.store.request</field>
-        <field name="model">stock.picking</field>
-        <field name="inherit_id" ref="stock.view_picking_form"/>
-        <field name="arch" type="xml">
-            <xpath expr="//field[@name='ddfsc_production_id']" position="after">
-                <field name="ddfsc_store_request_id" invisible="not ddfsc_store_request_id"/>
-            </xpath>
-        </field>
-    </record>
-
     <record id="view_ddfsc_department_quant_list" model="ir.ui.view">
         <field name="name">ddfsc.department.quant.list</field>
         <field name="model">stock.quant</field>
@@ -43,10 +32,12 @@
         <field name="arch" type="xml">
             <list>
                 <field name="name"/>
+                <field name="date_request"/>
+                <field name="location_dest_id"/>
                 <field name="ddfsc_department"/>
                 <field name="user_id"/>
-                <field name="ddfsc_approval_state"/>
-                <field name="picking_id"/>
+                <field name="state"/>
+                <field name="picking_id" optional="hide"/>
             </list>
         </field>
     </record>
@@ -55,26 +46,25 @@
         <field name="name">ddfsc.store.request.form</field>
         <field name="model">ddfsc.store.request</field>
         <field name="arch" type="xml">
-            <form>
+            <form string="Store Transfer Requests">
                 <header>
-                    <button name="action_ddfsc_submit" type="object" string="Submit for Approval" class="btn-primary"
-                            invisible="ddfsc_approval_state not in ('draft', 'refused')"/>
-                    <button name="action_ddfsc_approve" type="object" string="Approve" class="btn-primary"
+                    <button name="action_submit_to_manager" type="object" string="Submit to Manager" class="btn-primary"
+                            invisible="state != 'draft'"/>
+                    <button name="action_approve_manager" type="object" string="Approve" class="btn-primary"
                             groups="ddfsc_manufacturing.group_ddfsc_operation_manager"
-                            invisible="ddfsc_approval_state != 'submitted'"/>
-                    <button name="action_ddfsc_refuse" type="object" string="Refuse"
-                            groups="ddfsc_manufacturing.group_ddfsc_operation_manager"
-                            invisible="ddfsc_approval_state != 'submitted'"/>
-                    <button name="action_ddfsc_reset" type="object" string="Reset to Draft"
-                            invisible="ddfsc_approval_state != 'refused'"/>
-                    <field name="ddfsc_approval_state" widget="statusbar" statusbar_visible="draft,submitted,approved"/>
+                            invisible="state != 'store_manager'"/>
+                    <button name="action_cancel" type="object" string="Cancel"
+                            invisible="state not in ('draft', 'store_manager', 'requested')"/>
+                    <button name="action_reset_draft" type="object" string="Reset to Draft"
+                            invisible="state != 'cancel'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,store_manager,requested,received"/>
                 </header>
                 <sheet>
                     <div class="oe_button_box" name="button_box">
                         <button name="action_view_picking" type="object" class="oe_stat_button" icon="fa-truck"
                                 invisible="not picking_id">
                             <div class="o_stat_info">
-                                <span class="o_stat_text">Internal Transfer</span>
+                                <span class="o_stat_text">Transfer</span>
                             </div>
                         </button>
                     </div>
@@ -83,32 +73,45 @@
                     </div>
                     <group>
                         <group>
-                            <field name="ddfsc_user_department" invisible="1"/>
-                            <field name="ddfsc_department" readonly="ddfsc_approval_state != 'draft' or ddfsc_user_department"/>
-                            <field name="user_id"/>
-                            <field name="company_id" invisible="1"/>
+                            <field name="location_dest_id" readonly="state != 'draft'"/>
+                            <field name="date_request" readonly="state != 'draft'"/>
                         </group>
                         <group>
-                            <field name="location_id" readonly="1"/>
-                            <field name="location_dest_id" readonly="1"/>
+                            <field name="ddfsc_user_department" invisible="1"/>
+                            <field name="ddfsc_department" readonly="state != 'draft' or ddfsc_user_department"/>
+                            <field name="location_id" readonly="state != 'draft'"
+                                   string="Default Source"/>
+                            <field name="user_id"/>
+                            <field name="company_id" invisible="1"/>
                             <field name="picking_id" invisible="not picking_id"/>
-                            <field name="ddfsc_submitted_uid" invisible="not ddfsc_submitted_uid"/>
-                            <field name="ddfsc_approved_uid" invisible="not ddfsc_approved_uid"/>
-                            <field name="ddfsc_refusal_note" invisible="ddfsc_approval_state not in ('submitted', 'refused')"
-                                   readonly="ddfsc_approval_state != 'submitted'"/>
                         </group>
                     </group>
-                    <field name="line_ids" readonly="ddfsc_approval_state != 'draft'">
-                        <list editable="bottom">
-                            <field name="product_id"/>
-                            <field name="product_uom_qty"/>
-                            <field name="product_uom_id"/>
-                        </list>
-                    </field>
+                    <notebook>
+                        <page string="Product Details" name="product_details">
+                            <field name="line_ids" readonly="state != 'draft'">
+                                <list editable="bottom">
+                                    <field name="product_id"/>
+                                    <field name="product_uom_id"/>
+                                    <field name="location_id"/>
+                                    <field name="qty_available"/>
+                                    <field name="product_uom_qty"/>
+                                    <field name="lot_id" optional="show"
+                                           context="{'default_product_id': product_id}"/>
+                                    <field name="company_id" column_invisible="1"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
                 </sheet>
                 <chatter/>
             </form>
         </field>
+    </record>
+
+    <record id="action_ddfsc_store_requests" model="ir.actions.act_window">
+        <field name="name">Store Transfer Requests</field>
+        <field name="res_model">ddfsc.store.request</field>
+        <field name="view_mode">list,form</field>
     </record>
 
     <!-- Available flour -->
@@ -147,7 +150,7 @@
         <field name="res_model">stock.quant</field>
         <field name="view_mode">list</field>
         <field name="view_id" ref="view_ddfsc_department_quant_list"/>
-        <field name="domain" eval="[('quantity', '>', 0), ('location_id', 'in', [ref('loc_pasta'), ref('loc_macaroni')]), ('product_id.product_tmpl_id', 'in', [ref('product_pasta_long'), ref('product_pasta_short')])]"/>
+        <field name="domain" eval="[('quantity', '>', 0), ('location_id', 'in', [ref('loc_pasta_finished'), ref('loc_macaroni_finished')]), ('product_id.product_tmpl_id', 'in', [ref('product_pasta_long'), ref('product_pasta_short')])]"/>
     </record>
     <record id="action_ddfsc_bread_temp" model="ir.actions.act_window">
         <field name="name">Temp Finished Products</field>
@@ -171,30 +174,30 @@
         <field name="domain" eval="[('quantity', '>', 0), ('location_id', 'in', [ref('loc_flour'), ref('loc_mill')]), ('product_id.product_tmpl_id', 'in', [ref('product_flour_g1'), ref('product_flour_g2'), ref('product_flour_scp'), ref('product_flour_lcp')])]"/>
     </record>
 
-    <!-- Store requisition -->
+    <!-- Store request (per department) -->
     <record id="action_ddfsc_pasta_request" model="ir.actions.act_window">
-        <field name="name">Store Requisition</field>
+        <field name="name">Store Transfer Requests</field>
         <field name="res_model">ddfsc.store.request</field>
         <field name="view_mode">list,form</field>
         <field name="domain">[('ddfsc_department', '=', 'pasta')]</field>
         <field name="context">{'default_ddfsc_department': 'pasta'}</field>
     </record>
     <record id="action_ddfsc_bread_request" model="ir.actions.act_window">
-        <field name="name">Store Requisition</field>
+        <field name="name">Store Transfer Requests</field>
         <field name="res_model">ddfsc.store.request</field>
         <field name="view_mode">list,form</field>
         <field name="domain">[('ddfsc_department', '=', 'bread')]</field>
         <field name="context">{'default_ddfsc_department': 'bread'}</field>
     </record>
     <record id="action_ddfsc_biscuit_request" model="ir.actions.act_window">
-        <field name="name">Store Requisition</field>
+        <field name="name">Store Transfer Requests</field>
         <field name="res_model">ddfsc.store.request</field>
         <field name="view_mode">list,form</field>
         <field name="domain">[('ddfsc_department', '=', 'biscuit')]</field>
         <field name="context">{'default_ddfsc_department': 'biscuit'}</field>
     </record>
     <record id="action_ddfsc_flour_request" model="ir.actions.act_window">
-        <field name="name">Store Requisition</field>
+        <field name="name">Store Transfer Requests</field>
         <field name="res_model">ddfsc.store.request</field>
         <field name="view_mode">list,form</field>
         <field name="domain">[('ddfsc_department', '=', 'flour')]</field>
@@ -235,27 +238,34 @@
         <field name="context">{'search_default_todo': True, 'ddfsc_department': 'flour'}</field>
     </record>
 
-    <menuitem id="menu_ddfsc_dept_pasta" name="Pasta" parent="mrp.menu_mrp_root" sequence="1" groups="mrp.group_mrp_user"/>
+    <menuitem id="menu_ddfsc_store_requests"
+              name="Store Transfer Requests"
+              parent="mrp.menu_mrp_root"
+              action="action_ddfsc_store_requests"
+              sequence="5"
+              groups="mrp.group_mrp_user"/>
+
+    <menuitem id="menu_ddfsc_dept_pasta" name="Pasta" parent="mrp.menu_mrp_root" sequence="10" groups="mrp.group_mrp_user"/>
     <menuitem id="menu_ddfsc_dept_pasta_flour" name="Available Flour" parent="menu_ddfsc_dept_pasta" action="action_ddfsc_pasta_flour" sequence="10"/>
     <menuitem id="menu_ddfsc_dept_pasta_temp" name="Temp Finished Products" parent="menu_ddfsc_dept_pasta" action="action_ddfsc_pasta_temp" sequence="20"/>
-    <menuitem id="menu_ddfsc_dept_pasta_request" name="Store Requisition" parent="menu_ddfsc_dept_pasta" action="action_ddfsc_pasta_request" sequence="30"/>
+    <menuitem id="menu_ddfsc_dept_pasta_request" name="Store Transfer Requests" parent="menu_ddfsc_dept_pasta" action="action_ddfsc_pasta_request" sequence="30"/>
     <menuitem id="menu_ddfsc_dept_pasta_mo" name="Manufacturing Orders" parent="menu_ddfsc_dept_pasta" action="action_ddfsc_pasta_mo" sequence="40"/>
 
-    <menuitem id="menu_ddfsc_dept_bread" name="Bread" parent="mrp.menu_mrp_root" sequence="2" groups="mrp.group_mrp_user"/>
+    <menuitem id="menu_ddfsc_dept_bread" name="Bread" parent="mrp.menu_mrp_root" sequence="20" groups="mrp.group_mrp_user"/>
     <menuitem id="menu_ddfsc_dept_bread_flour" name="Available Flour" parent="menu_ddfsc_dept_bread" action="action_ddfsc_bread_flour" sequence="10"/>
     <menuitem id="menu_ddfsc_dept_bread_temp" name="Temp Finished Products" parent="menu_ddfsc_dept_bread" action="action_ddfsc_bread_temp" sequence="20"/>
-    <menuitem id="menu_ddfsc_dept_bread_request" name="Store Requisition" parent="menu_ddfsc_dept_bread" action="action_ddfsc_bread_request" sequence="30"/>
+    <menuitem id="menu_ddfsc_dept_bread_request" name="Store Transfer Requests" parent="menu_ddfsc_dept_bread" action="action_ddfsc_bread_request" sequence="30"/>
     <menuitem id="menu_ddfsc_dept_bread_mo" name="Manufacturing Orders" parent="menu_ddfsc_dept_bread" action="action_ddfsc_bread_mo" sequence="40"/>
 
-    <menuitem id="menu_ddfsc_dept_biscuit" name="Biscuit" parent="mrp.menu_mrp_root" sequence="3" groups="mrp.group_mrp_user"/>
+    <menuitem id="menu_ddfsc_dept_biscuit" name="Biscuit" parent="mrp.menu_mrp_root" sequence="30" groups="mrp.group_mrp_user"/>
     <menuitem id="menu_ddfsc_dept_biscuit_flour" name="Available Flour" parent="menu_ddfsc_dept_biscuit" action="action_ddfsc_biscuit_flour" sequence="10"/>
     <menuitem id="menu_ddfsc_dept_biscuit_temp" name="Temp Finished Products" parent="menu_ddfsc_dept_biscuit" action="action_ddfsc_biscuit_temp" sequence="20"/>
-    <menuitem id="menu_ddfsc_dept_biscuit_request" name="Store Requisition" parent="menu_ddfsc_dept_biscuit" action="action_ddfsc_biscuit_request" sequence="30"/>
+    <menuitem id="menu_ddfsc_dept_biscuit_request" name="Store Transfer Requests" parent="menu_ddfsc_dept_biscuit" action="action_ddfsc_biscuit_request" sequence="30"/>
     <menuitem id="menu_ddfsc_dept_biscuit_mo" name="Manufacturing Orders" parent="menu_ddfsc_dept_biscuit" action="action_ddfsc_biscuit_mo" sequence="40"/>
 
-    <menuitem id="menu_ddfsc_dept_flour" name="Flour" parent="mrp.menu_mrp_root" sequence="4" groups="mrp.group_mrp_user"/>
+    <menuitem id="menu_ddfsc_dept_flour" name="Flour" parent="mrp.menu_mrp_root" sequence="40" groups="mrp.group_mrp_user"/>
     <menuitem id="menu_ddfsc_dept_flour_wheat" name="Available Wheat" parent="menu_ddfsc_dept_flour" action="action_ddfsc_flour_wheat" sequence="10"/>
     <menuitem id="menu_ddfsc_dept_flour_temp" name="Temp Finished Products" parent="menu_ddfsc_dept_flour" action="action_ddfsc_flour_temp" sequence="20"/>
-    <menuitem id="menu_ddfsc_dept_flour_request" name="Store Requisition" parent="menu_ddfsc_dept_flour" action="action_ddfsc_flour_request" sequence="30"/>
+    <menuitem id="menu_ddfsc_dept_flour_request" name="Store Transfer Requests" parent="menu_ddfsc_dept_flour" action="action_ddfsc_flour_request" sequence="30"/>
     <menuitem id="menu_ddfsc_dept_flour_mo" name="Manufacturing Orders" parent="menu_ddfsc_dept_flour" action="action_ddfsc_flour_mo" sequence="40"/>
 </odoo>

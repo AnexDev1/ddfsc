@@ -171,6 +171,16 @@ class DdfscShift(models.Model):
             'location_id': parent.id,
             'usage': 'internal',
         })
+        self._ensure_record('loc_pasta_finished', 'stock.location', {
+            'name': 'Pasta',
+            'location_id': parent.id,
+            'usage': 'internal',
+        })
+        self._ensure_record('loc_macaroni_finished', 'stock.location', {
+            'name': 'Macaroni',
+            'location_id': parent.id,
+            'usage': 'internal',
+        })
         self._ensure_record('loc_recycle', 'stock.location', {
             'name': 'Recycled Material',
             'location_id': parent.id,
@@ -317,60 +327,74 @@ class DdfscShift(models.Model):
         self._sync_operations()
 
     def _sync_operations(self):
-        """Purchase receipts and inventory transfers for the plant forms."""
+        """Enable multi-location and retire obsolete plant operation types."""
         internal_users = self.env.ref('base.group_user')
         multi_locations = self.env.ref('stock.group_stock_multi_locations')
         if multi_locations not in internal_users.implied_ids:
             internal_users.write({'implied_ids': [Command.link(multi_locations.id)]})
-        warehouse = self.env['stock.warehouse'].search([
-            ('company_id', '=', self.env.company.id),
-        ], limit=1)
-        suppliers = self.env.ref('stock.stock_location_suppliers')
-        operations = [
-            ('picking_type_wheat_purchase', 'wheat_purchase', 'Wheat Receiving', 'incoming', 'WHEAT', suppliers, 'loc_wheat_dock'),
-            ('picking_type_store_purchase', 'store_purchase', 'Store Receipt', 'incoming', 'STORE', suppliers, 'loc_store'),
-            ('picking_type_wheat_to_silo', 'wheat_to_silo', 'Wheat to Silo', 'internal', 'SILO', 'loc_wheat_dock', 'loc_silo_pasta'),
-            ('picking_type_silo_issue', 'silo_issue', 'Silo Issue', 'internal', 'ISSUE', 'loc_silo_pasta', 'loc_mill'),
-            ('picking_type_flour_transfer', 'flour_transfer', 'Flour Transfer', 'internal', 'FLOUR', 'loc_flour', 'loc_flour_pasta'),
-            ('picking_type_store_requisition', 'store_requisition', 'Store Requisition', 'internal', 'REQ', 'loc_store', 'loc_biscuit'),
-            ('picking_type_byproduct_return', 'byproduct_return', 'By-product to Store', 'internal', 'BYP', 'loc_mill', 'loc_store'),
-            ('picking_type_fg_receiving', 'fg_receiving', 'Finished Goods Receiving', 'internal', 'FG', 'loc_biscuit', 'loc_finished'),
-        ]
-        for xmlid, document_type, name, code, prefix, source, destination in operations:
-            source_location = self.env.ref('ddfsc_manufacturing.%s' % source) if isinstance(source, str) else source
-            dest_location = self.env.ref('ddfsc_manufacturing.%s' % destination)
-            picking_type = self._ensure_record(xmlid, 'stock.picking.type', {
-                'name': name,
-                'code': code,
-                'sequence_code': prefix,
-                'sequence': 50,
-                'warehouse_id': warehouse.id,
-                'company_id': self.env.company.id,
-            })
-            picking_type.write({
-                'name': name,
-                'ddfsc_document_type': document_type,
-                'default_location_src_id': source_location.id,
-                'default_location_dest_id': dest_location.id,
-            })
-        self.env['mrp.production']._ddfsc_rehome_default_transfers()
+        self._retire_plant_operation_types()
         self._retire_manufacturing_transfer_menus()
 
+    def _retire_plant_operation_types(self):
+        """Archive custom plant picking types; Store Request uses the warehouse internal type."""
+        xmlids = [
+            'picking_type_wheat_receiving',
+            'picking_type_store_receipt',
+            'picking_type_wheat_to_silo',
+            'picking_type_silo_issue',
+            'picking_type_flour_transfer',
+            'picking_type_store_requisition',
+            'picking_type_byproduct_return',
+            'picking_type_fg_receiving',
+            'picking_type_wheat_purchase',
+            'picking_type_store_purchase',
+        ]
+        for xmlid in xmlids:
+            picking_type = self.env.ref('ddfsc_manufacturing.%s' % xmlid, raise_if_not_found=False)
+            if not picking_type:
+                continue
+            picking_type.write({
+                'active': False,
+                'ddfsc_document_type': False,
+            })
+
     def _retire_manufacturing_transfer_menus(self):
+        """Drop obsolete custom-transfer menus and purchase-based plant forms."""
         xmlids = [
             'menu_ddfsc_store_requisition',
-            'menu_ddfsc_wheat_receiving',
             'menu_ddfsc_silo_issue',
             'menu_ddfsc_flour_transfer',
             'menu_ddfsc_byproduct_return',
             'menu_ddfsc_fg_receiving',
             'menu_ddfsc_transfers',
+            'menu_ddfsc_wheat_purchase',
+            'menu_ddfsc_store_purchase',
+            'menu_ddfsc_picking_requisition',
+            'menu_ddfsc_wheat_receiving',
+            'menu_ddfsc_store_receipt',
+            'menu_ddfsc_wheat_to_silo',
+            'menu_ddfsc_picking_silo_issue',
+            'menu_ddfsc_picking_flour',
+            'menu_ddfsc_picking_byproduct',
+            'menu_ddfsc_picking_fg',
             'action_ddfsc_store_requisition',
             'action_ddfsc_wheat_receiving',
             'action_ddfsc_silo_issue',
             'action_ddfsc_flour_transfer',
             'action_ddfsc_byproduct_return',
             'action_ddfsc_fg_receiving',
+            'action_ddfsc_wheat_purchase',
+            'action_ddfsc_store_purchase',
+            'action_ddfsc_picking_store_requisition',
+            'action_ddfsc_picking_wheat_receiving',
+            'action_ddfsc_picking_store_receipt',
+            'action_ddfsc_picking_wheat_to_silo',
+            'action_ddfsc_picking_silo_issue',
+            'action_ddfsc_picking_flour_transfer',
+            'action_ddfsc_picking_byproduct_return',
+            'action_ddfsc_picking_fg_receiving',
+            'purchase_order_form_ddfsc',
+            'view_picking_form_ddfsc_store_request',
         ]
         for xmlid in xmlids:
             record = self.env.ref('ddfsc_manufacturing.%s' % xmlid, raise_if_not_found=False)

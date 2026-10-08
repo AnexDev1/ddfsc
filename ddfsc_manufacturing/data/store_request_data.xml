@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<odoo noupdate="1">
+<odoo>
     <record id="seq_ddfsc_store_request" model="ir.sequence">
-        <field name="name">Store Requisition</field>
+        <field name="name">Store Transfer Request</field>
         <field name="code">ddfsc.store.request</field>
-        <field name="prefix">SRQ/</field>
+        <field name="prefix">MTR/%(year)s/</field>
         <field name="padding">5</field>
         <field name="company_id" eval="False"/>
     </record>

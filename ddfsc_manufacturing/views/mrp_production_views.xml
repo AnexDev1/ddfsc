@@ -19,24 +19,12 @@
                 <field name="ddfsc_approval_state" widget="statusbar" statusbar_visible="draft,submitted,approved"/>
             </xpath>
             <xpath expr="//div[@name='button_box']" position="inside">
-                <button name="action_view_ddfsc_purchases" type="object" class="oe_stat_button" icon="fa-credit-card">
-                    <field name="ddfsc_purchase_count" widget="statinfo" string="Purchases"/>
-                </button>
                 <button name="action_view_ddfsc_pickings" type="object" class="oe_stat_button" icon="fa-truck">
                     <field name="ddfsc_picking_count" widget="statinfo" string="Transfers"/>
                 </button>
             </xpath>
             <xpath expr="//page[@name='miscellaneous']" position="before">
-                <page string="Plant Documents" name="ddfsc_documents">
-                    <field name="ddfsc_purchase_ids" readonly="1">
-                        <list>
-                            <field name="name"/>
-                            <field name="partner_id"/>
-                            <field name="date_order"/>
-                            <field name="ddfsc_approval_state"/>
-                            <field name="state"/>
-                        </list>
-                    </field>
+                <page string="Plant Transfers" name="ddfsc_documents">
                     <field name="ddfsc_picking_ids" readonly="1" domain="[('state', '!=', 'cancel')]">
                         <list>
                             <field name="name"/>

@@ -5,7 +5,6 @@ from . import ddfsc_store_request
 from . import ddfsc_shift
 from . import ddfsc_quality_check
 from . import ddfsc_quality_report
-from . import ddfsc_transfer
 from . import product_template
 from . import stock_location
 from . import mrp_workcenter
@@ -13,4 +12,3 @@ from . import mrp_production
 from . import maintenance_equipment
 from . import stock_lot
 from . import stock_picking
-from . import purchase_order
