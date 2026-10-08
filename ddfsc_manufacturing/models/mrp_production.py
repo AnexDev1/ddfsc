@@ -2,9 +2,12 @@ from odoo import _, api, fields, models
 from odoo.exceptions import UserError, ValidationError
 from odoo.fields import Command
 
+from .ddfsc_department import DEPARTMENTS
+
 
 class MrpProduction(models.Model):
-    _inherit = 'mrp.production'
+    _name = 'mrp.production'
+    _inherit = ['mrp.production', 'ddfsc.approval.mixin']
 
     ddfsc_shift_id = fields.Many2one('ddfsc.shift', string='Shift', tracking=True)
     ddfsc_supervisor_id = fields.Many2one('res.users', string='Shift Supervisor', tracking=True)
@@ -145,15 +148,351 @@ class MrpProduction(models.Model):
             if production.conditioning_1_hours or production.conditioning_2_hours:
                 raise ValidationError(_('First and second conditioning are recorded on the flour mill only.'))
 
+    def _ddfsc_approval_role(self):
+        self.ensure_one()
+        return 'operation'
+
+    ddfsc_picking_ids = fields.One2many(
+        'stock.picking',
+        'ddfsc_production_id',
+        string='Plant Transfers',
+    )
+    ddfsc_purchase_ids = fields.One2many(
+        'purchase.order',
+        'ddfsc_production_id',
+        string='Purchases',
+    )
+    ddfsc_picking_count = fields.Integer(compute='_compute_ddfsc_document_counts')
+    ddfsc_purchase_count = fields.Integer(compute='_compute_ddfsc_document_counts')
+
+    @api.depends('ddfsc_picking_ids', 'ddfsc_purchase_ids')
+    def _compute_ddfsc_document_counts(self):
+        for production in self:
+            production.ddfsc_picking_count = len(production.ddfsc_picking_ids.filtered(
+                lambda picking: picking.state != 'cancel'
+            ))
+            production.ddfsc_purchase_count = len(production.ddfsc_purchase_ids)
+
+    def action_view_ddfsc_pickings(self):
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Plant Transfers'),
+            'res_model': 'stock.picking',
+            'view_mode': 'list,form',
+            'domain': [('ddfsc_production_id', '=', self.id), ('state', '!=', 'cancel')],
+            'context': {'default_ddfsc_production_id': self.id},
+        }
+
+    def action_view_ddfsc_purchases(self):
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Purchases'),
+            'res_model': 'purchase.order',
+            'view_mode': 'list,form',
+            'domain': [('ddfsc_production_id', '=', self.id)],
+            'context': {'default_ddfsc_production_id': self.id},
+        }
+
+    @api.model
+    def default_get(self, fields_list):
+        values = super().default_get(fields_list)
+        department = self.env.user.ddfsc_department
+        if department:
+            line = self._ddfsc_line_for_department(department)
+            if line:
+                values['ddfsc_line_id'] = line.id
+        elif not values.get('ddfsc_line_id') and self.env.context.get('ddfsc_department'):
+            line = self._ddfsc_line_for_department(self.env.context['ddfsc_department'])
+            if line:
+                values['ddfsc_line_id'] = line.id
+        line = self.env['mrp.workcenter'].browse(values.get('ddfsc_line_id') or False).exists()
+        if line:
+            source, destination = self._ddfsc_locations_for_code(line.code)
+            if source and destination:
+                values['location_src_id'] = source.id
+                values['location_dest_id'] = destination.id
+        return values
+
+    @api.model
+    def _ddfsc_line_for_department(self, department):
+        code = DEPARTMENTS.get(department, {}).get('line')
+        if not code:
+            return self.env['mrp.workcenter']
+        return self.env['mrp.workcenter'].search([('code', '=', code)], limit=1)
+
+    @api.model
+    def _ddfsc_locations_for_code(self, code):
+        locations = {
+            'MILL': ('loc_mill', 'loc_flour'),
+            'PASTA': ('loc_flour_pasta', 'loc_pasta'),
+            'MAC': ('loc_flour_macaroni', 'loc_macaroni'),
+            'BREAD': ('loc_bread', 'loc_bread'),
+            'BISC-CN': ('loc_biscuit', 'loc_biscuit'),
+            'BISC-OR': ('loc_biscuit', 'loc_biscuit'),
+        }
+        pair = locations.get(code)
+        if not pair:
+            return self.env['stock.location'], self.env['stock.location']
+        return (
+            self.env.ref('ddfsc_manufacturing.%s' % pair[0]),
+            self.env.ref('ddfsc_manufacturing.%s' % pair[1]),
+        )
+
+    @api.depends('picking_type_id', 'ddfsc_line_id')
+    def _compute_locations(self):
+        super()._compute_locations()
+        for production in self.filtered(lambda item: item.state == 'draft'):
+            source, destination = production._ddfsc_plant_locations()
+            if source and destination:
+                production.location_src_id = source
+                production.location_dest_id = destination
+
+    def _ddfsc_plant_locations(self):
+        self.ensure_one()
+        return self._ddfsc_locations_for_code(self.ddfsc_line_id.code)
+
+    def _ddfsc_wheat_silo(self):
+        self.ensure_one()
+        data = self.env['ir.model.data'].search([
+            ('module', '=', 'ddfsc_manufacturing'),
+            ('model', '=', 'product.template'),
+            ('res_id', '=', self.product_id.product_tmpl_id.id),
+        ], limit=1)
+        silos = {
+            'product_flour_g1': 'loc_silo_bread',
+            'product_bread_market': 'loc_silo_bread',
+            'product_bread_university': 'loc_silo_bread',
+            'product_flour_g2': 'loc_silo_biscuit',
+            'product_zebib': 'loc_silo_biscuit',
+            'product_defense': 'loc_silo_biscuit',
+            'product_flour_scp': 'loc_silo_macaroni',
+            'product_pasta_short': 'loc_silo_macaroni',
+            'product_flour_lcp': 'loc_silo_pasta',
+            'product_pasta_long': 'loc_silo_pasta',
+        }
+        xmlid = silos.get(data.name, 'loc_silo_pasta')
+        return self.env.ref('ddfsc_manufacturing.%s' % xmlid)
+
+    def _ddfsc_product_xmlid(self):
+        self.ensure_one()
+        return self.env['ir.model.data'].search([
+            ('module', '=', 'ddfsc_manufacturing'),
+            ('model', '=', 'product.template'),
+            ('res_id', '=', self.product_id.product_tmpl_id.id),
+        ], limit=1).name
+
+    def _ddfsc_guess_line(self):
+        self.ensure_one()
+        codes = {
+            'product_flour_g1': 'MILL',
+            'product_flour_g2': 'MILL',
+            'product_flour_scp': 'MILL',
+            'product_flour_lcp': 'MILL',
+            'product_bread_market': 'BREAD',
+            'product_bread_university': 'BREAD',
+            'product_pasta_long': 'PASTA',
+            'product_pasta_short': 'MAC',
+        }
+        code = codes.get(self._ddfsc_product_xmlid())
+        if not code:
+            return self.env['mrp.workcenter']
+        return self.env['mrp.workcenter'].search([('code', '=', code)], limit=1)
+
+    def action_confirm(self):
+        draft = self.filtered(lambda production: production.state == 'draft')
+        for production in draft.filtered(lambda item: not item.ddfsc_line_id):
+            line = production._ddfsc_guess_line()
+            if line:
+                production.ddfsc_line_id = line
+        for production in draft:
+            source, destination = production._ddfsc_plant_locations()
+            if not source or not destination:
+                continue
+            production.write({
+                'location_src_id': source.id,
+                'location_dest_id': destination.id,
+            })
+            production.move_raw_ids.filtered(
+                lambda move: move.state not in ('done', 'cancel')
+            ).write({'location_id': source.id})
+            finished = production.move_finished_ids.filtered(
+                lambda move: move.state not in ('done', 'cancel')
+            )
+            if production.ddfsc_line_id.code == 'MILL':
+                mill = self.env.ref('ddfsc_manufacturing.loc_mill')
+                finished.filtered('product_id.ddfsc_is_byproduct').write({'location_dest_id': mill.id})
+                finished.filtered(lambda move: not move.product_id.ddfsc_is_byproduct).write({
+                    'location_dest_id': destination.id,
+                })
+            else:
+                finished.write({'location_dest_id': destination.id})
+        result = super().action_confirm()
+        draft._ddfsc_create_plant_transfers()
+        self._ddfsc_rehome_default_transfers()
+        return result
+
+    def _ddfsc_create_plant_transfers(self):
+        water = self.env.ref('ddfsc_manufacturing.product_water', raise_if_not_found=False)
+        water_variant = water.product_variant_id if water else self.env['product.product']
+        wheat = self.env.ref('ddfsc_manufacturing.product_wheat').product_variant_id
+        store = self.env.ref('ddfsc_manufacturing.loc_store')
+        flour_store = self.env.ref('ddfsc_manufacturing.loc_flour')
+        finished_store = self.env.ref('ddfsc_manufacturing.loc_finished')
+        mill = self.env.ref('ddfsc_manufacturing.loc_mill')
+        for production in self.filtered('ddfsc_line_id'):
+            source, destination = production._ddfsc_plant_locations()
+            if not source or not destination:
+                continue
+            wheat_lines = []
+            flour_lines = []
+            store_lines = []
+            for move in production.move_raw_ids.filtered(lambda item: item.state != 'cancel'):
+                line = (move.product_id, move.product_uom_qty, move.product_uom)
+                if move.product_id == wheat:
+                    wheat_lines.append(line)
+                elif move.product_id.ddfsc_is_flour:
+                    flour_lines.append(line)
+                elif move.product_id != water_variant and move.product_uom_qty:
+                    store_lines.append(line)
+            if wheat_lines:
+                production._ddfsc_open_transfer(
+                    'ddfsc_manufacturing.picking_type_silo_issue',
+                    production._ddfsc_wheat_silo(),
+                    mill,
+                    wheat_lines,
+                )
+            if flour_lines:
+                production._ddfsc_open_transfer(
+                    'ddfsc_manufacturing.picking_type_flour_transfer',
+                    flour_store,
+                    source,
+                    flour_lines,
+                )
+            if store_lines:
+                production._ddfsc_open_transfer(
+                    'ddfsc_manufacturing.picking_type_store_requisition',
+                    store,
+                    source,
+                    store_lines,
+                )
+            if production.ddfsc_line_id.code != 'MILL':
+                output = production.move_finished_ids.filtered(
+                    lambda move: move.product_id == production.product_id and move.state != 'cancel'
+                )
+                production._ddfsc_open_transfer(
+                    'ddfsc_manufacturing.picking_type_fg_receiving',
+                    destination,
+                    finished_store,
+                    [(move.product_id, move.product_uom_qty, move.product_uom) for move in output],
+                )
+            else:
+                byproduct = production.move_finished_ids.filtered(
+                    lambda move: move.product_id.ddfsc_is_byproduct and move.state != 'cancel'
+                )
+                production._ddfsc_open_transfer(
+                    'ddfsc_manufacturing.picking_type_byproduct_return',
+                    mill,
+                    store,
+                    [(move.product_id, move.product_uom_qty, move.product_uom) for move in byproduct],
+                )
+
+    def _ddfsc_open_transfer(self, picking_type_xmlid, source, destination, lines):
+        self.ensure_one()
+        lines = [line for line in lines if line[1]]
+        if not lines:
+            return self.env['stock.picking']
+        picking_type = self.env.ref(picking_type_xmlid)
+        existing = self.env['stock.picking'].search([
+            ('ddfsc_production_id', '=', self.id),
+            ('picking_type_id', '=', picking_type.id),
+            ('location_id', '=', source.id),
+            ('location_dest_id', '=', destination.id),
+            ('state', '!=', 'cancel'),
+        ], limit=1)
+        if existing:
+            return existing
+        picking = self.env['stock.picking'].create({
+            'picking_type_id': picking_type.id,
+            'location_id': source.id,
+            'location_dest_id': destination.id,
+            'origin': self.name,
+            'ddfsc_production_id': self.id,
+            'move_ids': [Command.create({
+                'product_id': product.id,
+                'product_uom_qty': quantity,
+                'product_uom': unit.id,
+                'location_id': source.id,
+                'location_dest_id': destination.id,
+                'origin': self.name,
+            }) for product, quantity, unit in lines],
+        })
+        picking.action_confirm()
+        return picking
+
+    @api.model
+    def _ddfsc_rehome_default_transfers(self):
+        """Move the standard pick and store transfers onto the plant operation types."""
+        warehouse = self.env['stock.warehouse'].search([
+            ('company_id', '=', self.env.company.id),
+        ], limit=1)
+        if not warehouse or not warehouse.pbm_type_id:
+            return
+        wheat = self.env.ref('ddfsc_manufacturing.product_wheat').product_variant_id
+        pickings = self.env['stock.picking'].search([
+            ('state', 'not in', ('done', 'cancel')),
+            ('picking_type_id', 'in', (warehouse.pbm_type_id.id, warehouse.sam_type_id.id)),
+        ])
+        for picking in pickings:
+            products = picking.move_ids.filtered(lambda move: move.state != 'cancel').product_id
+            if picking.picking_type_id == warehouse.sam_type_id:
+                xmlid = 'picking_type_byproduct_return' if products and all(product.ddfsc_is_byproduct for product in products) else 'picking_type_fg_receiving'
+            elif products and all(product == wheat for product in products):
+                xmlid = 'picking_type_silo_issue'
+            elif products and all(product.ddfsc_is_flour for product in products):
+                xmlid = 'picking_type_flour_transfer'
+            else:
+                xmlid = 'picking_type_store_requisition'
+            production = picking.move_ids.production_group_id.production_ids[:1]
+            source = picking.location_id
+            destination = picking.location_dest_id
+            move_locations = [
+                (move, move.location_id, move.location_dest_id)
+                for move in picking.move_ids
+            ]
+            picking.write({
+                'picking_type_id': self.env.ref('ddfsc_manufacturing.%s' % xmlid).id,
+                'ddfsc_production_id': production.id or picking.ddfsc_production_id.id,
+            })
+            # The operation type recomputes locations from its biscuit defaults.
+            picking.write({
+                'location_id': source.id,
+                'location_dest_id': destination.id,
+            })
+            for move, move_source, move_destination in move_locations:
+                move.write({
+                    'location_id': move_source.id,
+                    'location_dest_id': move_destination.id,
+                })
+
     def button_mark_done(self):
-        store = self.env.ref('ddfsc_manufacturing.loc_store', raise_if_not_found=False)
-        for production in self.filtered(lambda item: item.ddfsc_line_id.code == 'MILL' and store):
+        self._ddfsc_ensure_approved()
+        mill = self.env.ref('ddfsc_manufacturing.loc_mill', raise_if_not_found=False)
+        for production in self.filtered(lambda item: item.ddfsc_line_id.code == 'MILL' and mill):
             production.move_finished_ids.filtered(
                 lambda move: move.product_id.ddfsc_is_byproduct and move.state not in ('done', 'cancel')
-            ).write({'location_dest_id': store.id})
+            ).write({'location_dest_id': mill.id})
         res = super().button_mark_done()
         if res is True:
             self._ddfsc_post_losses()
+            output = self.env['stock.picking'].search([
+                ('ddfsc_production_id', 'in', self.ids),
+                ('ddfsc_document_type', 'in', ('fg_receiving', 'byproduct_return')),
+                ('state', 'not in', ('done', 'cancel')),
+            ])
+            if output:
+                output.action_assign()
         return res
 
     def _ddfsc_post_losses(self):

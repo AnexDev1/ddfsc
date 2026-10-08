@@ -5,13 +5,59 @@
         <field name="model">mrp.production</field>
         <field name="inherit_id" ref="mrp.mrp_production_form_view"/>
         <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="action_ddfsc_submit" type="object" string="Submit for Approval" class="btn-primary"
+                        invisible="ddfsc_approval_state not in ('draft', 'refused')"/>
+                <button name="action_ddfsc_approve" type="object" string="Approve" class="btn-primary"
+                        groups="ddfsc_manufacturing.group_ddfsc_operation_manager"
+                        invisible="ddfsc_approval_state != 'submitted'"/>
+                <button name="action_ddfsc_refuse" type="object" string="Refuse"
+                        groups="ddfsc_manufacturing.group_ddfsc_operation_manager"
+                        invisible="ddfsc_approval_state != 'submitted'"/>
+                <button name="action_ddfsc_reset" type="object" string="Reset to Draft"
+                        invisible="ddfsc_approval_state != 'refused'"/>
+                <field name="ddfsc_approval_state" widget="statusbar" statusbar_visible="draft,submitted,approved"/>
+            </xpath>
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_ddfsc_purchases" type="object" class="oe_stat_button" icon="fa-credit-card">
+                    <field name="ddfsc_purchase_count" widget="statinfo" string="Purchases"/>
+                </button>
+                <button name="action_view_ddfsc_pickings" type="object" class="oe_stat_button" icon="fa-truck">
+                    <field name="ddfsc_picking_count" widget="statinfo" string="Transfers"/>
+                </button>
+            </xpath>
             <xpath expr="//page[@name='miscellaneous']" position="before">
+                <page string="Plant Documents" name="ddfsc_documents">
+                    <field name="ddfsc_purchase_ids" readonly="1">
+                        <list>
+                            <field name="name"/>
+                            <field name="partner_id"/>
+                            <field name="date_order"/>
+                            <field name="ddfsc_approval_state"/>
+                            <field name="state"/>
+                        </list>
+                    </field>
+                    <field name="ddfsc_picking_ids" readonly="1" domain="[('state', '!=', 'cancel')]">
+                        <list>
+                            <field name="name"/>
+                            <field name="picking_type_id"/>
+                            <field name="location_id"/>
+                            <field name="location_dest_id"/>
+                            <field name="ddfsc_approval_state"/>
+                            <field name="state"/>
+                        </list>
+                    </field>
+                </page>
                 <page string="Shift Report" name="ddfsc_shift">
                     <group>
                         <group string="Shift">
                             <field name="ddfsc_shift_id"/>
                             <field name="ddfsc_supervisor_id"/>
                             <field name="ddfsc_line_id"/>
+                            <field name="ddfsc_submitted_uid" invisible="not ddfsc_submitted_uid"/>
+                            <field name="ddfsc_approved_uid" invisible="not ddfsc_approved_uid"/>
+                            <field name="ddfsc_refusal_note" invisible="ddfsc_approval_state not in ('submitted', 'refused')"
+                                   readonly="ddfsc_approval_state != 'submitted'"/>
                             <field name="variation_qty"/>
                             <field name="yield_ratio"/>
                             <field name="flour_consumed_qtl"/>

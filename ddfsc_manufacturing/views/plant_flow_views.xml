@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_picking_form_ddfsc" model="ir.ui.view">
+        <field name="name">stock.picking.form.ddfsc</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.view_picking_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="action_ddfsc_submit" type="object" string="Submit for Approval" class="btn-primary"
+                        invisible="not ddfsc_needs_approval or ddfsc_approval_state not in ('draft', 'refused')"/>
+                <button name="action_ddfsc_approve" type="object" string="Approve" class="btn-primary"
+                        groups="ddfsc_manufacturing.group_ddfsc_gm"
+                        invisible="ddfsc_approval_role != 'gm' or ddfsc_approval_state != 'submitted'"/>
+                <button name="action_ddfsc_approve" type="object" string="Approve" class="btn-primary"
+                        groups="ddfsc_manufacturing.group_ddfsc_operation_manager"
+                        invisible="ddfsc_approval_role != 'operation' or ddfsc_approval_state != 'submitted'"/>
+                <button name="action_ddfsc_refuse" type="object" string="Refuse"
+                        groups="ddfsc_manufacturing.group_ddfsc_gm"
+                        invisible="ddfsc_approval_role != 'gm' or ddfsc_approval_state != 'submitted'"/>
+                <button name="action_ddfsc_refuse" type="object" string="Refuse"
+                        groups="ddfsc_manufacturing.group_ddfsc_operation_manager"
+                        invisible="ddfsc_approval_role != 'operation' or ddfsc_approval_state != 'submitted'"/>
+                <button name="action_ddfsc_reset" type="object" string="Reset to Draft"
+                        invisible="ddfsc_approval_state != 'refused'"/>
+                <field name="ddfsc_needs_approval" invisible="1"/>
+                <field name="ddfsc_approval_role" invisible="1"/>
+                <field name="ddfsc_approval_state" widget="statusbar" statusbar_visible="draft,submitted,approved"
+                       invisible="not ddfsc_needs_approval"/>
+            </xpath>
+            <xpath expr="//field[@name='picking_type_id']" position="after">
+                <field name="ddfsc_document_type" invisible="1"/>
+                <field name="ddfsc_production_id" readonly="state == 'done'"/>
+                <field name="ddfsc_board_open" invisible="ddfsc_document_type != 'silo_issue'" readonly="state == 'done'"/>
+                <field name="ddfsc_board_close" invisible="ddfsc_document_type != 'silo_issue'" readonly="state == 'done'"/>
+                <field name="ddfsc_impurity_qtl" invisible="ddfsc_document_type != 'silo_issue'" readonly="state == 'done'"/>
+                <field name="ddfsc_wheat_qtl" invisible="ddfsc_document_type != 'silo_issue'"/>
+                <field name="ddfsc_cleaned_qtl" invisible="ddfsc_document_type != 'silo_issue'"/>
+                <field name="ddfsc_approval_role" invisible="not ddfsc_needs_approval" readonly="1"/>
+                <field name="ddfsc_submitted_uid" invisible="not ddfsc_submitted_uid"/>
+                <field name="ddfsc_approved_uid" invisible="not ddfsc_approved_uid"/>
+                <field name="ddfsc_refusal_note" invisible="ddfsc_approval_state not in ('submitted', 'refused')"
+                       readonly="ddfsc_approval_state != 'submitted'"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="purchase_order_form_ddfsc" model="ir.ui.view">
+        <field name="name">purchase.order.form.ddfsc</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="action_ddfsc_submit" type="object" string="Submit for Approval" class="btn-primary"
+                        invisible="not ddfsc_needs_approval or ddfsc_approval_state not in ('draft', 'refused')"/>
+                <button name="action_ddfsc_approve" type="object" string="Approve" class="btn-primary"
+                        groups="ddfsc_manufacturing.group_ddfsc_gm"
+                        invisible="ddfsc_approval_role != 'gm' or ddfsc_approval_state != 'submitted'"/>
+                <button name="action_ddfsc_approve" type="object" string="Approve" class="btn-primary"
+                        groups="ddfsc_manufacturing.group_ddfsc_operation_manager"
+                        invisible="ddfsc_approval_role != 'operation' or ddfsc_approval_state != 'submitted'"/>
+                <button name="action_ddfsc_refuse" type="object" string="Refuse"
+                        groups="ddfsc_manufacturing.group_ddfsc_gm"
+                        invisible="ddfsc_approval_role != 'gm' or ddfsc_approval_state != 'submitted'"/>
+                <button name="action_ddfsc_refuse" type="object" string="Refuse"
+                        groups="ddfsc_manufacturing.group_ddfsc_operation_manager"
+                        invisible="ddfsc_approval_role != 'operation' or ddfsc_approval_state != 'submitted'"/>
+                <button name="action_ddfsc_reset" type="object" string="Reset to Draft"
+                        invisible="ddfsc_approval_state != 'refused'"/>
+                <field name="ddfsc_needs_approval" invisible="1"/>
+                <field name="ddfsc_approval_role" invisible="1"/>
+                <field name="ddfsc_approval_state" widget="statusbar" statusbar_visible="draft,submitted,approved"
+                       invisible="not ddfsc_needs_approval"/>
+            </xpath>
+            <xpath expr="//field[@name='partner_ref']" position="after">
+                <field name="ddfsc_production_id"/>
+                <field name="ddfsc_submitted_uid" invisible="not ddfsc_submitted_uid"/>
+                <field name="ddfsc_approved_uid" invisible="not ddfsc_approved_uid"/>
+                <field name="ddfsc_refusal_note" invisible="ddfsc_approval_state not in ('submitted', 'refused')"
+                       readonly="ddfsc_approval_state != 'submitted'"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_ddfsc_wheat_purchase" model="ir.actions.act_window">
+        <field name="name">Wheat Receiving</field>
+        <field name="res_model">purchase.order</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain" eval="[('picking_type_id', '=', ref('picking_type_wheat_purchase'))]"/>
+        <field name="context">{'ddfsc_document_type': 'wheat_purchase'}</field>
+    </record>
+    <record id="action_ddfsc_store_purchase" model="ir.actions.act_window">
+        <field name="name">Store Purchases</field>
+        <field name="res_model">purchase.order</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain" eval="[('picking_type_id', '=', ref('picking_type_store_purchase'))]"/>
+        <field name="context">{'ddfsc_document_type': 'store_purchase'}</field>
+    </record>
+
+    <record id="action_ddfsc_picking_wheat_to_silo" model="ir.actions.act_window">
+        <field name="name">Wheat to Silo</field>
+        <field name="res_model">stock.picking</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain" eval="[('picking_type_id', '=', ref('picking_type_wheat_to_silo'))]"/>
+        <field name="context" eval="{'default_picking_type_id': ref('picking_type_wheat_to_silo'), 'contact_display': 'partner_address'}"/>
+    </record>
+    <record id="action_ddfsc_picking_silo_issue" model="ir.actions.act_window">
+        <field name="name">Silo Issue</field>
+        <field name="res_model">stock.picking</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain" eval="[('picking_type_id', '=', ref('picking_type_silo_issue'))]"/>
+        <field name="context" eval="{'default_picking_type_id': ref('picking_type_silo_issue'), 'contact_display': 'partner_address'}"/>
+    </record>
+    <record id="action_ddfsc_picking_flour_transfer" model="ir.actions.act_window">
+        <field name="name">Flour Transfer</field>
+        <field name="res_model">stock.picking</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain" eval="[('picking_type_id', '=', ref('picking_type_flour_transfer'))]"/>
+        <field name="context" eval="{'default_picking_type_id': ref('picking_type_flour_transfer'), 'contact_display': 'partner_address'}"/>
+    </record>
+    <record id="action_ddfsc_picking_store_requisition" model="ir.actions.act_window">
+        <field name="name">Store Requisition</field>
+        <field name="res_model">stock.picking</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain" eval="[('picking_type_id', '=', ref('picking_type_store_requisition'))]"/>
+        <field name="context" eval="{'default_picking_type_id': ref('picking_type_store_requisition'), 'contact_display': 'partner_address'}"/>
+    </record>
+    <record id="action_ddfsc_picking_byproduct_return" model="ir.actions.act_window">
+        <field name="name">By-product to Store</field>
+        <field name="res_model">stock.picking</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain" eval="[('picking_type_id', '=', ref('picking_type_byproduct_return'))]"/>
+        <field name="context" eval="{'default_picking_type_id': ref('picking_type_byproduct_return'), 'contact_display': 'partner_address'}"/>
+    </record>
+    <record id="action_ddfsc_picking_fg_receiving" model="ir.actions.act_window">
+        <field name="name">Finished Goods Receiving</field>
+        <field name="res_model">stock.picking</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain" eval="[('picking_type_id', '=', ref('picking_type_fg_receiving'))]"/>
+        <field name="context" eval="{'default_picking_type_id': ref('picking_type_fg_receiving'), 'contact_display': 'partner_address'}"/>
+    </record>
+
+    <menuitem id="menu_ddfsc_wheat_purchase" name="Wheat Receiving" parent="purchase.menu_procurement_management" action="action_ddfsc_wheat_purchase" sequence="20"/>
+    <menuitem id="menu_ddfsc_store_purchase" name="Store Purchases" parent="purchase.menu_procurement_management" action="action_ddfsc_store_purchase" sequence="21"/>
+
+    <menuitem id="menu_ddfsc_wheat_to_silo" name="Wheat to Silo" parent="stock.menu_stock_transfers" action="action_ddfsc_picking_wheat_to_silo" sequence="30" groups="stock.group_stock_user"/>
+    <menuitem id="menu_ddfsc_picking_silo_issue" name="Silo Issue" parent="stock.menu_stock_transfers" action="action_ddfsc_picking_silo_issue" sequence="31" groups="stock.group_stock_user"/>
+    <menuitem id="menu_ddfsc_picking_flour" name="Flour Transfer" parent="stock.menu_stock_transfers" action="action_ddfsc_picking_flour_transfer" sequence="32" groups="stock.group_stock_user"/>
+    <menuitem id="menu_ddfsc_picking_requisition" name="Store Requisition" parent="stock.menu_stock_transfers" action="action_ddfsc_picking_store_requisition" sequence="33" groups="stock.group_stock_user"/>
+    <menuitem id="menu_ddfsc_picking_byproduct" name="By-product to Store" parent="stock.menu_stock_transfers" action="action_ddfsc_picking_byproduct_return" sequence="34" groups="stock.group_stock_user"/>
+    <menuitem id="menu_ddfsc_picking_fg" name="Finished Goods Receiving" parent="stock.menu_stock_transfers" action="action_ddfsc_picking_fg_receiving" sequence="35" groups="stock.group_stock_user"/>
+</odoo>

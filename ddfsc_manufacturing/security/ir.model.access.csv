@@ -9,3 +9,8 @@ access_ddfsc_transfer_line_user,ddfsc.transfer.line.user,model_ddfsc_transfer_li
 access_ddfsc_transfer_line_manager,ddfsc.transfer.line.manager,model_ddfsc_transfer_line,mrp.group_mrp_manager,1,1,1,1
 access_ddfsc_quality_report_user,ddfsc.quality.report.user,model_ddfsc_quality_report,mrp.group_mrp_user,1,1,1,0
 access_ddfsc_quality_report_manager,ddfsc.quality.report.manager,model_ddfsc_quality_report,mrp.group_mrp_manager,1,1,1,1
+access_ddfsc_store_request_user,ddfsc.store.request.user,model_ddfsc_store_request,mrp.group_mrp_user,1,1,1,0
+access_ddfsc_store_request_manager,ddfsc.store.request.manager,model_ddfsc_store_request,mrp.group_mrp_manager,1,1,1,1
+access_ddfsc_store_request_line_user,ddfsc.store.request.line.user,model_ddfsc_store_request_line,mrp.group_mrp_user,1,1,1,0
+access_ddfsc_store_request_line_manager,ddfsc.store.request.line.manager,model_ddfsc_store_request_line,mrp.group_mrp_manager,1,1,1,1
+access_stock_quant_mrp_read,stock.quant.mrp.read,stock.model_stock_quant,mrp.group_mrp_user,1,0,0,0

@@ -314,6 +314,68 @@ class DdfscShift(models.Model):
         self._line_request('BISC-CN', 'Biscuit Line China', 100)
         self._line_request('BISC-OR', 'Biscuit Line Orland', 60)
         self._line_request('MILL', 'Flour Mill', 0)
+        self._sync_operations()
+
+    def _sync_operations(self):
+        """Purchase receipts and inventory transfers for the plant forms."""
+        internal_users = self.env.ref('base.group_user')
+        multi_locations = self.env.ref('stock.group_stock_multi_locations')
+        if multi_locations not in internal_users.implied_ids:
+            internal_users.write({'implied_ids': [Command.link(multi_locations.id)]})
+        warehouse = self.env['stock.warehouse'].search([
+            ('company_id', '=', self.env.company.id),
+        ], limit=1)
+        suppliers = self.env.ref('stock.stock_location_suppliers')
+        operations = [
+            ('picking_type_wheat_purchase', 'wheat_purchase', 'Wheat Receiving', 'incoming', 'WHEAT', suppliers, 'loc_wheat_dock'),
+            ('picking_type_store_purchase', 'store_purchase', 'Store Receipt', 'incoming', 'STORE', suppliers, 'loc_store'),
+            ('picking_type_wheat_to_silo', 'wheat_to_silo', 'Wheat to Silo', 'internal', 'SILO', 'loc_wheat_dock', 'loc_silo_pasta'),
+            ('picking_type_silo_issue', 'silo_issue', 'Silo Issue', 'internal', 'ISSUE', 'loc_silo_pasta', 'loc_mill'),
+            ('picking_type_flour_transfer', 'flour_transfer', 'Flour Transfer', 'internal', 'FLOUR', 'loc_flour', 'loc_flour_pasta'),
+            ('picking_type_store_requisition', 'store_requisition', 'Store Requisition', 'internal', 'REQ', 'loc_store', 'loc_biscuit'),
+            ('picking_type_byproduct_return', 'byproduct_return', 'By-product to Store', 'internal', 'BYP', 'loc_mill', 'loc_store'),
+            ('picking_type_fg_receiving', 'fg_receiving', 'Finished Goods Receiving', 'internal', 'FG', 'loc_biscuit', 'loc_finished'),
+        ]
+        for xmlid, document_type, name, code, prefix, source, destination in operations:
+            source_location = self.env.ref('ddfsc_manufacturing.%s' % source) if isinstance(source, str) else source
+            dest_location = self.env.ref('ddfsc_manufacturing.%s' % destination)
+            picking_type = self._ensure_record(xmlid, 'stock.picking.type', {
+                'name': name,
+                'code': code,
+                'sequence_code': prefix,
+                'sequence': 50,
+                'warehouse_id': warehouse.id,
+                'company_id': self.env.company.id,
+            })
+            picking_type.write({
+                'name': name,
+                'ddfsc_document_type': document_type,
+                'default_location_src_id': source_location.id,
+                'default_location_dest_id': dest_location.id,
+            })
+        self.env['mrp.production']._ddfsc_rehome_default_transfers()
+        self._retire_manufacturing_transfer_menus()
+
+    def _retire_manufacturing_transfer_menus(self):
+        xmlids = [
+            'menu_ddfsc_store_requisition',
+            'menu_ddfsc_wheat_receiving',
+            'menu_ddfsc_silo_issue',
+            'menu_ddfsc_flour_transfer',
+            'menu_ddfsc_byproduct_return',
+            'menu_ddfsc_fg_receiving',
+            'menu_ddfsc_transfers',
+            'action_ddfsc_store_requisition',
+            'action_ddfsc_wheat_receiving',
+            'action_ddfsc_silo_issue',
+            'action_ddfsc_flour_transfer',
+            'action_ddfsc_byproduct_return',
+            'action_ddfsc_fg_receiving',
+        ]
+        for xmlid in xmlids:
+            record = self.env.ref('ddfsc_manufacturing.%s' % xmlid, raise_if_not_found=False)
+            if record:
+                record.unlink()
 
     def _line_request(self, code, name, flour_qtl):
         line = self.env['mrp.workcenter'].search([('code', '=', code)], limit=1)

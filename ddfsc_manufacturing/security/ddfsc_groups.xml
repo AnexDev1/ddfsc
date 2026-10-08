@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="group_ddfsc_gm" model="res.groups">
+        <field name="name">General Manager</field>
+        <field name="comment">Approves wheat purchases and wheat entering a silo.</field>
+        <field name="implied_ids" eval="[(4, ref('stock.group_stock_user')), (4, ref('purchase.group_purchase_user')), (4, ref('mrp.group_mrp_user'))]"/>
+        <field name="user_ids" eval="[(4, ref('base.user_root')), (4, ref('base.user_admin'))]"/>
+    </record>
+    <record id="group_ddfsc_operation_manager" model="res.groups">
+        <field name="name">Operation Manager</field>
+        <field name="comment">Approves store purchases, plant transfers, and the shift report.</field>
+        <field name="implied_ids" eval="[(4, ref('stock.group_stock_user')), (4, ref('purchase.group_purchase_user')), (4, ref('mrp.group_mrp_user'))]"/>
+        <field name="user_ids" eval="[(4, ref('base.user_root')), (4, ref('base.user_admin'))]"/>
+    </record>
+</odoo>
