@@ -1,3 +1,7 @@
+from . import ddfsc_approval
+from . import ddfsc_department
+from . import res_users
+from . import ddfsc_store_request
 from . import ddfsc_shift
 from . import ddfsc_quality_check
 from . import ddfsc_quality_report
@@ -9,3 +13,4 @@ from . import mrp_production
 from . import maintenance_equipment
 from . import stock_lot
 from . import stock_picking
+from . import purchase_order

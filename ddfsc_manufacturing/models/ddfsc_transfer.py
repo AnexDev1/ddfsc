@@ -5,7 +5,7 @@ from odoo.fields import Command
 
 class DdfscTransfer(models.Model):
     _name = 'ddfsc.transfer'
-    _description = 'Plant Transfer'
+    _description = 'Earlier plant form kept for documents already posted'
     _order = 'id desc'
 
     name = fields.Char(default='New', required=True, copy=False)

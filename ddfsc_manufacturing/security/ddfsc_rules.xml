@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="rule_ddfsc_store_request_department" model="ir.rule">
+        <field name="name">Store requisitions of the user's department</field>
+        <field name="model_id" ref="model_ddfsc_store_request"/>
+        <field name="domain_force">user.ddfsc_department and [('ddfsc_department', '=', user.ddfsc_department)] or [(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('mrp.group_mrp_user'))]"/>
+    </record>
+    <record id="rule_ddfsc_store_request_manager" model="ir.rule">
+        <field name="name">Operation manager sees every store requisition</field>
+        <field name="model_id" ref="model_ddfsc_store_request"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('ddfsc_manufacturing.group_ddfsc_operation_manager'))]"/>
+    </record>
+</odoo>
