@@ -33,7 +33,7 @@
     </record>
     <!-- Temporary finished pasta / macaroni before Finished Goods Store -->
     <record id="loc_pasta_finished" model="stock.location">
-        <field name="name">Pasta</field>
+        <field name="name">Pasta Temp Finished</field>
         <field name="location_id" ref="stock.stock_location_stock"/>
         <field name="usage">internal</field>
     </record>
@@ -43,12 +43,27 @@
         <field name="usage">internal</field>
     </record>
     <record id="loc_macaroni_finished" model="stock.location">
-        <field name="name">Macaroni</field>
+        <field name="name">Macaroni Temp Finished</field>
+        <field name="location_id" ref="stock.stock_location_stock"/>
+        <field name="usage">internal</field>
+    </record>
+    <record id="loc_bread_finished" model="stock.location">
+        <field name="name">Bread Temp Finished</field>
+        <field name="location_id" ref="stock.stock_location_stock"/>
+        <field name="usage">internal</field>
+    </record>
+    <record id="loc_biscuit_finished" model="stock.location">
+        <field name="name">Biscuit Temp Finished</field>
         <field name="location_id" ref="stock.stock_location_stock"/>
         <field name="usage">internal</field>
     </record>
     <record id="loc_finished" model="stock.location">
         <field name="name">Finished Goods Store</field>
+        <field name="location_id" ref="stock.stock_location_stock"/>
+        <field name="usage">internal</field>
+    </record>
+    <record id="loc_byproduct" model="stock.location">
+        <field name="name">By-product Temp</field>
         <field name="location_id" ref="stock.stock_location_stock"/>
         <field name="usage">internal</field>
     </record>
@@ -77,19 +92,16 @@
     <record id="product_wheat" model="product.template">
         <field name="name">Wheat</field>
         <field name="is_storable" eval="True"/>
-        <field name="tracking">lot</field>
         <field name="uom_id" ref="uom_quintal"/>
     </record>
     <record id="product_flour_g1" model="product.template">
         <field name="name">Wheat Flour Grade 1</field>
         <field name="is_storable" eval="True"/>
-        <field name="tracking">lot</field>
         <field name="uom_id" ref="uom_quintal"/>
     </record>
     <record id="product_flour_g2" model="product.template">
         <field name="name">Wheat Flour Grade 2</field>
         <field name="is_storable" eval="True"/>
-        <field name="tracking">lot</field>
         <field name="uom_id" ref="uom_quintal"/>
     </record>
     <record id="product_sugar" model="product.template">
@@ -105,7 +117,6 @@
     <record id="product_zebib" model="product.template">
         <field name="name">New Zebib Biscuit 78x4</field>
         <field name="is_storable" eval="True"/>
-        <field name="tracking">lot</field>
         <field name="uom_id" ref="uom.product_uom_unit"/>
     </record>
 

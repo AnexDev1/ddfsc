@@ -180,13 +180,10 @@ class MrpProduction(models.Model):
     @api.model
     def default_get(self, fields_list):
         values = super().default_get(fields_list)
-        department = self.env.user.ddfsc_department
-        if department:
+        # Menu context wins so Bread / Biscuit / Pasta menus set the right line.
+        department = self.env.context.get('ddfsc_department') or self.env.user.ddfsc_department
+        if department and not values.get('ddfsc_line_id'):
             line = self._ddfsc_line_for_department(department)
-            if line:
-                values['ddfsc_line_id'] = line.id
-        elif not values.get('ddfsc_line_id') and self.env.context.get('ddfsc_department'):
-            line = self._ddfsc_line_for_department(self.env.context['ddfsc_department'])
             if line:
                 values['ddfsc_line_id'] = line.id
         line = self.env['mrp.workcenter'].browse(values.get('ddfsc_line_id') or False).exists()
@@ -207,33 +204,52 @@ class MrpProduction(models.Model):
     @api.model
     def _ddfsc_locations_for_code(self, code):
         locations = {
-            # (component location, finished / temp output location)
+            # (component / floor location, temp finished location)
             'MILL': ('loc_mill', 'loc_flour'),
             'PASTA': ('loc_pasta', 'loc_pasta_finished'),
             'MAC': ('loc_macaroni', 'loc_macaroni_finished'),
-            'BREAD': ('loc_bread', 'loc_bread'),
-            'BISC-CN': ('loc_biscuit', 'loc_biscuit'),
-            'BISC-OR': ('loc_biscuit', 'loc_biscuit'),
+            'BREAD': ('loc_bread', 'loc_bread_finished'),
+            'BISC-CN': ('loc_biscuit', 'loc_biscuit_finished'),
+            'BISC-OR': ('loc_biscuit', 'loc_biscuit_finished'),
         }
         pair = locations.get(code)
         if not pair:
             return self.env['stock.location'], self.env['stock.location']
-        return (
-            self.env.ref('ddfsc_manufacturing.%s' % pair[0]),
-            self.env.ref('ddfsc_manufacturing.%s' % pair[1]),
-        )
+        source = self.env.ref('ddfsc_manufacturing.%s' % pair[0], raise_if_not_found=False)
+        destination = self.env.ref('ddfsc_manufacturing.%s' % pair[1], raise_if_not_found=False)
+        return source or self.env['stock.location'], destination or self.env['stock.location']
 
     @api.depends('picking_type_id', 'ddfsc_line_id')
     def _compute_locations(self):
         super()._compute_locations()
-        for production in self.filtered(lambda item: item.state == 'draft'):
+        productions = self.with_context(skip_compute_move_raw_ids=True).filtered(
+            lambda item: item.state == 'draft'
+        )
+        for production in productions:
             source, destination = production._ddfsc_plant_locations()
             if source and destination:
                 production.location_src_id = source
                 production.location_dest_id = destination
 
+    @api.onchange('product_id', 'bom_id')
+    def _onchange_ddfsc_product_locations(self):
+        for production in self:
+            if production.state and production.state != 'draft':
+                continue
+            line = production._ddfsc_guess_line()
+            if line:
+                production.ddfsc_line_id = line
+            source, destination = production._ddfsc_plant_locations()
+            if source and destination:
+                production.with_context(skip_compute_move_raw_ids=True).update({
+                    'location_src_id': source.id,
+                    'location_dest_id': destination.id,
+                })
+
     def _ddfsc_plant_locations(self):
         self.ensure_one()
+        if not self.ddfsc_line_id:
+            return self.env['stock.location'], self.env['stock.location']
         return self._ddfsc_locations_for_code(self.ddfsc_line_id.code)
 
     def _ddfsc_wheat_silo(self):
@@ -277,6 +293,8 @@ class MrpProduction(models.Model):
             'product_bread_university': 'BREAD',
             'product_pasta_long': 'PASTA',
             'product_pasta_short': 'MAC',
+            'product_zebib': 'BISC-CN',
+            'product_defense': 'BISC-CN',
         }
         code = codes.get(self._ddfsc_product_xmlid())
         if not code:
@@ -290,10 +308,12 @@ class MrpProduction(models.Model):
             if line:
                 production.ddfsc_line_id = line
         for production in draft:
+            production._ddfsc_remove_orphan_raw_moves()
             source, destination = production._ddfsc_plant_locations()
             if not source or not destination:
                 continue
-            production.write({
+            # Skip recompute: rewriting location_src_id rebuilds components and can duplicate lines.
+            production.with_context(skip_compute_move_raw_ids=True).write({
                 'location_src_id': source.id,
                 'location_dest_id': destination.id,
             })
@@ -304,23 +324,56 @@ class MrpProduction(models.Model):
                 lambda move: move.state not in ('done', 'cancel')
             )
             if production.ddfsc_line_id.code == 'MILL':
-                mill = self.env.ref('ddfsc_manufacturing.loc_mill')
-                finished.filtered('product_id.ddfsc_is_byproduct').write({'location_dest_id': mill.id})
+                byproduct_loc = self.env.ref(
+                    'ddfsc_manufacturing.loc_byproduct', raise_if_not_found=False,
+                )
+                if byproduct_loc:
+                    finished.filtered('product_id.ddfsc_is_byproduct').write({
+                        'location_dest_id': byproduct_loc.id,
+                    })
                 finished.filtered(lambda move: not move.product_id.ddfsc_is_byproduct).write({
                     'location_dest_id': destination.id,
                 })
             else:
                 finished.write({'location_dest_id': destination.id})
-        result = super().action_confirm()
-        return result
+        return super().action_confirm()
+
+    def _ddfsc_remove_orphan_raw_moves(self):
+        """Drop manual duplicates left after BoM lines were recreated on upgrade."""
+        self.ensure_one()
+        if self.state != 'draft':
+            return
+        bom_products = self.move_raw_ids.filtered('bom_line_id').mapped('product_id')
+        orphans = self.move_raw_ids.filtered(
+            lambda move: not move.bom_line_id
+            and move.product_id in bom_products
+            and move.state not in ('done', 'cancel')
+        )
+        if orphans:
+            orphans._action_cancel()
+            orphans.unlink()
 
     def button_mark_done(self):
         self._ddfsc_ensure_approved()
-        mill = self.env.ref('ddfsc_manufacturing.loc_mill', raise_if_not_found=False)
-        for production in self.filtered(lambda item: item.ddfsc_line_id.code == 'MILL' and mill):
-            production.move_finished_ids.filtered(
-                lambda move: move.product_id.ddfsc_is_byproduct and move.state not in ('done', 'cancel')
-            ).write({'location_dest_id': mill.id})
+        byproduct_loc = self.env.ref('ddfsc_manufacturing.loc_byproduct', raise_if_not_found=False)
+        for production in self:
+            source, destination = production._ddfsc_plant_locations()
+            finished = production.move_finished_ids.filtered(
+                lambda move: move.state not in ('done', 'cancel')
+            )
+            if not destination:
+                continue
+            production.location_dest_id = destination
+            if production.ddfsc_line_id.code == 'MILL':
+                if byproduct_loc:
+                    finished.filtered('product_id.ddfsc_is_byproduct').write({
+                        'location_dest_id': byproduct_loc.id,
+                    })
+                finished.filtered(lambda move: not move.product_id.ddfsc_is_byproduct).write({
+                    'location_dest_id': destination.id,
+                })
+            else:
+                finished.write({'location_dest_id': destination.id})
         res = super().button_mark_done()
         if res is True:
             self._ddfsc_post_losses()

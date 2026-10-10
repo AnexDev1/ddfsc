@@ -1,14 +1,16 @@
 {
     'name': 'DDFSC Manufacturing',
-    'version': '19.0.2.4.0',
+    'version': '19.0.2.6.0',
     'category': 'Manufacturing',
-    'summary': 'Production, shift reports, quality, and store transfer requests',
+    'summary': 'Production, shift reports, quality, and transfer requests',
     'description': """
 Dire Dawa Food Complex manufacturing on Odoo 19 Community.
 Manufacturing owns production orders, shift reports, quality hold/release, and
-recipes. Departments raise Store Transfer Requests (destination, request date,
-product details). Submit to Manager, approve to create an inventory internal
-transfer, then mark received when the picking is validated.
+recipes. Departments raise Store Transfer Requests for components onto the floor,
+FG Transfer Requests from Temp Finished into Finished Goods Store, and mill
+By-product Return Requests from By-product Temp into General Store. Submit to
+Manager, approve to create an inventory internal transfer, then mark received
+when the picking is validated.
     """,
     'author': 'DDFSC',
     'license': 'LGPL-3',

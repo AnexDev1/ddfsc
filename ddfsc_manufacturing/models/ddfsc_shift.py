@@ -37,11 +37,24 @@ class DdfscShift(models.Model):
         self.env['ir.model.data'].create({
             'module': 'ddfsc_manufacturing',
             'name': xmlid,
-            'model': 'product.template',
             'res_id': product.id,
+            'model': 'product.template',
             'noupdate': True,
         })
         return product
+
+    @api.model
+    def _ddfsc_disable_lot_tracking(self):
+        """Starter data used to force lot tracking; turn it off on plant products."""
+        products = self.env['ir.model.data'].search([
+            ('module', '=', 'ddfsc_manufacturing'),
+            ('model', '=', 'product.template'),
+        ]).mapped('res_id')
+        templates = self.env['product.template'].browse(products).exists().filtered(
+            lambda product: product.tracking != 'none'
+        )
+        if templates:
+            templates.write({'tracking': 'none'})
 
     def _ensure_record(self, xmlid, model, vals):
         record = self.env.ref('ddfsc_manufacturing.%s' % xmlid, raise_if_not_found=False)
@@ -68,6 +81,7 @@ class DdfscShift(models.Model):
         return location
 
     def _sync_bom(self, code, product_xmlid, qty, uom_xmlid, lines, byproducts=None):
+        """Create or update a BoM without clearing lines (keeps MO move links stable)."""
         product = self.env.ref(product_xmlid)
         vals = {
             'product_tmpl_id': product.id,
@@ -75,15 +89,33 @@ class DdfscShift(models.Model):
             'product_uom_id': self.env.ref(uom_xmlid).id,
             'code': code,
             'type': 'normal',
-            'bom_line_ids': [Command.clear()] + [Command.create(line) for line in lines],
-            'byproduct_ids': [Command.clear()] + [Command.create(line) for line in (byproducts or [])],
         }
         bom = self.env['mrp.bom'].search([('code', '=', code)], limit=1)
-        if bom:
-            bom.write(vals)
-        else:
-            bom = self.env['mrp.bom'].create(vals)
+        if not bom:
+            vals['bom_line_ids'] = [Command.create(line) for line in lines]
+            vals['byproduct_ids'] = [Command.create(line) for line in (byproducts or [])]
+            return self.env['mrp.bom'].create(vals)
+        bom.write(vals)
+        self._sync_bom_lines(bom, 'bom_line_ids', lines)
+        self._sync_bom_lines(bom, 'byproduct_ids', byproducts or [])
         return bom
+
+    def _sync_bom_lines(self, bom, field_name, lines):
+        existing = {line.product_id.id: line for line in bom[field_name]}
+        seen = set()
+        commands = []
+        for line_vals in lines:
+            product_id = line_vals['product_id']
+            seen.add(product_id)
+            current = existing.get(product_id)
+            if current:
+                current.write(line_vals)
+            else:
+                commands.append(Command.create(line_vals))
+        extras = bom[field_name].filtered(lambda line: line.product_id.id not in seen)
+        commands.extend(Command.delete(line.id) for line in extras)
+        if commands:
+            bom.write({field_name: commands})
 
     def _line(self, product, qty, uom_xmlid):
         return {
@@ -98,7 +130,8 @@ class DdfscShift(models.Model):
         quintal = 'ddfsc_manufacturing.uom_quintal'
         kg = 'uom.product_uom_kgm'
         unit = 'uom.product_uom_unit'
-        self._ensure_product('product_maize_flour', 'Maize Flour', quintal, tracking='lot')
+        self._ddfsc_disable_lot_tracking()
+        self._ensure_product('product_maize_flour', 'Maize Flour', quintal)
         self._ensure_product('product_abc', 'Ammonium Bicarbonate', kg)
         self._ensure_product('product_sbc', 'Sodium Bicarbonate', kg)
         self._ensure_product('product_sms', 'Sodium Metabisulfite', kg)
@@ -109,12 +142,12 @@ class DdfscShift(models.Model):
         self._ensure_product('product_zebib_film', 'Zebib Film', kg)
         self._ensure_product('product_carton_78', 'Carton 78x4', unit)
         self._ensure_product('product_scotch', 'Scotch Tape', unit)
-        self._ensure_product('product_bran', 'Wheat Bran', quintal, tracking='lot')
+        self._ensure_product('product_bran', 'Wheat Bran', quintal)
         self._ensure_product('product_water', 'Process Water', kg)
-        self._ensure_product('product_bread_market', 'Bread Market 100g', unit, tracking='lot')
-        self._ensure_product('product_bread_university', 'Bread University 120g', unit, tracking='lot')
-        self._ensure_product('product_pasta_long', 'Long Cut Pasta 500g', unit, tracking='lot')
-        self._ensure_product('product_pasta_short', 'Short Cut Pasta 500g', unit, tracking='lot')
+        self._ensure_product('product_bread_market', 'Bread Market 100g', unit)
+        self._ensure_product('product_bread_university', 'Bread University 120g', unit)
+        self._ensure_product('product_pasta_long', 'Long Cut Pasta 500g', unit)
+        self._ensure_product('product_pasta_short', 'Short Cut Pasta 500g', unit)
 
         flour_g1 = self._variant('ddfsc_manufacturing.product_flour_g1')
         flour_g2 = self._variant('ddfsc_manufacturing.product_flour_g2')
@@ -172,12 +205,27 @@ class DdfscShift(models.Model):
             'usage': 'internal',
         })
         self._ensure_record('loc_pasta_finished', 'stock.location', {
-            'name': 'Pasta',
+            'name': 'Pasta Temp Finished',
             'location_id': parent.id,
             'usage': 'internal',
         })
         self._ensure_record('loc_macaroni_finished', 'stock.location', {
-            'name': 'Macaroni',
+            'name': 'Macaroni Temp Finished',
+            'location_id': parent.id,
+            'usage': 'internal',
+        })
+        self._ensure_record('loc_bread_finished', 'stock.location', {
+            'name': 'Bread Temp Finished',
+            'location_id': parent.id,
+            'usage': 'internal',
+        })
+        self._ensure_record('loc_biscuit_finished', 'stock.location', {
+            'name': 'Biscuit Temp Finished',
+            'location_id': parent.id,
+            'usage': 'internal',
+        })
+        self._ensure_record('loc_byproduct', 'stock.location', {
+            'name': 'By-product Temp',
             'location_id': parent.id,
             'usage': 'internal',
         })
@@ -186,15 +234,15 @@ class DdfscShift(models.Model):
             'location_id': parent.id,
             'usage': 'internal',
         })
-        self._ensure_product('product_flour_scp', 'Short Cut Pasta Flour', quintal, tracking='lot')
-        self._ensure_product('product_flour_lcp', 'Long Cut Pasta Flour', quintal, tracking='lot')
-        self._ensure_product('product_rf', 'By-product RF', quintal, tracking='lot')
-        self._ensure_product('product_rc', 'By-product RC', quintal, tracking='lot')
+        self._ensure_product('product_flour_scp', 'Short Cut Pasta Flour', quintal)
+        self._ensure_product('product_flour_lcp', 'Long Cut Pasta Flour', quintal)
+        self._ensure_product('product_rf', 'By-product RF', quintal)
+        self._ensure_product('product_rc', 'By-product RC', quintal)
         self.env.ref('ddfsc_manufacturing.product_flour_scp').ddfsc_is_flour = True
         self.env.ref('ddfsc_manufacturing.product_flour_lcp').ddfsc_is_flour = True
         self.env.ref('ddfsc_manufacturing.product_rf').ddfsc_is_byproduct = True
         self.env.ref('ddfsc_manufacturing.product_rc').ddfsc_is_byproduct = True
-        self._ensure_product('product_defense', 'Defense Biscuit 160x4', unit, tracking='lot')
+        self._ensure_product('product_defense', 'Defense Biscuit 160x4', unit)
         self._ensure_product('product_carton_160', 'Carton 160x4', unit)
         self._ensure_product('product_defense_film', 'Defense Film', kg)
         defense_film = self._variant('ddfsc_manufacturing.product_defense_film')
@@ -327,25 +375,62 @@ class DdfscShift(models.Model):
         self._sync_operations()
 
     def _sync_operations(self):
-        """Enable multi-location and retire obsolete plant operation types."""
+        """Enable multi-location, keep request picking types on the Inventory dashboard."""
         internal_users = self.env.ref('base.group_user')
         multi_locations = self.env.ref('stock.group_stock_multi_locations')
         if multi_locations not in internal_users.implied_ids:
             internal_users.write({'implied_ids': [Command.link(multi_locations.id)]})
+        self._ensure_request_picking_types()
         self._retire_plant_operation_types()
         self._retire_manufacturing_transfer_menus()
 
+    def _ensure_request_picking_types(self):
+        """Store / FG request pickings need their own operation types to show on Overview."""
+        warehouse = self.env['stock.warehouse'].search([
+            ('company_id', '=', self.env.company.id),
+        ], limit=1)
+        if not warehouse:
+            return
+        stock_loc = warehouse.lot_stock_id
+        for xmlid, name, prefix, doc_type, sequence in (
+            ('picking_type_store_requisition', 'Store Transfer Request', 'MTR', 'store_requisition', 35),
+            ('picking_type_fg_receiving', 'FG Transfer Request', 'FGR', 'fg_receiving', 36),
+            ('picking_type_byproduct_return', 'By-product Return', 'BPR', 'byproduct_return', 37),
+        ):
+            picking_type = self.env.ref('ddfsc_manufacturing.%s' % xmlid, raise_if_not_found=False)
+            vals = {
+                'name': name,
+                'code': 'internal',
+                'sequence_code': prefix,
+                'warehouse_id': warehouse.id,
+                'default_location_src_id': stock_loc.id,
+                'default_location_dest_id': stock_loc.id,
+                'ddfsc_document_type': doc_type,
+                'active': True,
+                'sequence': sequence,
+                'reservation_method': 'at_confirm',
+                'show_operations': True,
+            }
+            if picking_type:
+                picking_type.write(vals)
+                continue
+            picking_type = self.env['stock.picking.type'].create(vals)
+            self.env['ir.model.data'].create({
+                'module': 'ddfsc_manufacturing',
+                'name': xmlid,
+                'model': 'stock.picking.type',
+                'res_id': picking_type.id,
+                'noupdate': True,
+            })
+
     def _retire_plant_operation_types(self):
-        """Archive custom plant picking types; Store Request uses the warehouse internal type."""
+        """Archive obsolete plant picking types; keep Store / FG request types active."""
         xmlids = [
             'picking_type_wheat_receiving',
             'picking_type_store_receipt',
             'picking_type_wheat_to_silo',
             'picking_type_silo_issue',
             'picking_type_flour_transfer',
-            'picking_type_store_requisition',
-            'picking_type_byproduct_return',
-            'picking_type_fg_receiving',
             'picking_type_wheat_purchase',
             'picking_type_store_purchase',
         ]

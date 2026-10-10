@@ -7,11 +7,22 @@ from .ddfsc_department import location, selection
 
 class DdfscStoreRequest(models.Model):
     _name = 'ddfsc.store.request'
-    _description = 'Store Transfer Request'
+    _description = 'Transfer Request'
     _inherit = ['mail.thread', 'mail.activity.mixin']
     _order = 'id desc'
 
     name = fields.Char(default='New', copy=False, readonly=True)
+    request_type = fields.Selection(
+        [
+            ('component', 'Store Transfer'),
+            ('finished_goods', 'Finished Goods Transfer'),
+            ('byproduct_return', 'By-product Return'),
+        ],
+        string='Request Type',
+        default='component',
+        required=True,
+        tracking=True,
+    )
     state = fields.Selection(
         [
             ('draft', 'Draft'),
@@ -59,7 +70,6 @@ class DdfscStoreRequest(models.Model):
         'stock.location',
         string='Default Source',
         required=True,
-        default=lambda self: self.env.ref('ddfsc_manufacturing.loc_store', raise_if_not_found=False),
         check_company=True,
         domain="[('usage', '=', 'internal')]",
         help='Default source location for new product lines.',
@@ -72,42 +82,75 @@ class DdfscStoreRequest(models.Model):
         default=lambda self: self.env.company,
     )
 
+    def _ddfsc_apply_locations(self, values=None):
+        """Fill source/destination from department + request type."""
+        values = dict(values or {})
+        department = values.get('ddfsc_department') or self.ddfsc_department
+        request_type = values.get('request_type') or self.request_type or 'component'
+        if request_type == 'finished_goods':
+            source = location(self.env, department, 'fg_source')
+            dest = location(self.env, department, 'fg_dest')
+        elif request_type == 'byproduct_return':
+            source = location(self.env, department, 'byproduct_source')
+            dest = location(self.env, department, 'byproduct_dest')
+            if not source:
+                source = self.env.ref('ddfsc_manufacturing.loc_byproduct', raise_if_not_found=False)
+            if not dest:
+                dest = self.env.ref('ddfsc_manufacturing.loc_store', raise_if_not_found=False)
+        else:
+            source = location(self.env, department, 'request_source')
+            dest = location(self.env, department, 'request_location')
+            if not source:
+                source = self.env.ref('ddfsc_manufacturing.loc_store', raise_if_not_found=False)
+        if source and not values.get('location_id'):
+            values['location_id'] = source.id
+        if dest and not values.get('location_dest_id'):
+            values['location_dest_id'] = dest.id
+        return values
+
     @api.model
     def default_get(self, fields_list):
         values = super().default_get(fields_list)
-        department = self.env.user.ddfsc_department or values.get('ddfsc_department')
+        if self.env.context.get('default_request_type'):
+            values['request_type'] = self.env.context['default_request_type']
+        department = (
+            self.env.context.get('default_ddfsc_department')
+            or self.env.user.ddfsc_department
+            or values.get('ddfsc_department')
+        )
         if department:
             values['ddfsc_department'] = department
-            dest = location(self.env, department, 'request_location')
-            if dest:
-                values['location_dest_id'] = dest.id
-            source = location(self.env, department, 'request_source')
-            if source:
-                values['location_id'] = source.id
-        if not values.get('location_id'):
-            store = self.env.ref('ddfsc_manufacturing.loc_store', raise_if_not_found=False)
-            if store:
-                values['location_id'] = store.id
+        values = self._ddfsc_apply_locations(values)
         return values
 
-    @api.onchange('ddfsc_department')
+    @api.onchange('ddfsc_department', 'request_type')
     def _onchange_ddfsc_department(self):
         for request in self:
-            dest = location(self.env, request.ddfsc_department, 'request_location')
-            if dest:
-                request.location_dest_id = dest
-            source = location(self.env, request.ddfsc_department, 'request_source')
-            if source:
-                request.location_id = source
+            vals = request._ddfsc_apply_locations({
+                'ddfsc_department': request.ddfsc_department,
+                'request_type': request.request_type,
+            })
+            if vals.get('location_dest_id'):
+                request.location_dest_id = vals['location_dest_id']
+            if vals.get('location_id'):
+                request.location_id = vals['location_id']
                 for line in request.line_ids:
-                    line.location_id = source
+                    line.location_id = request.location_id
 
     @api.model_create_multi
     def create(self, vals_list):
+        prepared = []
         for vals in vals_list:
+            vals = self._ddfsc_apply_locations(vals)
             if vals.get('name', 'New') == 'New':
-                vals['name'] = self.env['ir.sequence'].next_by_code('ddfsc.store.request') or 'New'
-        return super().create(vals_list)
+                if vals.get('request_type') == 'finished_goods':
+                    vals['name'] = self.env['ir.sequence'].next_by_code('ddfsc.fg.request') or 'New'
+                elif vals.get('request_type') == 'byproduct_return':
+                    vals['name'] = self.env['ir.sequence'].next_by_code('ddfsc.byproduct.request') or 'New'
+                else:
+                    vals['name'] = self.env['ir.sequence'].next_by_code('ddfsc.store.request') or 'New'
+            prepared.append(vals)
+        return super().create(prepared)
 
     def action_submit_to_manager(self):
         for request in self:
@@ -154,17 +197,43 @@ class DdfscStoreRequest(models.Model):
     def _ddfsc_mark_received(self):
         self.filtered(lambda request: request.state == 'requested').write({'state': 'received'})
 
+    def _ddfsc_picking_type(self):
+        self.ensure_one()
+        self.env['ddfsc.shift']._ensure_request_picking_types()
+        if self.request_type == 'finished_goods':
+            picking_type = self.env.ref(
+                'ddfsc_manufacturing.picking_type_fg_receiving',
+                raise_if_not_found=False,
+            )
+        elif self.request_type == 'byproduct_return':
+            picking_type = self.env.ref(
+                'ddfsc_manufacturing.picking_type_byproduct_return',
+                raise_if_not_found=False,
+            )
+        else:
+            picking_type = self.env.ref(
+                'ddfsc_manufacturing.picking_type_store_requisition',
+                raise_if_not_found=False,
+            )
+        if picking_type and picking_type.active:
+            return picking_type
+        warehouse = self.env['stock.warehouse'].search([
+            ('company_id', '=', self.company_id.id),
+        ], limit=1)
+        if not warehouse.int_type_id:
+            raise UserError(_('The warehouse has no internal transfer operation type.'))
+        return warehouse.int_type_id
+
     def _ddfsc_create_internal_transfer(self):
         for request in self.filtered(lambda item: not item.picking_id):
-            warehouse = self.env['stock.warehouse'].search([
-                ('company_id', '=', request.company_id.id),
-            ], limit=1)
-            if not warehouse.int_type_id:
-                raise UserError(_('The warehouse has no internal transfer operation type.'))
-            # One picking; moves may come from different source locations.
+            picking_type = request._ddfsc_picking_type()
             first_source = request.line_ids[:1].location_id or request.location_id
+            if not first_source or not request.location_dest_id:
+                raise UserError(_('Set source and destination locations before approving.'))
+            if not request.line_ids:
+                raise UserError(_('Add at least one product line.'))
             picking = self.env['stock.picking'].create({
-                'picking_type_id': warehouse.int_type_id.id,
+                'picking_type_id': picking_type.id,
                 'location_id': first_source.id,
                 'location_dest_id': request.location_dest_id.id,
                 'origin': request.name,
@@ -179,6 +248,7 @@ class DdfscStoreRequest(models.Model):
                     'location_dest_id': request.location_dest_id.id,
                     'company_id': request.company_id.id,
                     'origin': request.name,
+                    'description_picking': line.product_id.display_name,
                 }) for line in request.line_ids],
             })
             picking.write({
@@ -212,7 +282,7 @@ class DdfscStoreRequest(models.Model):
                     move.move_line_ids.write({'lot_id': line.lot_id.id})
                 elif move:
                     move.lot_ids = line.lot_id
-            request.picking_id = picking.id
+            request.write({'picking_id': picking.id})
 
     def action_view_picking(self):
         self.ensure_one()
@@ -229,7 +299,7 @@ class DdfscStoreRequest(models.Model):
 
 class DdfscStoreRequestLine(models.Model):
     _name = 'ddfsc.store.request.line'
-    _description = 'Store Transfer Request Line'
+    _description = 'Transfer Request Line'
 
     request_id = fields.Many2one(
         'ddfsc.store.request',
@@ -262,7 +332,7 @@ class DdfscStoreRequestLine(models.Model):
     product_uom_qty = fields.Float(string='Request', required=True, default=1.0)
     lot_id = fields.Many2one(
         'stock.lot',
-        string='Destination Lot',
+        string='Lot',
         domain="[('product_id', '=', product_id)]",
         check_company=True,
     )
@@ -286,7 +356,15 @@ class DdfscStoreRequestLine(models.Model):
             line.qty_available = qty
 
     def _ddfsc_source_for_product(self, product, request):
-        """Flour comes from the flour silo; other components from General Store."""
+        """Component: flour silo / store. FG: temp finished. By-product: by-product temp."""
+        if request.request_type == 'finished_goods':
+            source = location(self.env, request.ddfsc_department, 'fg_source')
+            return source or request.location_id
+        if request.request_type == 'byproduct_return':
+            source = location(self.env, request.ddfsc_department, 'byproduct_source')
+            return source or request.location_id or self.env.ref(
+                'ddfsc_manufacturing.loc_byproduct', raise_if_not_found=False,
+            )
         store = self.env.ref('ddfsc_manufacturing.loc_store', raise_if_not_found=False)
         if not product:
             return request.location_id or store
