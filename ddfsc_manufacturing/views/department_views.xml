@@ -146,7 +146,7 @@
         <field name="res_model">stock.quant</field>
         <field name="view_mode">list</field>
         <field name="view_id" ref="view_ddfsc_department_quant_list"/>
-        <field name="domain" eval="[('quantity', '>', 0), ('product_id.product_tmpl_id', '=', ref('product_wheat')), ('location_id', 'in', [ref('loc_silo_pasta'), ref('loc_silo_macaroni'), ref('loc_silo_bread'), ref('loc_silo_biscuit')])]"/>
+        <field name="domain" eval="[('quantity', '>', 0), ('product_id.product_tmpl_id', '=', ref('product_wheat')), ('location_id', 'in', [ref('loc_mill'), ref('loc_silo'), ref('loc_silo_pasta'), ref('loc_silo_macaroni'), ref('loc_silo_bread'), ref('loc_silo_biscuit')])]"/>
     </record>
 
     <!-- Temp finished products: stock that landed in the department temp finished location after MO. -->

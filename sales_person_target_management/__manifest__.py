@@ -5,7 +5,7 @@
     'description': 'Extends sales order lines to include batch number and expiration date in tree view.',
     'author': 'mehbuba',
     'category': 'Sales',
-    'depends': ['base', 'crm', 'sale', 'purchase', 'stock', 'sales_team', 'mail', 'sale_stock', 'yohannes_account_withholding_tax'],
+    'depends': ['base', 'crm', 'sale', 'purchase', 'stock', 'sales_team', 'mail', 'sale_stock', 'product_expiry', 'yohannes_account_withholding_tax'],
     'data': [
 
         'security/sale_targate_security.xml',
