@@ -391,7 +391,11 @@ class DdfscShift(models.Model):
         ], limit=1)
         if not warehouse:
             return
-        stock_loc = warehouse.lot_stock_id
+        defaults = {
+            'store_requisition': ('loc_store', 'loc_mill'),
+            'fg_receiving': ('loc_flour', 'loc_finished'),
+            'byproduct_return': ('loc_byproduct', 'loc_store'),
+        }
         for xmlid, name, prefix, doc_type, sequence in (
             ('picking_type_store_requisition', 'Store Transfer Request', 'MTR', 'store_requisition', 35),
             ('picking_type_fg_receiving', 'FG Transfer Request', 'FGR', 'fg_receiving', 36),
@@ -403,8 +407,8 @@ class DdfscShift(models.Model):
                 'code': 'internal',
                 'sequence_code': prefix,
                 'warehouse_id': warehouse.id,
-                'default_location_src_id': stock_loc.id,
-                'default_location_dest_id': stock_loc.id,
+                'default_location_src_id': self.env.ref('ddfsc_manufacturing.' + defaults[doc_type][0]).id,
+                'default_location_dest_id': self.env.ref('ddfsc_manufacturing.' + defaults[doc_type][1]).id,
                 'ddfsc_document_type': doc_type,
                 'active': True,
                 'sequence': sequence,

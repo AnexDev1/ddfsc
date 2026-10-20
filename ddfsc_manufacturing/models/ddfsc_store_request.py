@@ -135,7 +135,7 @@ class DdfscStoreRequest(models.Model):
             if vals.get('location_id'):
                 request.location_id = vals['location_id']
                 for line in request.line_ids:
-                    line.location_id = request.location_id
+                    line.location_id = line._ddfsc_source_for_product(line.product_id, request) or request.location_id
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -319,7 +319,7 @@ class DdfscStoreRequestLine(models.Model):
     )
     location_id = fields.Many2one(
         'stock.location',
-        string='Source Warehouse',
+        string='Source Location',
         required=True,
         check_company=True,
         domain="[('usage', '=', 'internal')]",

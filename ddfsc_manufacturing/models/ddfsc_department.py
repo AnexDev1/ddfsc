@@ -8,7 +8,7 @@ DEPARTMENTS = {
         'label': 'Pasta',
         'line': 'PASTA',
         # Components: flour silo → pasta floor.
-        'request_source': 'loc_flour_pasta',
+        'request_source': 'loc_flour',
         'request_location': 'loc_pasta',
         'component_location': 'loc_pasta',
         # Production output, then FG transfer → Finished Goods Store.
@@ -19,7 +19,7 @@ DEPARTMENTS = {
     'bread': {
         'label': 'Bread',
         'line': 'BREAD',
-        'request_source': 'loc_store',
+        'request_source': 'loc_flour',
         'request_location': 'loc_bread',
         'component_location': 'loc_bread',
         'finished_location': 'loc_bread_finished',
@@ -29,7 +29,7 @@ DEPARTMENTS = {
     'biscuit': {
         'label': 'Biscuit',
         'line': 'BISC-CN',
-        'request_source': 'loc_store',
+        'request_source': 'loc_flour',
         'request_location': 'loc_biscuit',
         'component_location': 'loc_biscuit',
         'finished_location': 'loc_biscuit_finished',
