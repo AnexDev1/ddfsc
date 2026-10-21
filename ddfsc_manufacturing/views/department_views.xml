@@ -323,5 +323,6 @@
     <menuitem id="menu_ddfsc_dept_flour_fg_request" name="FG Transfer Requests" parent="menu_ddfsc_dept_flour" action="action_ddfsc_flour_fg_request" sequence="35"/>
     <menuitem id="menu_ddfsc_dept_flour_byproduct_request" name="By-product Return Requests" parent="menu_ddfsc_dept_flour" action="action_ddfsc_flour_byproduct_request" sequence="37"/>
     <menuitem id="menu_ddfsc_dept_flour_mo" name="Manufacturing Orders" parent="menu_ddfsc_dept_flour" action="action_ddfsc_flour_mo" sequence="40"/>
+    <function model="ddfsc.shift" name="_sync_operations"/>
     <function model="ddfsc.store.request" name="_sync_department_stock_filters"/>
 </odoo>

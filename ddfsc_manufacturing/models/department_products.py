@@ -35,13 +35,15 @@ class StoreRequest(models.Model):
 
     @api.model
     def _sync_department_stock_filters(self):
+        flour_products = outputs(self.env, 'flour')
+        flour_products.product_tmpl_id.write({'ddfsc_is_flour': True})
         for department in OUTPUTS:
             products = outputs(self.env, department)
             for suffix in ['flour', 'temp']:
                 if department == 'flour' and suffix == 'flour':
                     continue
                 action = self.env.ref('ddfsc_manufacturing.action_ddfsc_%s_%s' % (department, suffix))
-                allowed = products if suffix == 'temp' else recipes(self.env, products).bom_line_ids.product_id.filtered('ddfsc_is_flour')
+                allowed = products if suffix == 'temp' else recipes(self.env, products).bom_line_ids.product_id & flour_products
                 domain = safe_eval(action.domain)
                 domain = [term for term in domain if not (isinstance(term, (tuple, list)) and term[0] == 'product_id' and term[1] == 'in')]
                 domain.append(('product_id', 'in', allowed.ids))

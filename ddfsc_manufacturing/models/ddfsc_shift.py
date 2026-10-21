@@ -374,15 +374,30 @@ class DdfscShift(models.Model):
         self._line_request('MILL', 'Flour Mill', 0)
         self._sync_operations()
 
+    @api.model
     def _sync_operations(self):
         """Enable multi-location, keep request picking types on the Inventory dashboard."""
         internal_users = self.env.ref('base.group_user')
         multi_locations = self.env.ref('stock.group_stock_multi_locations')
         if multi_locations not in internal_users.implied_ids:
             internal_users.write({'implied_ids': [Command.link(multi_locations.id)]})
+        self._sync_warehouse_defaults()
         self._ensure_request_picking_types()
         self._retire_plant_operation_types()
         self._retire_manufacturing_transfer_menus()
+
+    def _sync_warehouse_defaults(self):
+        """Keep standard receipts and deliveries aligned with the plant stores."""
+        store = self.env.ref('ddfsc_manufacturing.loc_store')
+        finished_goods = self.env.ref('ddfsc_manufacturing.loc_finished')
+        warehouses = self.env['stock.warehouse'].search([
+            ('company_id', '=', self.env.company.id),
+        ])
+        for warehouse in warehouses:
+            if warehouse.in_type_id:
+                warehouse.in_type_id.default_location_dest_id = store
+            if warehouse.out_type_id:
+                warehouse.out_type_id.default_location_src_id = finished_goods
 
     def _ensure_request_picking_types(self):
         """Store / FG request pickings need their own operation types to show on Overview."""
