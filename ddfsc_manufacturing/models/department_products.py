@@ -69,6 +69,8 @@ class StoreRequest(models.Model):
 
     def _check_department_products(self):
         for request in self:
+            if request.ddfsc_department == 'flour' and request.request_type == 'finished_goods':
+                raise ValidationError(_('Flour remains in Flour Store for the production departments and must not be transferred to Finished Goods.'))
             invalid = request.line_ids.product_id - request.allowed_product_ids
             if invalid:
                 raise ValidationError(_('These products do not belong to this department/request type: %s', ', '.join(invalid.mapped('display_name'))))
@@ -112,6 +114,8 @@ class Production(models.Model):
         department = LINES.get(self.ddfsc_line_id.code)
         if not department or not self.bom_id:
             raise ValidationError(_('Choose the production line, finished product and recipe first.'))
+        if kind == 'finished_goods' and department == 'flour':
+            raise ValidationError(_('Produced flour remains in Flour Store so pasta, bread and biscuit departments can request it.'))
         existing = self.env['ddfsc.store.request'].search([('production_id', '=', self.id), ('request_type', '=', kind), ('state', '!=', 'cancel')])
         action = self.env.ref('ddfsc_manufacturing.action_ddfsc_store_requests').read()[0]
         action['context'] = {'default_ddfsc_department': department, 'default_request_type': kind, 'default_production_id': self.id}

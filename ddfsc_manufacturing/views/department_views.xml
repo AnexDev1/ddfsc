@@ -320,7 +320,6 @@
     <menuitem id="menu_ddfsc_dept_flour_temp" name="Temp Finished Products" parent="menu_ddfsc_dept_flour" action="action_ddfsc_flour_temp" sequence="20"/>
     <menuitem id="menu_ddfsc_dept_flour_byproduct_temp" name="Temp By-products" parent="menu_ddfsc_dept_flour" action="action_ddfsc_flour_byproduct_temp" sequence="25"/>
     <menuitem id="menu_ddfsc_dept_flour_request" name="Store Transfer Requests" parent="menu_ddfsc_dept_flour" action="action_ddfsc_flour_request" sequence="30"/>
-    <menuitem id="menu_ddfsc_dept_flour_fg_request" name="FG Transfer Requests" parent="menu_ddfsc_dept_flour" action="action_ddfsc_flour_fg_request" sequence="35"/>
     <menuitem id="menu_ddfsc_dept_flour_byproduct_request" name="By-product Return Requests" parent="menu_ddfsc_dept_flour" action="action_ddfsc_flour_byproduct_request" sequence="37"/>
     <menuitem id="menu_ddfsc_dept_flour_mo" name="Manufacturing Orders" parent="menu_ddfsc_dept_flour" action="action_ddfsc_flour_mo" sequence="40"/>
     <function model="ddfsc.shift" name="_sync_operations"/>
