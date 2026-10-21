@@ -37,6 +37,7 @@
             </xpath>
             <xpath expr="//header" position="inside">
                 <button name="action_request_ingredients" type="object" string="Request Ingredients" invisible="state in ('done', 'cancel') or not bom_id"/>
+                <button name="action_request_finished_goods" type="object" string="Release to Flour Store" class="btn-primary" invisible="state != 'done' or ddfsc_line_code != 'MILL'"/>
                 <button name="action_request_finished_goods" type="object" string="Send to Finished Goods" class="btn-primary" invisible="state != 'done' or ddfsc_line_code == 'MILL'"/>
                 <button name="action_ddfsc_submit" type="object" string="Submit for Approval" class="btn-primary"
                         invisible="ddfsc_approval_state not in ('draft', 'refused')"/>

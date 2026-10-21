@@ -188,7 +188,13 @@ class DdfscShift(models.Model):
             'usage': 'internal',
         })
         flour_store = self.env.ref('ddfsc_manufacturing.loc_flour')
-        flour_store.ddfsc_flour_hold = True
+        flour_store.ddfsc_flour_hold = False
+        flour_finished = self._ensure_record('loc_flour_finished', 'stock.location', {
+            'name': 'Flour Temp Finished',
+            'location_id': parent.id,
+            'usage': 'internal',
+        })
+        flour_finished.ddfsc_flour_hold = True
         for xmlid, name in (
             ('loc_flour_pasta', 'Pasta Flour Silo'),
             ('loc_flour_macaroni', 'Macaroni Flour Silo'),

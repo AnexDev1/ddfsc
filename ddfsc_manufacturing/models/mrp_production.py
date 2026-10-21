@@ -205,7 +205,7 @@ class MrpProduction(models.Model):
     def _ddfsc_locations_for_code(self, code):
         locations = {
             # (component / floor location, temp finished location)
-            'MILL': ('loc_mill', 'loc_flour'),
+            'MILL': ('loc_mill', 'loc_flour_finished'),
             'PASTA': ('loc_pasta', 'loc_pasta_finished'),
             'MAC': ('loc_macaroni', 'loc_macaroni_finished'),
             'BREAD': ('loc_bread', 'loc_bread_finished'),
