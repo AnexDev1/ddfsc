@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_stock_move_analysis_range" model="ir.ui.view">
+        <field name="name">Moves Analysis at Date Range</field>
+        <field name="model">stock.move.analysis.range</field>
+        <field name="arch" type="xml">
+            <form string="Choose Date Range">
+                <group>
+                    <group>
+                        <field name="date_from"/>
+                    </group>
+                    <group>
+                        <field name="date_to"/>
+                    </group>
+                </group>
+                <footer>
+                    <button name="open_move_analysis_range" string="Confirm" type="object" class="btn-primary" data-hotkey="q"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel" data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_move_analysis_date_range" model="ir.actions.act_window">
+        <field name="name">Moves Analysis at Date Range</field>
+        <field name="res_model">stock.move.analysis.range</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

@@ -1,0 +1,67 @@
+<odoo>
+    <data>
+        <record id="view_weekly_sales_form" model="ir.ui.view">
+            <field name="name">weekly.sales.form</field>
+            <field name="model">weekly.sales</field>
+            <field name="arch" type="xml">
+                <form>
+                    <sheet>
+                        <group>
+                            <group>
+                                <field name="salesperson_id" required="1"/>
+                                <field name="week_start_date" required="1"/>
+                                <field name="week_end_date" required="1"/>
+                                <field name="week_number" readonly="1"/>
+                                <field name="monthly_sales_id" readonly="1" options="{'no_create': True}"/>
+                            </group>
+                            <group>
+                                <field name="weekly_target" readonly="1"/>
+                                <field name="weekly_achievement_percent" readonly="1"/>
+                                <field name="total_cash_sales" readonly="1"/>
+                                <field name="total_credit_sales" readonly="1"/>
+                                <field name="total_sales" readonly="1"/>
+                                <field name="total_quantity" readonly="1"/>
+                            </group>
+                        </group>
+                        <notebook>
+                            <page string="Daily sales">
+                                <field name="daily_sales_ids">
+                                    <list>
+                                        <field name="date"/>
+                                        <field name="cash_sales"/>
+                                        <field name="credit_sales"/>
+                                        <field name="total_sales"/>
+                                        <field name="total_quantity"/>
+                                        <field name="daily_sales_target" optional="hide"/>
+                                        <field name="achievement_percent" optional="hide"/>
+                                    </list>
+                                </field>
+                            </page>
+                        </notebook>
+                    </sheet>
+                    <chatter/>
+                </form>
+            </field>
+        </record>
+
+        <record id="view_weekly_sales_list" model="ir.ui.view">
+            <field name="name">weekly.sales.list</field>
+            <field name="model">weekly.sales</field>
+            <field name="arch" type="xml">
+                <list string="Weekly Sales">
+                    <field name="week_number"/>
+                    <field name="week_start_date"/>
+                    <field name="week_end_date"/>
+                    <field name="salesperson_id"/>
+                    <field name="total_sales"/>
+                    <field name="total_quantity" sum="Total Quantity"/>
+                    <field name="weekly_target" optional="hide"/>
+                    <field name="weekly_achievement_percent" optional="hide"/>
+                    <field name="monthly_sales_id" optional="hide"/>
+                </list>
+            </field>
+        </record>
+
+        <!-- Search view completely removed to guarantee compilation -->
+    </data>
+</odoo>

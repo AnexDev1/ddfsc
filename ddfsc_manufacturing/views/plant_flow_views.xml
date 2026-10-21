@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Link inventory transfers created from Store Request / manufacturing orders. -->
+    <record id="view_picking_form_ddfsc" model="ir.ui.view">
+        <field name="name">stock.picking.form.ddfsc</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.view_picking_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='picking_type_id']" position="after">
+                <field name="ddfsc_production_id" readonly="1" invisible="not ddfsc_production_id"/>
+                <field name="ddfsc_store_request_id" readonly="1" invisible="not ddfsc_store_request_id"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

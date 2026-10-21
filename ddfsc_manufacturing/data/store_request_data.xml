@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="seq_ddfsc_store_request" model="ir.sequence">
+        <field name="name">Store Transfer Request</field>
+        <field name="code">ddfsc.store.request</field>
+        <field name="prefix">MTR/%(year)s/</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False"/>
+    </record>
+    <record id="seq_ddfsc_fg_request" model="ir.sequence">
+        <field name="name">Finished Goods Transfer Request</field>
+        <field name="code">ddfsc.fg.request</field>
+        <field name="prefix">FGR/%(year)s/</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False"/>
+    </record>
+    <record id="seq_ddfsc_byproduct_request" model="ir.sequence">
+        <field name="name">By-product Return Request</field>
+        <field name="code">ddfsc.byproduct.request</field>
+        <field name="prefix">BPR/%(year)s/</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False"/>
+    </record>
+</odoo>

@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_stock_quant_tree_inventory" model="ir.ui.view">
+        <field name="name">stock.quant.tree.inventory</field>
+        <field name="model">stock.quant</field>
+        <field name="inherit_id" ref="stock.view_stock_quant_tree_inventory_editable"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='user_id']" position="before">
+                <field name="accounting_date" optional="show"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="seq_picking" model="ir.sequence">
+        <field name="name">Stock Picking Sequence</field>
+        <field name="code">stock.picking.sequence</field>
+        <field name="prefix"></field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False"/>
+    </record>
+
+    <record id="view_picking_form_inherit_valuation" model="ir.ui.view">
+        <field name="name">stock.picking.form.inherit.valuation</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.view_picking_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='origin']" position="after">
+                <!-- For non-account admins: just display text natively -->
+                <field name="valuation_reference" groups="!account.group_account_manager"/>
+                
+                <!-- For account admins: render a field label, and a clickable button mimicking the field UI -->
+                <label for="valuation_reference" groups="account.group_account_manager"/>
+                <div class="o_row" groups="account.group_account_manager">
+                    <button name="action_open_valuation_moves" type="object" class="btn btn-link p-0 text-start" invisible="not valuation_reference">
+                        <field name="valuation_reference" class="oe_inline"/>
+                    </button>
+                    <!-- Fallback placeholder when empty so layout doesn't break -->
+                    <span invisible="valuation_reference" class="text-muted">No valuation yet</span>
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_picking_search_inherit_valuation" model="ir.ui.view">
+        <field name="name">stock.picking.search.inherit.valuation</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.view_picking_internal_search"/>
+        <field name="arch" type="xml">
+            <!-- Add searchable field and filter -->
+            <xpath expr="//field[@name='origin']" position="after">
+                <field name="valuation_reference" string="Valuation Reference"/>
+            </xpath>
+            <xpath expr="//filter[@name='backorder']" position="after">
+                <separator/>
+                <filter string="Has Valuation Reference" name="has_valuation_reference"
+                        domain="[('valuation_reference', '!=', False), ('valuation_reference', '!=', '')]"/>
+            </xpath>
+            <!-- Add group-by inside the existing group element -->
+            <xpath expr="//group/filter[@name='picking_type']" position="after">
+                <filter string="Valuation Reference" name="group_by_valuation_reference"
+                        context="{'group_by': 'valuation_reference'}"/>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

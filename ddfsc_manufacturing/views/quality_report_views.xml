@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="ddfsc_quality_report_view_list" model="ir.ui.view">
+        <field name="name">ddfsc.quality.report.list</field>
+        <field name="model">ddfsc.quality.report</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="date_start"/>
+                <field name="date_end"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="ddfsc_quality_report_view_form" model="ir.ui.view">
+        <field name="name">ddfsc.quality.report.form</field>
+        <field name="model">ddfsc.quality.report</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_collect" type="object" string="Collect checks" invisible="state == 'submitted'"/>
+                    <button name="action_submit" type="object" string="Submit to General Manager" invisible="state == 'submitted'" class="btn-primary"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="state == 'submitted'"/></h1>
+                    </div>
+                    <group>
+                        <field name="date_start" readonly="state == 'submitted'"/>
+                        <field name="date_end" readonly="state == 'submitted'"/>
+                    </group>
+                    <field name="note" placeholder="Note to the general manager" readonly="state == 'submitted'"/>
+                    <field name="check_ids" readonly="1">
+                        <list>
+                            <field name="lot_id"/>
+                            <field name="product_id"/>
+                            <field name="check_type"/>
+                            <field name="measured_value"/>
+                            <field name="result"/>
+                        </list>
+                    </field>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_ddfsc_quality_report" model="ir.actions.act_window">
+        <field name="name">Weekly Quality Reports</field>
+        <field name="res_model">ddfsc.quality.report</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_ddfsc_quality_report"
+              name="Weekly Quality Report"
+              parent="mrp.menu_mrp_reporting"
+              action="action_ddfsc_quality_report"
+              sequence="15"/>
+</odoo>

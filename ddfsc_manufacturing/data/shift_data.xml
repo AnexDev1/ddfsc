@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="shift_1" model="ddfsc.shift">
+        <field name="name">Shift 1</field>
+        <field name="code">S1</field>
+        <field name="sequence">1</field>
+        <field name="hour_from">6</field>
+        <field name="hour_to">14</field>
+    </record>
+    <record id="shift_2" model="ddfsc.shift">
+        <field name="name">Shift 2</field>
+        <field name="code">S2</field>
+        <field name="sequence">2</field>
+        <field name="hour_from">14</field>
+        <field name="hour_to">22</field>
+    </record>
+    <record id="shift_3" model="ddfsc.shift">
+        <field name="name">Shift 3</field>
+        <field name="code">S3</field>
+        <field name="sequence">3</field>
+        <field name="hour_from">22</field>
+        <field name="hour_to">6</field>
+    </record>
+</odoo>

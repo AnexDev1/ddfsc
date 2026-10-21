@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="mrp_production_form_ddfsc" model="ir.ui.view">
+        <field name="name">mrp.production.form.ddfsc</field>
+        <field name="model">mrp.production</field>
+        <field name="inherit_id" ref="mrp.mrp_production_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='product_id']" position="before">
+                <field name="allowed_output_ids" invisible="1"/>
+                <field name="allowed_component_ids" invisible="1"/>
+                <field name="department_line_ids" invisible="1"/>
+            </xpath>
+            <xpath expr="//field[@name='move_raw_ids']//field[@name='product_id']" position="attributes">
+                <attribute name="domain">[('id', 'in', parent.allowed_component_ids)]</attribute>
+                <attribute name="options">{'no_create': True}</attribute>
+            </xpath>
+            <xpath expr="//field[@name='product_id']" position="attributes">
+                <attribute name="domain">[('id', 'in', allowed_output_ids)]</attribute>
+                <attribute name="options">{'no_create': True}</attribute>
+                <attribute name="string">Finished Product to Make</attribute>
+                <attribute name="help">Choose the output, such as Long Cut Pasta 500g. Flour is an ingredient in the recipe below.</attribute>
+            </xpath>
+            <xpath expr="//field[@name='bom_id']" position="attributes">
+                <attribute name="string">Production Recipe</attribute>
+                <attribute name="options">{'no_create': True}</attribute>
+            </xpath>
+            <xpath expr="//field[@name='bom_id']" position="after">
+                <label for="ddfsc_line_id" string="Production Line"/>
+                <field name="ddfsc_line_id" domain="[('id', 'in', department_line_ids)]" readonly="state != 'draft'" options="{'no_create': True}"/>
+            </xpath>
+            <xpath expr="//field[@name='product_uom_id']" position="attributes">
+                <attribute name="groups"/>
+            </xpath>
+            <xpath expr="//field[@name='move_raw_ids']//field[@name='product_uom']" position="attributes">
+                <attribute name="groups"/>
+                <attribute name="optional">show</attribute>
+            </xpath>
+            <xpath expr="//header" position="inside">
+                <button name="action_request_ingredients" type="object" string="Request Ingredients" invisible="state in ('done', 'cancel') or not bom_id"/>
+                <button name="action_request_finished_goods" type="object" string="Send to Finished Goods" class="btn-primary" invisible="state != 'done'"/>
+                <button name="action_ddfsc_submit" type="object" string="Submit for Approval" class="btn-primary"
+                        invisible="ddfsc_approval_state not in ('draft', 'refused')"/>
+                <button name="action_ddfsc_approve" type="object" string="Approve" class="btn-primary"
+                        groups="ddfsc_manufacturing.group_ddfsc_operation_manager"
+                        invisible="ddfsc_approval_state != 'submitted'"/>
+                <button name="action_ddfsc_refuse" type="object" string="Refuse"
+                        groups="ddfsc_manufacturing.group_ddfsc_operation_manager"
+                        invisible="ddfsc_approval_state != 'submitted'"/>
+                <button name="action_ddfsc_reset" type="object" string="Reset to Draft"
+                        invisible="ddfsc_approval_state != 'refused'"/>
+                <field name="ddfsc_approval_state" widget="statusbar" statusbar_visible="draft,submitted,approved"/>
+            </xpath>
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_ddfsc_pickings" type="object" class="oe_stat_button" icon="fa-truck">
+                    <field name="ddfsc_picking_count" widget="statinfo" string="Transfers"/>
+                </button>
+            </xpath>
+            <xpath expr="//page[@name='miscellaneous']" position="before">
+                <page string="Plant Transfers" name="ddfsc_documents">
+                    <field name="ddfsc_picking_ids" readonly="1" domain="[('state', '!=', 'cancel')]">
+                        <list>
+                            <field name="name"/>
+                            <field name="picking_type_id"/>
+                            <field name="location_id"/>
+                            <field name="location_dest_id"/>
+                            <field name="ddfsc_approval_state"/>
+                            <field name="state"/>
+                        </list>
+                    </field>
+                </page>
+                <page string="Shift Report" name="ddfsc_shift">
+                    <group>
+                        <group string="Shift">
+                            <field name="ddfsc_shift_id"/>
+                            <field name="ddfsc_supervisor_id"/>
+                            <field name="ddfsc_submitted_uid" invisible="not ddfsc_submitted_uid"/>
+                            <field name="ddfsc_approved_uid" invisible="not ddfsc_approved_uid"/>
+                            <field name="ddfsc_refusal_note" invisible="ddfsc_approval_state not in ('submitted', 'refused')"
+                                   readonly="ddfsc_approval_state != 'submitted'"/>
+                            <field name="variation_qty"/>
+                            <field name="yield_ratio"/>
+                            <field name="flour_consumed_qtl" invisible="ddfsc_line_code == 'MILL'"/>
+                            <field name="yield_per_quintal" invisible="ddfsc_line_code not in ('PASTA', 'MAC', 'BISC-CN', 'BISC-OR')"/>
+                        </group>
+                        <group string="Milling" invisible="ddfsc_line_code != 'MILL'">
+                            <field name="ddfsc_line_code" invisible="1"/>
+                            <field name="conditioning_1_hours"/>
+                            <field name="conditioning_2_hours"/>
+                            <field name="moisture_initial"/>
+                            <field name="moisture_final"/>
+                            <field name="wheat_consumed_qtl"/>
+                            <field name="flour_produced_qtl"/>
+                            <field name="byproduct_qtl"/>
+                            <field name="extraction_ratio"/>
+                        </group>
+                        <group string="Losses">
+                            <field name="ddfsc_flour_request_qtl" invisible="ddfsc_line_code == 'MILL'"/>
+                            <field name="downtime_hours"/>
+                            <field name="downtime_reason"/>
+                            <field name="ddfsc_maintenance_request_id" readonly="1"/>
+                            <button name="action_log_downtime" type="object" string="Log maintenance"
+                                    invisible="downtime_reason not in ('mixer', 'die', 'oven', 'packing')"/>
+                            <field name="scrap_qty"/>
+                            <field name="sweeping_qty"/>
+                            <field name="bread_scrap_low" invisible="ddfsc_line_code != 'BREAD'"/>
+                            <field name="bread_scrap_high" invisible="ddfsc_line_code != 'BREAD'"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="mrp_production_list_shift_report" model="ir.ui.view">
+        <field name="name">mrp.production.list.shift.report</field>
+        <field name="model">mrp.production</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="ddfsc_shift_id"/>
+                <field name="ddfsc_line_id"/>
+                <field name="ddfsc_supervisor_id"/>
+                <field name="product_id"/>
+                <field name="product_qty" string="Target"/>
+                <field name="qty_produced" string="Actual"/>
+                <field name="variation_qty"/>
+                <field name="yield_ratio"/>
+                <field name="flour_consumed_qtl"/>
+                <field name="yield_per_quintal"/>
+                <field name="downtime_reason"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_ddfsc_shift_report" model="ir.actions.act_window">
+        <field name="name">Shift Report</field>
+        <field name="res_model">mrp.production</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="mrp_production_list_shift_report"/>
+        <field name="context">{'search_default_todo': 1}</field>
+    </record>
+
+    <menuitem id="menu_ddfsc_shift_report"
+              name="Shift Report"
+              parent="mrp.menu_mrp_reporting"
+              action="action_ddfsc_shift_report"
+              sequence="5"/>
+</odoo>

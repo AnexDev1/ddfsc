@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Popup detailed operations list: "Destination Lot" after "Store To" -->
+    <record id="view_stock_move_line_operation_tree_dest_lot" model="ir.ui.view">
+        <field name="name">stock.move.line.operations.dest.lot</field>
+        <field name="model">stock.move.line</field>
+        <field name="inherit_id" ref="stock.view_stock_move_line_operation_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='location_dest_id'][2]" position="after">
+                <field name="dest_lot_id"
+                       groups="stock.group_production_lot"
+                       domain="[('product_id', '=', product_id)]"
+                       column_invisible="parent.has_tracking == 'none' or parent.picking_code != 'internal'"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- History / full-page detailed operations list: show destination lot (read-only) -->
+    <record id="view_stock_move_line_detailed_op_dest_lot" model="ir.ui.view">
+        <field name="name">stock.move.line.detailed.op.dest.lot</field>
+        <field name="model">stock.move.line</field>
+        <field name="inherit_id" ref="stock.view_stock_move_line_detailed_operation_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='location_dest_id']" position="after">
+                <field name="dest_lot_id"
+                       string="Destination Lot"
+                       readonly="1"
+                       optional="show"
+                       groups="stock.group_production_lot"
+                       column_invisible="parent.picking_code != 'internal'"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>
