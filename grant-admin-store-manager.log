@@ -1,0 +1,225 @@
+ Container ddfsc-db-1 Running 
+ Container ddfsc-db-1 Waiting 
+ Container ddfsc-db-1 Healthy 
+ Container ddfsc-odoo-run-a010fd56c382 Creating 
+ Container ddfsc-odoo-run-a010fd56c382 Created 
+2026-10-16 18:13:16,743 1 INFO ? odoo: Odoo version 19.0-20261015 
+2026-10-16 18:13:16,744 1 INFO ? odoo: Using configuration file at /etc/odoo/odoo.conf 
+2026-10-16 18:13:16,744 1 INFO ? odoo: addons paths: _NamespacePath(['/usr/lib/python3/dist-packages/odoo/addons', '/var/lib/odoo/addons/19.0', '/mnt/extra-addons', '/usr/lib/python3/dist-packages/addons']) 
+2026-10-16 18:13:16,744 1 INFO ? odoo: database: odoo@db:5432 
+2026-10-16 18:13:17,006 1 INFO ? odoo.service.server: Initiating shutdown 
+2026-10-16 18:13:17,006 1 INFO ? odoo.service.server: Hit CTRL-C again or send a second signal to force the shutdown. 
+2026-10-16 18:13:17,030 1 INFO ddfsc odoo.modules.loading: loading 1 modules... 
+2026-10-16 18:13:17,033 1 INFO ddfsc odoo.modules.loading: 1 modules loaded in 0.00s, 0 queries (+0 extra) 
+2026-10-16 18:13:17,041 1 WARNING ddfsc odoo.modules.module: Missing `license` key in manifest for 'sales_person_target_management', defaulting to LGPL-3 
+2026-10-16 18:13:17,105 1 WARNING ddfsc odoo.modules.module: Missing `author` key in manifest for 'inventory_product_category', defaulting to '' 
+2026-10-16 18:13:17,105 1 WARNING ddfsc odoo.modules.module: Missing `license` key in manifest for 'inventory_product_category', defaulting to LGPL-3 
+2026-10-16 18:13:17,127 1 WARNING ddfsc odoo.modules.module: Missing `license` key in manifest for 'sales_credit_cash', defaulting to LGPL-3 
+2026-10-16 18:13:17,234 1 INFO ddfsc odoo.modules.loading: loading 132 modules... 
+2026-10-16 18:13:18,088 1 WARNING ddfsc odoo.registry: Model attribute '_sql_constraints' is no longer supported, please define models.Constraint on the model. 
+2026-10-16 18:13:18,975 1 WARNING ddfsc odoo.registry: The model account.account.type has no _description 
+2026-10-16 18:13:19,101 1 WARNING ddfsc odoo.registry: The model account.account.type has no _description 
+2026-10-16 18:13:19,313 1 INFO ddfsc odoo.tests.common: Importing test framework 
+2026-10-16 18:13:19,397 1 WARNING ddfsc odoo.registry: Model attribute '_sql_constraints' is no longer supported, please define models.Constraint on the model. 
+2026-10-16 18:13:20,112 1 WARNING ddfsc odoo.registry: Model attribute '_sql_constraints' is no longer supported, please define models.Constraint on the model. 
+2026-10-16 18:13:20,299 1 INFO ddfsc odoo.modules.loading: 132 modules loaded in 3.06s, 0 queries (+0 extra) 
+2026-10-16 18:13:20,542 1 WARNING ddfsc py.warnings: /usr/lib/python3/dist-packages/odoo/orm/fields.py:493: DeprecationWarning: Since Odoo 18, 'group_operator' is deprecated, use 'aggregator' instead
+  File "/usr/bin/odoo", line 6, in <module>
+    odoo.cli.main()
+  File "/usr/lib/python3/dist-packages/odoo/cli/command.py", line 133, in main
+    command().run(args)
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 162, in run
+    self.shell(dbnames[0])
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 137, in shell
+    registry = Registry(dbname)
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 108, in __new__
+    return cls.new(db_name)
+  File "/usr/lib/python3/dist-packages/odoo/tools/func.py", line 88, in locked
+    return func(inst, *args, **kwargs)
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 189, in new
+    load_modules(
+  File "/usr/lib/python3/dist-packages/odoo/modules/loading.py", line 488, in load_modules
+    registry._setup_models__(cr)
+  File "/usr/lib/python3/dist-packages/odoo/tools/func.py", line 88, in locked
+    return func(inst, *args, **kwargs)
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 509, in _setup_models__
+    model_classes.setup_model_classes(env)
+  File "/usr/lib/python3/dist-packages/odoo/orm/model_classes.py", line 320, in setup_model_classes
+    _setup(model_cls, env)
+  File "/usr/lib/python3/dist-packages/odoo/orm/model_classes.py", line 415, in _setup
+    add_field(model_cls, name, Field(_base_fields__=tuple(fields_)))
+  File "/usr/lib/python3/dist-packages/odoo/orm/model_classes.py", line 617, in add_field
+    field.__set_name__(model_cls, name)
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 402, in __set_name__
+    self._setup_attrs__(owner, name)
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 493, in _setup_attrs__
+    attrs = self._get_attrs(model_class, name)
+ 
+2026-10-16 18:13:20,580 1 WARNING ddfsc odoo.fields: sale.order.state: selection=[('draft', 'Quotation'), ('price_change_approval', 'Discount Approval'), ('operational_approval', 'Manager Approval'), ('finance_approval', 'Finance Approval'), ('approved', 'Approved'), ('sent', 'Quotation Sent'), ('sale', 'Sales Order'), ('done', 'Locked'), ('cancel', 'Cancelled')] overrides existing selection; use selection_add instead 
+2026-10-16 18:13:20,714 1 WARNING ddfsc odoo.fields: Field sale.order.sale_type: unknown parameter 'force_save', if this is an actual parameter you may want to override the method _valid_field_parameter on the relevant model in order to allow it 
+2026-10-16 18:13:20,721 1 WARNING ddfsc odoo.fields: Field account.asset.category.currency_id: unknown parameter 'hide', if this is an actual parameter you may want to override the method _valid_field_parameter on the relevant model in order to allow it 
+2026-10-16 18:13:20,835 1 INFO ddfsc odoo.modules.loading: Modules loaded. 
+2026-10-16 18:13:20,938 1 INFO ddfsc odoo.registry: Registry loaded in 3.931s 
+2026-10-16 18:13:20,994 1 WARNING ddfsc py.warnings: /usr/lib/python3/dist-packages/odoo/orm/fields.py:837: UserWarning: Field sale.order.line.price_subtotal cannot be precomputed as it depends on non-precomputed field sale.order.line.manual_discount_active
+  File "/usr/bin/odoo", line 6, in <module>
+    odoo.cli.main()
+  File "/usr/lib/python3/dist-packages/odoo/cli/command.py", line 133, in main
+    command().run(args)
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 162, in run
+    self.shell(dbnames[0])
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 148, in shell
+    self.console(local_vars)
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 82, in console
+    exec(sys.stdin.read(), local_vars)
+  File "<string>", line 5, in <module>
+  File "/usr/lib/python3/dist-packages/odoo/addons/mail/models/discuss/res_groups.py", line 10, in write
+    res = super().write(vals)
+  File "/usr/lib/python3/dist-packages/odoo/addons/base/models/res_groups.py", line 195, in write
+    res = super().write(vals)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 4423, in write
+    if self.pool.is_modifying_relations(field):
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 705, in is_modifying_relations
+    result = field in self._field_triggers and bool(
+  File "/usr/lib/python3.12/functools.py", line 995, in __get__
+    val = self.func(instance)
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 686, in _field_triggers
+    dependencies = list(field.resolve_depends(self))
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 837, in resolve_depends
+    warnings.warn(f"Field {self} cannot be precomputed as it depends on non-precomputed field {field}", stacklevel=1)
+ 
+2026-10-16 18:13:20,995 1 WARNING ddfsc py.warnings: /usr/lib/python3/dist-packages/odoo/orm/fields.py:837: UserWarning: Field sale.order.line.price_tax cannot be precomputed as it depends on non-precomputed field sale.order.line.manual_discount_active
+  File "/usr/bin/odoo", line 6, in <module>
+    odoo.cli.main()
+  File "/usr/lib/python3/dist-packages/odoo/cli/command.py", line 133, in main
+    command().run(args)
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 162, in run
+    self.shell(dbnames[0])
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 148, in shell
+    self.console(local_vars)
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 82, in console
+    exec(sys.stdin.read(), local_vars)
+  File "<string>", line 5, in <module>
+  File "/usr/lib/python3/dist-packages/odoo/addons/mail/models/discuss/res_groups.py", line 10, in write
+    res = super().write(vals)
+  File "/usr/lib/python3/dist-packages/odoo/addons/base/models/res_groups.py", line 195, in write
+    res = super().write(vals)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 4423, in write
+    if self.pool.is_modifying_relations(field):
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 705, in is_modifying_relations
+    result = field in self._field_triggers and bool(
+  File "/usr/lib/python3.12/functools.py", line 995, in __get__
+    val = self.func(instance)
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 686, in _field_triggers
+    dependencies = list(field.resolve_depends(self))
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 837, in resolve_depends
+    warnings.warn(f"Field {self} cannot be precomputed as it depends on non-precomputed field {field}", stacklevel=1)
+ 
+2026-10-16 18:13:20,995 1 WARNING ddfsc py.warnings: /usr/lib/python3/dist-packages/odoo/orm/fields.py:837: UserWarning: Field sale.order.line.price_total cannot be precomputed as it depends on non-precomputed field sale.order.line.manual_discount_active
+  File "/usr/bin/odoo", line 6, in <module>
+    odoo.cli.main()
+  File "/usr/lib/python3/dist-packages/odoo/cli/command.py", line 133, in main
+    command().run(args)
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 162, in run
+    self.shell(dbnames[0])
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 148, in shell
+    self.console(local_vars)
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 82, in console
+    exec(sys.stdin.read(), local_vars)
+  File "<string>", line 5, in <module>
+  File "/usr/lib/python3/dist-packages/odoo/addons/mail/models/discuss/res_groups.py", line 10, in write
+    res = super().write(vals)
+  File "/usr/lib/python3/dist-packages/odoo/addons/base/models/res_groups.py", line 195, in write
+    res = super().write(vals)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 4423, in write
+    if self.pool.is_modifying_relations(field):
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 705, in is_modifying_relations
+    result = field in self._field_triggers and bool(
+  File "/usr/lib/python3.12/functools.py", line 995, in __get__
+    val = self.func(instance)
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 686, in _field_triggers
+    dependencies = list(field.resolve_depends(self))
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 837, in resolve_depends
+    warnings.warn(f"Field {self} cannot be precomputed as it depends on non-precomputed field {field}", stacklevel=1)
+ 
+2026-10-16 18:13:20,995 1 WARNING ddfsc py.warnings: /usr/lib/python3/dist-packages/odoo/orm/fields.py:837: UserWarning: Field sale.order.line.price_reduce_taxexcl cannot be precomputed as it depends on non-precomputed field sale.order.line.price_subtotal
+  File "/usr/bin/odoo", line 6, in <module>
+    odoo.cli.main()
+  File "/usr/lib/python3/dist-packages/odoo/cli/command.py", line 133, in main
+    command().run(args)
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 162, in run
+    self.shell(dbnames[0])
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 148, in shell
+    self.console(local_vars)
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 82, in console
+    exec(sys.stdin.read(), local_vars)
+  File "<string>", line 5, in <module>
+  File "/usr/lib/python3/dist-packages/odoo/addons/mail/models/discuss/res_groups.py", line 10, in write
+    res = super().write(vals)
+  File "/usr/lib/python3/dist-packages/odoo/addons/base/models/res_groups.py", line 195, in write
+    res = super().write(vals)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 4423, in write
+    if self.pool.is_modifying_relations(field):
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 705, in is_modifying_relations
+    result = field in self._field_triggers and bool(
+  File "/usr/lib/python3.12/functools.py", line 995, in __get__
+    val = self.func(instance)
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 686, in _field_triggers
+    dependencies = list(field.resolve_depends(self))
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 837, in resolve_depends
+    warnings.warn(f"Field {self} cannot be precomputed as it depends on non-precomputed field {field}", stacklevel=1)
+ 
+2026-10-16 18:13:20,996 1 WARNING ddfsc py.warnings: /usr/lib/python3/dist-packages/odoo/orm/fields.py:837: UserWarning: Field sale.order.line.price_reduce_taxinc cannot be precomputed as it depends on non-precomputed field sale.order.line.price_total
+  File "/usr/bin/odoo", line 6, in <module>
+    odoo.cli.main()
+  File "/usr/lib/python3/dist-packages/odoo/cli/command.py", line 133, in main
+    command().run(args)
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 162, in run
+    self.shell(dbnames[0])
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 148, in shell
+    self.console(local_vars)
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 82, in console
+    exec(sys.stdin.read(), local_vars)
+  File "<string>", line 5, in <module>
+  File "/usr/lib/python3/dist-packages/odoo/addons/mail/models/discuss/res_groups.py", line 10, in write
+    res = super().write(vals)
+  File "/usr/lib/python3/dist-packages/odoo/addons/base/models/res_groups.py", line 195, in write
+    res = super().write(vals)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 4423, in write
+    if self.pool.is_modifying_relations(field):
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 705, in is_modifying_relations
+    result = field in self._field_triggers and bool(
+  File "/usr/lib/python3.12/functools.py", line 995, in __get__
+    val = self.func(instance)
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 686, in _field_triggers
+    dependencies = list(field.resolve_depends(self))
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 837, in resolve_depends
+    warnings.warn(f"Field {self} cannot be precomputed as it depends on non-precomputed field {field}", stacklevel=1)
+ 
+2026-10-16 18:13:20,998 1 WARNING ddfsc py.warnings: /usr/lib/python3/dist-packages/odoo/orm/fields.py:832: UserWarning: Field daily.sales.total_quantity should be declared with recursive=True
+  File "/usr/bin/odoo", line 6, in <module>
+    odoo.cli.main()
+  File "/usr/lib/python3/dist-packages/odoo/cli/command.py", line 133, in main
+    command().run(args)
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 162, in run
+    self.shell(dbnames[0])
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 148, in shell
+    self.console(local_vars)
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 82, in console
+    exec(sys.stdin.read(), local_vars)
+  File "<string>", line 5, in <module>
+  File "/usr/lib/python3/dist-packages/odoo/addons/mail/models/discuss/res_groups.py", line 10, in write
+    res = super().write(vals)
+  File "/usr/lib/python3/dist-packages/odoo/addons/base/models/res_groups.py", line 195, in write
+    res = super().write(vals)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 4423, in write
+    if self.pool.is_modifying_relations(field):
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 705, in is_modifying_relations
+    result = field in self._field_triggers and bool(
+  File "/usr/lib/python3.12/functools.py", line 995, in __get__
+    val = self.func(instance)
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 686, in _field_triggers
+    dependencies = list(field.resolve_depends(self))
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 832, in resolve_depends
+    warnings.warn(f"Field {self} should be declared with recursive=True", stacklevel=1)
+ 
+Verified: admin has Store Manager and Inventory Manager roles in ddfsc

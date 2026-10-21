@@ -1,0 +1,516 @@
+ Container ddfsc-db-1 Running 
+ Container ddfsc-db-1 Waiting 
+ Container ddfsc-db-1 Healthy 
+ Container ddfsc-odoo-run-899e6bb150b0 Creating 
+ Container ddfsc-odoo-run-899e6bb150b0 Created 
+2026-10-16 18:50:54,484 1 INFO ? odoo: Odoo version 19.0-20261015 
+2026-10-16 18:50:54,485 1 INFO ? odoo: Using configuration file at /etc/odoo/odoo.conf 
+2026-10-16 18:50:54,485 1 INFO ? odoo: addons paths: _NamespacePath(['/usr/lib/python3/dist-packages/odoo/addons', '/var/lib/odoo/addons/19.0', '/mnt/extra-addons', '/usr/lib/python3/dist-packages/addons']) 
+2026-10-16 18:50:54,485 1 INFO ? odoo: database: odoo@db:5432 
+2026-10-16 18:50:54,728 1 INFO ? odoo.service.server: Initiating shutdown 
+2026-10-16 18:50:54,728 1 INFO ? odoo.service.server: Hit CTRL-C again or send a second signal to force the shutdown. 
+2026-10-16 18:50:54,750 1 INFO ddfsc odoo.modules.loading: loading 1 modules... 
+2026-10-16 18:50:54,755 1 INFO ddfsc odoo.modules.loading: 1 modules loaded in 0.00s, 0 queries (+0 extra) 
+2026-10-16 18:50:54,763 1 WARNING ddfsc odoo.modules.module: Missing `license` key in manifest for 'sales_person_target_management', defaulting to LGPL-3 
+2026-10-16 18:50:54,827 1 WARNING ddfsc odoo.modules.module: Missing `author` key in manifest for 'inventory_product_category', defaulting to '' 
+2026-10-16 18:50:54,827 1 WARNING ddfsc odoo.modules.module: Missing `license` key in manifest for 'inventory_product_category', defaulting to LGPL-3 
+2026-10-16 18:50:54,848 1 WARNING ddfsc odoo.modules.module: Missing `license` key in manifest for 'sales_credit_cash', defaulting to LGPL-3 
+2026-10-16 18:50:54,921 1 INFO ddfsc odoo.modules.loading: loading 132 modules... 
+2026-10-16 18:50:55,825 1 WARNING ddfsc odoo.registry: Model attribute '_sql_constraints' is no longer supported, please define models.Constraint on the model. 
+2026-10-16 18:50:57,322 1 WARNING ddfsc odoo.registry: The model account.account.type has no _description 
+2026-10-16 18:50:57,495 1 WARNING ddfsc odoo.registry: The model account.account.type has no _description 
+2026-10-16 18:50:57,804 1 INFO ddfsc odoo.tests.common: Importing test framework 
+2026-10-16 18:50:57,955 1 WARNING ddfsc odoo.registry: Model attribute '_sql_constraints' is no longer supported, please define models.Constraint on the model. 
+2026-10-16 18:50:59,053 1 WARNING ddfsc odoo.registry: Model attribute '_sql_constraints' is no longer supported, please define models.Constraint on the model. 
+2026-10-16 18:50:59,205 1 INFO ddfsc odoo.modules.loading: 132 modules loaded in 4.28s, 0 queries (+0 extra) 
+2026-10-16 18:50:59,304 1 WARNING ddfsc py.warnings: /usr/lib/python3/dist-packages/odoo/orm/fields.py:493: DeprecationWarning: Since Odoo 18, 'group_operator' is deprecated, use 'aggregator' instead
+  File "/usr/bin/odoo", line 6, in <module>
+    odoo.cli.main()
+  File "/usr/lib/python3/dist-packages/odoo/cli/command.py", line 133, in main
+    command().run(args)
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 162, in run
+    self.shell(dbnames[0])
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 137, in shell
+    registry = Registry(dbname)
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 108, in __new__
+    return cls.new(db_name)
+  File "/usr/lib/python3/dist-packages/odoo/tools/func.py", line 88, in locked
+    return func(inst, *args, **kwargs)
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 189, in new
+    load_modules(
+  File "/usr/lib/python3/dist-packages/odoo/modules/loading.py", line 488, in load_modules
+    registry._setup_models__(cr)
+  File "/usr/lib/python3/dist-packages/odoo/tools/func.py", line 88, in locked
+    return func(inst, *args, **kwargs)
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 509, in _setup_models__
+    model_classes.setup_model_classes(env)
+  File "/usr/lib/python3/dist-packages/odoo/orm/model_classes.py", line 320, in setup_model_classes
+    _setup(model_cls, env)
+  File "/usr/lib/python3/dist-packages/odoo/orm/model_classes.py", line 415, in _setup
+    add_field(model_cls, name, Field(_base_fields__=tuple(fields_)))
+  File "/usr/lib/python3/dist-packages/odoo/orm/model_classes.py", line 617, in add_field
+    field.__set_name__(model_cls, name)
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 402, in __set_name__
+    self._setup_attrs__(owner, name)
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 493, in _setup_attrs__
+    attrs = self._get_attrs(model_class, name)
+ 
+2026-10-16 18:50:59,321 1 WARNING ddfsc odoo.fields: sale.order.state: selection=[('draft', 'Quotation'), ('price_change_approval', 'Discount Approval'), ('operational_approval', 'Manager Approval'), ('finance_approval', 'Finance Approval'), ('approved', 'Approved'), ('sent', 'Quotation Sent'), ('sale', 'Sales Order'), ('done', 'Locked'), ('cancel', 'Cancelled')] overrides existing selection; use selection_add instead 
+2026-10-16 18:50:59,373 1 WARNING ddfsc odoo.fields: Field sale.order.sale_type: unknown parameter 'force_save', if this is an actual parameter you may want to override the method _valid_field_parameter on the relevant model in order to allow it 
+2026-10-16 18:50:59,374 1 WARNING ddfsc odoo.fields: Field account.asset.category.currency_id: unknown parameter 'hide', if this is an actual parameter you may want to override the method _valid_field_parameter on the relevant model in order to allow it 
+2026-10-16 18:50:59,413 1 INFO ddfsc odoo.modules.loading: Modules loaded. 
+2026-10-16 18:50:59,506 1 INFO ddfsc odoo.registry: Registry loaded in 4.778s 
+2026-10-16 18:50:59,542 1 WARNING ddfsc py.warnings: /mnt/extra-addons/sale_approval_workflow/models/product.py:245: DeprecationWarning: Deprecated since 19.0, use self.env.context directly
+  File "/usr/bin/odoo", line 6, in <module>
+    odoo.cli.main()
+  File "/usr/lib/python3/dist-packages/odoo/cli/command.py", line 133, in main
+    command().run(args)
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 162, in run
+    self.shell(dbnames[0])
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 148, in shell
+    self.console(local_vars)
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 82, in console
+    exec(sys.stdin.read(), local_vars)
+  File "<string>", line 4, in <module>
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields_relational.py", line 45, in __get__
+    return super().__get__(records, owner)
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 1745, in __get__
+    self.compute_value(recs)
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 1916, in compute_value
+    records._compute_field_value(self)
+  File "/usr/lib/python3/dist-packages/odoo/addons/mail/models/mail_thread.py", line 485, in _compute_field_value
+    return super()._compute_field_value(field)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 4961, in _compute_field_value
+    determine(field.compute, self)
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 81, in determine
+    return needle(*args)
+  File "/usr/lib/python3/dist-packages/odoo/addons/product/models/product_template.py", line 249, in _compute_product_variant_id
+    p.product_variant_id = p.product_variant_ids[:1].id
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields_relational.py", line 945, in __get__
+    return super().__get__(records, owner)
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields_relational.py", line 45, in __get__
+    return super().__get__(records, owner)
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 1701, in __get__
+    recs._fetch_field(self)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 3778, in _fetch_field
+    self.fetch(fnames)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 3818, in fetch
+    fetched = self._fetch_query(query, fields_to_fetch)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 3946, in _fetch_query
+    field.read(fetched)
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields_relational.py", line 961, in read
+    lines = comodel.search_fetch(domain, field_names)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 1421, in search_fetch
+    query = self._search(domain, offset=offset, limit=limit, order=order or self._order)
+  File "/mnt/extra-addons/sale_approval_workflow/models/product.py", line 245, in _search
+    customer_type = self._context.get('customer_type')
+ 
+2026-10-16 18:50:59,548 1 WARNING ddfsc py.warnings: /mnt/extra-addons/sale_approval_workflow/models/product.py:252: DeprecationWarning: Deprecated since 19.0, use self.env.context directly
+  File "/usr/bin/odoo", line 6, in <module>
+    odoo.cli.main()
+  File "/usr/lib/python3/dist-packages/odoo/cli/command.py", line 133, in main
+    command().run(args)
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 162, in run
+    self.shell(dbnames[0])
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 148, in shell
+    self.console(local_vars)
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 82, in console
+    exec(sys.stdin.read(), local_vars)
+  File "<string>", line 4, in <module>
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields_relational.py", line 45, in __get__
+    return super().__get__(records, owner)
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 1745, in __get__
+    self.compute_value(recs)
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 1916, in compute_value
+    records._compute_field_value(self)
+  File "/usr/lib/python3/dist-packages/odoo/addons/mail/models/mail_thread.py", line 485, in _compute_field_value
+    return super()._compute_field_value(field)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 4961, in _compute_field_value
+    determine(field.compute, self)
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 81, in determine
+    return needle(*args)
+  File "/usr/lib/python3/dist-packages/odoo/addons/product/models/product_template.py", line 249, in _compute_product_variant_id
+    p.product_variant_id = p.product_variant_ids[:1].id
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields_relational.py", line 945, in __get__
+    return super().__get__(records, owner)
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields_relational.py", line 45, in __get__
+    return super().__get__(records, owner)
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 1701, in __get__
+    recs._fetch_field(self)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 3778, in _fetch_field
+    self.fetch(fnames)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 3818, in fetch
+    fetched = self._fetch_query(query, fields_to_fetch)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 3946, in _fetch_query
+    field.read(fetched)
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields_relational.py", line 961, in read
+    lines = comodel.search_fetch(domain, field_names)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 1421, in search_fetch
+    query = self._search(domain, offset=offset, limit=limit, order=order or self._order)
+  File "/mnt/extra-addons/sale_approval_workflow/models/product.py", line 252, in _search
+    if self._context.get('is_sale_order_line'):
+ 
+2026-10-16 18:50:59,585 1 WARNING ddfsc py.warnings: /usr/lib/python3/dist-packages/odoo/orm/fields.py:837: UserWarning: Field sale.order.line.price_subtotal cannot be precomputed as it depends on non-precomputed field sale.order.line.manual_discount_active
+  File "/usr/bin/odoo", line 6, in <module>
+    odoo.cli.main()
+  File "/usr/lib/python3/dist-packages/odoo/cli/command.py", line 133, in main
+    command().run(args)
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 162, in run
+    self.shell(dbnames[0])
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 148, in shell
+    self.console(local_vars)
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 82, in console
+    exec(sys.stdin.read(), local_vars)
+  File "<string>", line 7, in <module>
+  File "/usr/lib/python3/dist-packages/odoo/orm/decorators.py", line 369, in create
+    return method(self, vals_list)
+  File "/usr/lib/python3/dist-packages/odoo/addons/mrp/models/mrp_production.py", line 1091, in create
+    vals['production_group_id'] = self.env["mrp.production.group"].create({'name': vals['name']}).id
+  File "/usr/lib/python3/dist-packages/odoo/orm/decorators.py", line 369, in create
+    return method(self, vals_list)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 4717, in create
+    records = self._create(data_list)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 4940, in _create
+    records.modified(self._fields, create=True)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 6823, in modified
+    todo = [self._modified([self._fields[fname] for fname in fnames], create)]
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 6875, in _modified
+    tree = self.pool.get_trigger_tree(fields, select=select)
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 591, in get_trigger_tree
+    if field in self._field_triggers
+  File "/usr/lib/python3.12/functools.py", line 995, in __get__
+    val = self.func(instance)
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 686, in _field_triggers
+    dependencies = list(field.resolve_depends(self))
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 837, in resolve_depends
+    warnings.warn(f"Field {self} cannot be precomputed as it depends on non-precomputed field {field}", stacklevel=1)
+ 
+2026-10-16 18:50:59,585 1 WARNING ddfsc py.warnings: /usr/lib/python3/dist-packages/odoo/orm/fields.py:837: UserWarning: Field sale.order.line.price_tax cannot be precomputed as it depends on non-precomputed field sale.order.line.manual_discount_active
+  File "/usr/bin/odoo", line 6, in <module>
+    odoo.cli.main()
+  File "/usr/lib/python3/dist-packages/odoo/cli/command.py", line 133, in main
+    command().run(args)
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 162, in run
+    self.shell(dbnames[0])
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 148, in shell
+    self.console(local_vars)
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 82, in console
+    exec(sys.stdin.read(), local_vars)
+  File "<string>", line 7, in <module>
+  File "/usr/lib/python3/dist-packages/odoo/orm/decorators.py", line 369, in create
+    return method(self, vals_list)
+  File "/usr/lib/python3/dist-packages/odoo/addons/mrp/models/mrp_production.py", line 1091, in create
+    vals['production_group_id'] = self.env["mrp.production.group"].create({'name': vals['name']}).id
+  File "/usr/lib/python3/dist-packages/odoo/orm/decorators.py", line 369, in create
+    return method(self, vals_list)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 4717, in create
+    records = self._create(data_list)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 4940, in _create
+    records.modified(self._fields, create=True)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 6823, in modified
+    todo = [self._modified([self._fields[fname] for fname in fnames], create)]
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 6875, in _modified
+    tree = self.pool.get_trigger_tree(fields, select=select)
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 591, in get_trigger_tree
+    if field in self._field_triggers
+  File "/usr/lib/python3.12/functools.py", line 995, in __get__
+    val = self.func(instance)
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 686, in _field_triggers
+    dependencies = list(field.resolve_depends(self))
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 837, in resolve_depends
+    warnings.warn(f"Field {self} cannot be precomputed as it depends on non-precomputed field {field}", stacklevel=1)
+ 
+2026-10-16 18:50:59,586 1 WARNING ddfsc py.warnings: /usr/lib/python3/dist-packages/odoo/orm/fields.py:837: UserWarning: Field sale.order.line.price_total cannot be precomputed as it depends on non-precomputed field sale.order.line.manual_discount_active
+  File "/usr/bin/odoo", line 6, in <module>
+    odoo.cli.main()
+  File "/usr/lib/python3/dist-packages/odoo/cli/command.py", line 133, in main
+    command().run(args)
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 162, in run
+    self.shell(dbnames[0])
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 148, in shell
+    self.console(local_vars)
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 82, in console
+    exec(sys.stdin.read(), local_vars)
+  File "<string>", line 7, in <module>
+  File "/usr/lib/python3/dist-packages/odoo/orm/decorators.py", line 369, in create
+    return method(self, vals_list)
+  File "/usr/lib/python3/dist-packages/odoo/addons/mrp/models/mrp_production.py", line 1091, in create
+    vals['production_group_id'] = self.env["mrp.production.group"].create({'name': vals['name']}).id
+  File "/usr/lib/python3/dist-packages/odoo/orm/decorators.py", line 369, in create
+    return method(self, vals_list)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 4717, in create
+    records = self._create(data_list)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 4940, in _create
+    records.modified(self._fields, create=True)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 6823, in modified
+    todo = [self._modified([self._fields[fname] for fname in fnames], create)]
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 6875, in _modified
+    tree = self.pool.get_trigger_tree(fields, select=select)
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 591, in get_trigger_tree
+    if field in self._field_triggers
+  File "/usr/lib/python3.12/functools.py", line 995, in __get__
+    val = self.func(instance)
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 686, in _field_triggers
+    dependencies = list(field.resolve_depends(self))
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 837, in resolve_depends
+    warnings.warn(f"Field {self} cannot be precomputed as it depends on non-precomputed field {field}", stacklevel=1)
+ 
+2026-10-16 18:50:59,586 1 WARNING ddfsc py.warnings: /usr/lib/python3/dist-packages/odoo/orm/fields.py:837: UserWarning: Field sale.order.line.price_reduce_taxexcl cannot be precomputed as it depends on non-precomputed field sale.order.line.price_subtotal
+  File "/usr/bin/odoo", line 6, in <module>
+    odoo.cli.main()
+  File "/usr/lib/python3/dist-packages/odoo/cli/command.py", line 133, in main
+    command().run(args)
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 162, in run
+    self.shell(dbnames[0])
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 148, in shell
+    self.console(local_vars)
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 82, in console
+    exec(sys.stdin.read(), local_vars)
+  File "<string>", line 7, in <module>
+  File "/usr/lib/python3/dist-packages/odoo/orm/decorators.py", line 369, in create
+    return method(self, vals_list)
+  File "/usr/lib/python3/dist-packages/odoo/addons/mrp/models/mrp_production.py", line 1091, in create
+    vals['production_group_id'] = self.env["mrp.production.group"].create({'name': vals['name']}).id
+  File "/usr/lib/python3/dist-packages/odoo/orm/decorators.py", line 369, in create
+    return method(self, vals_list)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 4717, in create
+    records = self._create(data_list)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 4940, in _create
+    records.modified(self._fields, create=True)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 6823, in modified
+    todo = [self._modified([self._fields[fname] for fname in fnames], create)]
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 6875, in _modified
+    tree = self.pool.get_trigger_tree(fields, select=select)
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 591, in get_trigger_tree
+    if field in self._field_triggers
+  File "/usr/lib/python3.12/functools.py", line 995, in __get__
+    val = self.func(instance)
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 686, in _field_triggers
+    dependencies = list(field.resolve_depends(self))
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 837, in resolve_depends
+    warnings.warn(f"Field {self} cannot be precomputed as it depends on non-precomputed field {field}", stacklevel=1)
+ 
+2026-10-16 18:50:59,586 1 WARNING ddfsc py.warnings: /usr/lib/python3/dist-packages/odoo/orm/fields.py:837: UserWarning: Field sale.order.line.price_reduce_taxinc cannot be precomputed as it depends on non-precomputed field sale.order.line.price_total
+  File "/usr/bin/odoo", line 6, in <module>
+    odoo.cli.main()
+  File "/usr/lib/python3/dist-packages/odoo/cli/command.py", line 133, in main
+    command().run(args)
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 162, in run
+    self.shell(dbnames[0])
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 148, in shell
+    self.console(local_vars)
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 82, in console
+    exec(sys.stdin.read(), local_vars)
+  File "<string>", line 7, in <module>
+  File "/usr/lib/python3/dist-packages/odoo/orm/decorators.py", line 369, in create
+    return method(self, vals_list)
+  File "/usr/lib/python3/dist-packages/odoo/addons/mrp/models/mrp_production.py", line 1091, in create
+    vals['production_group_id'] = self.env["mrp.production.group"].create({'name': vals['name']}).id
+  File "/usr/lib/python3/dist-packages/odoo/orm/decorators.py", line 369, in create
+    return method(self, vals_list)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 4717, in create
+    records = self._create(data_list)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 4940, in _create
+    records.modified(self._fields, create=True)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 6823, in modified
+    todo = [self._modified([self._fields[fname] for fname in fnames], create)]
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 6875, in _modified
+    tree = self.pool.get_trigger_tree(fields, select=select)
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 591, in get_trigger_tree
+    if field in self._field_triggers
+  File "/usr/lib/python3.12/functools.py", line 995, in __get__
+    val = self.func(instance)
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 686, in _field_triggers
+    dependencies = list(field.resolve_depends(self))
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 837, in resolve_depends
+    warnings.warn(f"Field {self} cannot be precomputed as it depends on non-precomputed field {field}", stacklevel=1)
+ 
+2026-10-16 18:50:59,589 1 WARNING ddfsc py.warnings: /usr/lib/python3/dist-packages/odoo/orm/fields.py:832: UserWarning: Field daily.sales.total_quantity should be declared with recursive=True
+  File "/usr/bin/odoo", line 6, in <module>
+    odoo.cli.main()
+  File "/usr/lib/python3/dist-packages/odoo/cli/command.py", line 133, in main
+    command().run(args)
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 162, in run
+    self.shell(dbnames[0])
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 148, in shell
+    self.console(local_vars)
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 82, in console
+    exec(sys.stdin.read(), local_vars)
+  File "<string>", line 7, in <module>
+  File "/usr/lib/python3/dist-packages/odoo/orm/decorators.py", line 369, in create
+    return method(self, vals_list)
+  File "/usr/lib/python3/dist-packages/odoo/addons/mrp/models/mrp_production.py", line 1091, in create
+    vals['production_group_id'] = self.env["mrp.production.group"].create({'name': vals['name']}).id
+  File "/usr/lib/python3/dist-packages/odoo/orm/decorators.py", line 369, in create
+    return method(self, vals_list)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 4717, in create
+    records = self._create(data_list)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 4940, in _create
+    records.modified(self._fields, create=True)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 6823, in modified
+    todo = [self._modified([self._fields[fname] for fname in fnames], create)]
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 6875, in _modified
+    tree = self.pool.get_trigger_tree(fields, select=select)
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 591, in get_trigger_tree
+    if field in self._field_triggers
+  File "/usr/lib/python3.12/functools.py", line 995, in __get__
+    val = self.func(instance)
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 686, in _field_triggers
+    dependencies = list(field.resolve_depends(self))
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 832, in resolve_depends
+    warnings.warn(f"Field {self} should be declared with recursive=True", stacklevel=1)
+ 
+2026-10-16 18:50:59,631 1 WARNING ddfsc py.warnings: /mnt/extra-addons/sale_approval_workflow/models/product.py:145: DeprecationWarning: Deprecated since 19.0, use self.env.context directly
+  File "/usr/bin/odoo", line 6, in <module>
+    odoo.cli.main()
+  File "/usr/lib/python3/dist-packages/odoo/cli/command.py", line 133, in main
+    command().run(args)
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 162, in run
+    self.shell(dbnames[0])
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 148, in shell
+    self.console(local_vars)
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 82, in console
+    exec(sys.stdin.read(), local_vars)
+  File "<string>", line 7, in <module>
+  File "/usr/lib/python3/dist-packages/odoo/orm/decorators.py", line 369, in create
+    return method(self, vals_list)
+  File "/usr/lib/python3/dist-packages/odoo/addons/mrp/models/mrp_production.py", line 1100, in create
+    (rec.move_raw_ids | rec.move_finished_ids).production_group_id = rec.production_group_id
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields_relational.py", line 945, in __get__
+    return super().__get__(records, owner)
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields_relational.py", line 45, in __get__
+    return super().__get__(records, owner)
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 1666, in __get__
+    self.recompute(record)
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 1892, in recompute
+    apply_except_missing(self.compute_value, recs)
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 1862, in apply_except_missing
+    func(records)
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 1916, in compute_value
+    records._compute_field_value(self)
+  File "/usr/lib/python3/dist-packages/odoo/addons/mail/models/mail_thread.py", line 485, in _compute_field_value
+    return super()._compute_field_value(field)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 4961, in _compute_field_value
+    determine(field.compute, self)
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 81, in determine
+    return needle(*args)
+  File "/usr/lib/python3/dist-packages/odoo/addons/mrp/models/mrp_production.py", line 832, in _compute_move_raw_ids
+    moves_raw_values = production._get_moves_raw_values()
+  File "/usr/lib/python3/dist-packages/odoo/addons/mrp/models/mrp_production.py", line 1345, in _get_moves_raw_values
+    _boms, lines = production.bom_id.explode(production.product_id, factor, picking_type=production.bom_id.picking_type_id, never_attribute_values=production.never_product_template_attribute_value_ids)
+  File "/usr/lib/python3/dist-packages/odoo/addons/mrp/models/mrp_bom.py", line 444, in explode
+    update_product_boms()
+  File "/usr/lib/python3/dist-packages/odoo/addons/mrp/models/mrp_bom.py", line 430, in update_product_boms
+    product_boms.update(self._bom_find(products, picking_type=picking_type or self.picking_type_id,
+  File "/usr/lib/python3/dist-packages/odoo/addons/mrp/models/mrp_bom.py", line 393, in _bom_find
+    products = products.filtered(lambda p: p.type != 'service')
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 6234, in filtered
+    return self.browse(rec_id for rec_id, rec in zip(self._ids, self) if func(rec))
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 5916, in browse
+    ids = tuple(ids)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 6234, in <genexpr>
+    return self.browse(rec_id for rec_id, rec in zip(self._ids, self) if func(rec))
+  File "/usr/lib/python3/dist-packages/odoo/addons/mrp/models/mrp_bom.py", line 393, in <lambda>
+    products = products.filtered(lambda p: p.type != 'service')
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 1745, in __get__
+    self.compute_value(recs)
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 1916, in compute_value
+    records._compute_field_value(self)
+  File "/usr/lib/python3/dist-packages/odoo/addons/mail/models/mail_thread.py", line 485, in _compute_field_value
+    return super()._compute_field_value(field)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 4961, in _compute_field_value
+    determine(field.compute, self)
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 84, in determine
+    return needle(records, *args)
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 718, in _compute_related
+    record[self.name] = self._process_related(value[self.related_field.name], record.env)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 6707, in __getitem__
+    return self._fields[key].__get__(self)
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 1701, in __get__
+    recs._fetch_field(self)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 3778, in _fetch_field
+    self.fetch(fnames)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 3802, in fetch
+    query = self._search([('id', 'in', self.ids)], active_test=False)
+  File "/mnt/extra-addons/sale_approval_workflow/models/product.py", line 145, in _search
+    customer_type = self._context.get('customer_type')
+ 
+2026-10-16 18:50:59,635 1 WARNING ddfsc py.warnings: /mnt/extra-addons/sale_approval_workflow/models/product.py:152: DeprecationWarning: Deprecated since 19.0, use self.env.context directly
+  File "/usr/bin/odoo", line 6, in <module>
+    odoo.cli.main()
+  File "/usr/lib/python3/dist-packages/odoo/cli/command.py", line 133, in main
+    command().run(args)
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 162, in run
+    self.shell(dbnames[0])
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 148, in shell
+    self.console(local_vars)
+  File "/usr/lib/python3/dist-packages/odoo/cli/shell.py", line 82, in console
+    exec(sys.stdin.read(), local_vars)
+  File "<string>", line 7, in <module>
+  File "/usr/lib/python3/dist-packages/odoo/orm/decorators.py", line 369, in create
+    return method(self, vals_list)
+  File "/usr/lib/python3/dist-packages/odoo/addons/mrp/models/mrp_production.py", line 1100, in create
+    (rec.move_raw_ids | rec.move_finished_ids).production_group_id = rec.production_group_id
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields_relational.py", line 945, in __get__
+    return super().__get__(records, owner)
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields_relational.py", line 45, in __get__
+    return super().__get__(records, owner)
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 1666, in __get__
+    self.recompute(record)
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 1892, in recompute
+    apply_except_missing(self.compute_value, recs)
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 1862, in apply_except_missing
+    func(records)
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 1916, in compute_value
+    records._compute_field_value(self)
+  File "/usr/lib/python3/dist-packages/odoo/addons/mail/models/mail_thread.py", line 485, in _compute_field_value
+    return super()._compute_field_value(field)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 4961, in _compute_field_value
+    determine(field.compute, self)
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 81, in determine
+    return needle(*args)
+  File "/usr/lib/python3/dist-packages/odoo/addons/mrp/models/mrp_production.py", line 832, in _compute_move_raw_ids
+    moves_raw_values = production._get_moves_raw_values()
+  File "/usr/lib/python3/dist-packages/odoo/addons/mrp/models/mrp_production.py", line 1345, in _get_moves_raw_values
+    _boms, lines = production.bom_id.explode(production.product_id, factor, picking_type=production.bom_id.picking_type_id, never_attribute_values=production.never_product_template_attribute_value_ids)
+  File "/usr/lib/python3/dist-packages/odoo/addons/mrp/models/mrp_bom.py", line 444, in explode
+    update_product_boms()
+  File "/usr/lib/python3/dist-packages/odoo/addons/mrp/models/mrp_bom.py", line 430, in update_product_boms
+    product_boms.update(self._bom_find(products, picking_type=picking_type or self.picking_type_id,
+  File "/usr/lib/python3/dist-packages/odoo/addons/mrp/models/mrp_bom.py", line 393, in _bom_find
+    products = products.filtered(lambda p: p.type != 'service')
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 6234, in filtered
+    return self.browse(rec_id for rec_id, rec in zip(self._ids, self) if func(rec))
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 5916, in browse
+    ids = tuple(ids)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 6234, in <genexpr>
+    return self.browse(rec_id for rec_id, rec in zip(self._ids, self) if func(rec))
+  File "/usr/lib/python3/dist-packages/odoo/addons/mrp/models/mrp_bom.py", line 393, in <lambda>
+    products = products.filtered(lambda p: p.type != 'service')
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 1745, in __get__
+    self.compute_value(recs)
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 1916, in compute_value
+    records._compute_field_value(self)
+  File "/usr/lib/python3/dist-packages/odoo/addons/mail/models/mail_thread.py", line 485, in _compute_field_value
+    return super()._compute_field_value(field)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 4961, in _compute_field_value
+    determine(field.compute, self)
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 84, in determine
+    return needle(records, *args)
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 718, in _compute_related
+    record[self.name] = self._process_related(value[self.related_field.name], record.env)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 6707, in __getitem__
+    return self._fields[key].__get__(self)
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 1701, in __get__
+    recs._fetch_field(self)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 3778, in _fetch_field
+    self.fetch(fnames)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 3802, in fetch
+    query = self._search([('id', 'in', self.ids)], active_test=False)
+  File "/mnt/extra-addons/sale_approval_workflow/models/product.py", line 152, in _search
+    if self._context.get('is_sale_order_line'):
+ 
+PASS pasta recipe-filled request, correct product set, approval/transfer, reuse existing request, FG blocked before completion
+PASS bread recipe-filled request, correct product set, approval/transfer, reuse existing request, FG blocked before completion
+PASS biscuit recipe-filled request, correct product set, approval/transfer, reuse existing request, FG blocked before completion
+PASS flour recipe-filled request, correct product set, approval/transfer, reuse existing request, FG blocked before completion

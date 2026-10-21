@@ -1,0 +1,443 @@
+ Container ddfsc-db-1 Running 
+ Container ddfsc-db-1 Waiting 
+ Container ddfsc-db-1 Healthy 
+ Container ddfsc-odoo-run-c6d354fe421e Creating 
+ Container ddfsc-odoo-run-c6d354fe421e Created 
+2026-10-16 18:55:34,139 1 INFO ? odoo: Odoo version 19.0-20261015 
+2026-10-16 18:55:34,141 1 INFO ? odoo: Using configuration file at /etc/odoo/odoo.conf 
+2026-10-16 18:55:34,141 1 INFO ? odoo: addons paths: _NamespacePath(['/usr/lib/python3/dist-packages/odoo/addons', '/var/lib/odoo/addons/19.0', '/mnt/extra-addons', '/usr/lib/python3/dist-packages/addons']) 
+2026-10-16 18:55:34,141 1 INFO ? odoo: database: odoo@db:5432 
+2026-10-16 18:55:34,625 1 INFO ddfsc odoo.modules.loading: loading 1 modules... 
+2026-10-16 18:55:34,631 1 INFO ddfsc odoo.modules.loading: 1 modules loaded in 0.01s, 0 queries (+0 extra) 
+2026-10-16 18:55:34,652 1 INFO ddfsc odoo.modules.loading: updating modules list 
+2026-10-16 18:55:34,655 1 INFO ddfsc odoo.addons.base.models.ir_module: ALLOW access to module.update_list on [] to user __system__ #1 via n/a 
+2026-10-16 18:55:35,516 1 WARNING ddfsc odoo.modules.module: Missing `author` key in manifest for 'inventory_product_category', defaulting to '' 
+2026-10-16 18:55:35,516 1 WARNING ddfsc odoo.modules.module: Missing `license` key in manifest for 'inventory_product_category', defaulting to LGPL-3 
+2026-10-16 18:55:35,543 1 WARNING ddfsc odoo.modules.module: Missing `author` key in manifest for 'inventory_product_category', defaulting to '' 
+2026-10-16 18:55:35,544 1 WARNING ddfsc odoo.modules.module: Missing `license` key in manifest for 'inventory_product_category', defaulting to LGPL-3 
+2026-10-16 18:55:36,541 1 WARNING ddfsc odoo.modules.module: Missing `license` key in manifest for 'sales_credit_cash', defaulting to LGPL-3 
+2026-10-16 18:55:36,550 1 WARNING ddfsc odoo.modules.module: Missing `license` key in manifest for 'sales_credit_cash', defaulting to LGPL-3 
+2026-10-16 18:55:36,566 1 WARNING ddfsc odoo.modules.module: Missing `license` key in manifest for 'sales_person_target_management', defaulting to LGPL-3 
+2026-10-16 18:55:36,572 1 WARNING ddfsc odoo.modules.module: Missing `license` key in manifest for 'sales_person_target_management', defaulting to LGPL-3 
+2026-10-16 18:55:36,912 1 INFO ddfsc odoo.addons.base.models.ir_module: ALLOW access to module.button_upgrade on ['DDFSC Manufacturing'] to user __system__ #1 via n/a 
+2026-10-16 18:55:36,913 1 INFO ddfsc odoo.addons.base.models.ir_module: ALLOW access to module.update_list on ['DDFSC Manufacturing'] to user __system__ #1 via n/a 
+2026-10-16 18:55:37,262 1 WARNING ddfsc odoo.modules.module: Missing `author` key in manifest for 'inventory_product_category', defaulting to '' 
+2026-10-16 18:55:37,262 1 WARNING ddfsc odoo.modules.module: Missing `license` key in manifest for 'inventory_product_category', defaulting to LGPL-3 
+2026-10-16 18:55:37,891 1 WARNING ddfsc odoo.modules.module: Missing `license` key in manifest for 'sales_credit_cash', defaulting to LGPL-3 
+2026-10-16 18:55:37,948 1 WARNING ddfsc odoo.modules.module: Missing `license` key in manifest for 'sales_person_target_management', defaulting to LGPL-3 
+2026-10-16 18:55:38,185 1 INFO ddfsc odoo.addons.base.models.ir_module: ALLOW access to module.button_install on [] to user __system__ #1 via n/a 
+2026-10-16 18:55:38,210 1 INFO ddfsc odoo.modules.loading: loading 132 modules... 
+2026-10-16 18:55:39,652 1 WARNING ddfsc odoo.registry: Model attribute '_sql_constraints' is no longer supported, please define models.Constraint on the model. 
+2026-10-16 18:55:40,060 1 INFO ddfsc odoo.modules.loading: Loading module ddfsc_manufacturing (93/132) 
+2026-10-16 18:55:40,519 1 INFO ddfsc odoo.registry: module ddfsc_manufacturing: creating or updating database tables 
+2026-10-16 18:55:40,731 1 INFO ddfsc odoo.modules.loading: loading ddfsc_manufacturing/security/ddfsc_groups.xml 
+2026-10-16 18:55:40,823 1 INFO ddfsc odoo.modules.loading: loading ddfsc_manufacturing/security/ir.model.access.csv 
+2026-10-16 18:55:40,853 1 INFO ddfsc odoo.modules.loading: loading ddfsc_manufacturing/security/ddfsc_rules.xml 
+2026-10-16 18:55:40,870 1 INFO ddfsc odoo.modules.loading: loading ddfsc_manufacturing/data/shift_data.xml 
+2026-10-16 18:55:40,878 1 INFO ddfsc odoo.modules.loading: loading ddfsc_manufacturing/data/plant_data.xml 
+2026-10-16 18:55:40,895 1 INFO ddfsc odoo.modules.loading: loading ddfsc_manufacturing/data/recipes_data.xml 
+2026-10-16 18:55:41,128 1 INFO ddfsc odoo.modules.loading: loading ddfsc_manufacturing/data/maintenance_data.xml 
+2026-10-16 18:55:41,265 1 INFO ddfsc odoo.modules.loading: loading ddfsc_manufacturing/data/store_request_data.xml 
+2026-10-16 18:55:41,275 1 INFO ddfsc odoo.modules.loading: loading ddfsc_manufacturing/views/ddfsc_shift_views.xml 
+2026-10-16 18:55:41,296 1 INFO ddfsc odoo.modules.loading: loading ddfsc_manufacturing/views/mrp_production_views.xml 
+2026-10-16 18:55:41,355 1 INFO ddfsc odoo.modules.loading: loading ddfsc_manufacturing/views/stock_lot_views.xml 
+2026-10-16 18:55:41,381 1 INFO ddfsc odoo.modules.loading: loading ddfsc_manufacturing/views/quality_check_views.xml 
+2026-10-16 18:55:41,398 1 INFO ddfsc odoo.modules.loading: loading ddfsc_manufacturing/views/quality_report_views.xml 
+2026-10-16 18:55:41,427 1 INFO ddfsc odoo.modules.loading: loading ddfsc_manufacturing/views/plant_flow_views.xml 
+2026-10-16 18:55:41,465 1 INFO ddfsc odoo.modules.loading: loading ddfsc_manufacturing/views/department_views.xml 
+2026-10-16 18:55:41,638 1 INFO ddfsc odoo.modules.loading: loading ddfsc_manufacturing/views/product_views.xml 
+2026-10-16 18:55:41,880 1 INFO ddfsc odoo.modules.loading: Module ddfsc_manufacturing loaded in 1.82s, 1797 queries (+1797 other) 
+2026-10-16 18:55:42,549 1 WARNING ddfsc odoo.registry: The model account.account.type has no _description 
+2026-10-16 18:55:42,707 1 WARNING ddfsc odoo.registry: The model account.account.type has no _description 
+2026-10-16 18:55:43,066 1 ERROR ddfsc odoo.tests.common: Importing test framework, avoid importing from business modules and when not running in test mode 
+Stack (most recent call last):
+  File "/usr/bin/odoo", line 6, in <module>
+    odoo.cli.main()
+  File "/usr/lib/python3/dist-packages/odoo/cli/command.py", line 133, in main
+    command().run(args)
+  File "/usr/lib/python3/dist-packages/odoo/cli/server.py", line 127, in run
+    main(args)
+  File "/usr/lib/python3/dist-packages/odoo/cli/server.py", line 118, in main
+    rc = server.start(preload=config['db_name'], stop=stop)
+  File "/usr/lib/python3/dist-packages/odoo/service/server.py", line 1677, in start
+    rc = server.run(preload, stop)
+  File "/usr/lib/python3/dist-packages/odoo/service/server.py", line 714, in run
+    rc = preload_registries(preload)
+  File "/usr/lib/python3/dist-packages/odoo/service/server.py", line 1591, in preload_registries
+    registry = Registry.new(dbname, update_module=update_module, install_modules=config['init'], upgrade_modules=config['update'], reinit_modules=config['reinit'])
+  File "/usr/lib/python3/dist-packages/odoo/tools/func.py", line 88, in locked
+    return func(inst, *args, **kwargs)
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 189, in new
+    load_modules(
+  File "/usr/lib/python3/dist-packages/odoo/modules/loading.py", line 464, in load_modules
+    load_module_graph(
+  File "/usr/lib/python3/dist-packages/odoo/modules/loading.py", line 178, in load_module_graph
+    load_openerp_module(package.name)
+  File "/usr/lib/python3/dist-packages/odoo/modules/module.py", line 506, in load_openerp_module
+    __import__(qualname)
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 995, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "/mnt/extra-addons/procurement_store_requisition/__init__.py", line 3, in <module>
+    from . import tests
+  File "<frozen importlib._bootstrap>", line 1415, in _handle_fromlist
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 995, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "/mnt/extra-addons/procurement_store_requisition/tests/__init__.py", line 1, in <module>
+    from . import test_store_requisition
+  File "<frozen importlib._bootstrap>", line 1415, in _handle_fromlist
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 995, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "/mnt/extra-addons/procurement_store_requisition/tests/test_store_requisition.py", line 2, in <module>
+    from odoo.tests.common import TransactionCase, tagged
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1310, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 995, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "/usr/lib/python3/dist-packages/odoo/tests/__init__.py", line 8, in <module>
+    from . import common
+  File "<frozen importlib._bootstrap>", line 1415, in _handle_fromlist
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 995, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "/usr/lib/python3/dist-packages/odoo/tests/common.py", line 83, in <module>
+    _logger.error(
+2026-10-16 18:55:43,286 1 WARNING ddfsc odoo.registry: Model attribute '_sql_constraints' is no longer supported, please define models.Constraint on the model. 
+2026-10-16 18:55:44,355 1 WARNING ddfsc odoo.registry: Model attribute '_sql_constraints' is no longer supported, please define models.Constraint on the model. 
+2026-10-16 18:55:44,474 1 INFO ddfsc odoo.modules.loading: 132 modules loaded in 6.26s, 1797 queries (+1797 extra) 
+2026-10-16 18:55:44,623 1 WARNING ddfsc py.warnings: /usr/lib/python3/dist-packages/odoo/orm/fields.py:493: DeprecationWarning: Since Odoo 18, 'group_operator' is deprecated, use 'aggregator' instead
+  File "/usr/bin/odoo", line 6, in <module>
+    odoo.cli.main()
+  File "/usr/lib/python3/dist-packages/odoo/cli/command.py", line 133, in main
+    command().run(args)
+  File "/usr/lib/python3/dist-packages/odoo/cli/server.py", line 127, in run
+    main(args)
+  File "/usr/lib/python3/dist-packages/odoo/cli/server.py", line 118, in main
+    rc = server.start(preload=config['db_name'], stop=stop)
+  File "/usr/lib/python3/dist-packages/odoo/service/server.py", line 1677, in start
+    rc = server.run(preload, stop)
+  File "/usr/lib/python3/dist-packages/odoo/service/server.py", line 714, in run
+    rc = preload_registries(preload)
+  File "/usr/lib/python3/dist-packages/odoo/service/server.py", line 1591, in preload_registries
+    registry = Registry.new(dbname, update_module=update_module, install_modules=config['init'], upgrade_modules=config['update'], reinit_modules=config['reinit'])
+  File "/usr/lib/python3/dist-packages/odoo/tools/func.py", line 88, in locked
+    return func(inst, *args, **kwargs)
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 189, in new
+    load_modules(
+  File "/usr/lib/python3/dist-packages/odoo/modules/loading.py", line 474, in load_modules
+    registry._setup_models__(cr, [])  # incremental setup
+  File "/usr/lib/python3/dist-packages/odoo/tools/func.py", line 88, in locked
+    return func(inst, *args, **kwargs)
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 509, in _setup_models__
+    model_classes.setup_model_classes(env)
+  File "/usr/lib/python3/dist-packages/odoo/orm/model_classes.py", line 320, in setup_model_classes
+    _setup(model_cls, env)
+  File "/usr/lib/python3/dist-packages/odoo/orm/model_classes.py", line 415, in _setup
+    add_field(model_cls, name, Field(_base_fields__=tuple(fields_)))
+  File "/usr/lib/python3/dist-packages/odoo/orm/model_classes.py", line 617, in add_field
+    field.__set_name__(model_cls, name)
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 402, in __set_name__
+    self._setup_attrs__(owner, name)
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 493, in _setup_attrs__
+    attrs = self._get_attrs(model_class, name)
+ 
+2026-10-16 18:55:44,639 1 WARNING ddfsc odoo.fields: sale.order.state: selection=[('draft', 'Quotation'), ('price_change_approval', 'Discount Approval'), ('operational_approval', 'Manager Approval'), ('finance_approval', 'Finance Approval'), ('approved', 'Approved'), ('sent', 'Quotation Sent'), ('sale', 'Sales Order'), ('done', 'Locked'), ('cancel', 'Cancelled')] overrides existing selection; use selection_add instead 
+2026-10-16 18:55:44,698 1 WARNING ddfsc odoo.fields: Field sale.order.sale_type: unknown parameter 'force_save', if this is an actual parameter you may want to override the method _valid_field_parameter on the relevant model in order to allow it 
+2026-10-16 18:55:44,702 1 WARNING ddfsc odoo.fields: Field account.asset.category.currency_id: unknown parameter 'hide', if this is an actual parameter you may want to override the method _valid_field_parameter on the relevant model in order to allow it 
+2026-10-16 18:55:44,847 1 WARNING ddfsc odoo.fields: sale.order.state: selection=[('draft', 'Quotation'), ('price_change_approval', 'Discount Approval'), ('operational_approval', 'Manager Approval'), ('finance_approval', 'Finance Approval'), ('approved', 'Approved'), ('sent', 'Quotation Sent'), ('sale', 'Sales Order'), ('done', 'Locked'), ('cancel', 'Cancelled')] overrides existing selection; use selection_add instead 
+2026-10-16 18:55:44,920 1 WARNING ddfsc odoo.fields: Field sale.order.sale_type: unknown parameter 'force_save', if this is an actual parameter you may want to override the method _valid_field_parameter on the relevant model in order to allow it 
+2026-10-16 18:55:44,923 1 WARNING ddfsc odoo.fields: Field account.asset.category.currency_id: unknown parameter 'hide', if this is an actual parameter you may want to override the method _valid_field_parameter on the relevant model in order to allow it 
+2026-10-16 18:55:45,243 1 WARNING ddfsc py.warnings: /usr/lib/python3/dist-packages/odoo/orm/fields.py:837: UserWarning: Field sale.order.line.price_subtotal cannot be precomputed as it depends on non-precomputed field sale.order.line.manual_discount_active
+  File "/usr/bin/odoo", line 6, in <module>
+    odoo.cli.main()
+  File "/usr/lib/python3/dist-packages/odoo/cli/command.py", line 133, in main
+    command().run(args)
+  File "/usr/lib/python3/dist-packages/odoo/cli/server.py", line 127, in run
+    main(args)
+  File "/usr/lib/python3/dist-packages/odoo/cli/server.py", line 118, in main
+    rc = server.start(preload=config['db_name'], stop=stop)
+  File "/usr/lib/python3/dist-packages/odoo/service/server.py", line 1677, in start
+    rc = server.run(preload, stop)
+  File "/usr/lib/python3/dist-packages/odoo/service/server.py", line 714, in run
+    rc = preload_registries(preload)
+  File "/usr/lib/python3/dist-packages/odoo/service/server.py", line 1591, in preload_registries
+    registry = Registry.new(dbname, update_module=update_module, install_modules=config['init'], upgrade_modules=config['update'], reinit_modules=config['reinit'])
+  File "/usr/lib/python3/dist-packages/odoo/tools/func.py", line 88, in locked
+    return func(inst, *args, **kwargs)
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 189, in new
+    load_modules(
+  File "/usr/lib/python3/dist-packages/odoo/modules/loading.py", line 528, in load_modules
+    vacuum_cron._trigger(at=datetime.datetime.now() + datetime.timedelta(minutes=1))
+  File "/usr/lib/python3/dist-packages/odoo/addons/base/models/ir_cron.py", line 762, in _trigger
+    return self._trigger_list(at_list)
+  File "/usr/lib/python3/dist-packages/odoo/addons/base/models/ir_cron.py", line 781, in _trigger_list
+    triggers = self.env['ir.cron.trigger'].sudo().create([
+  File "/usr/lib/python3/dist-packages/odoo/orm/decorators.py", line 369, in create
+    return method(self, vals_list)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 4717, in create
+    records = self._create(data_list)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 4940, in _create
+    records.modified(self._fields, create=True)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 6823, in modified
+    todo = [self._modified([self._fields[fname] for fname in fnames], create)]
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 6875, in _modified
+    tree = self.pool.get_trigger_tree(fields, select=select)
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 591, in get_trigger_tree
+    if field in self._field_triggers
+  File "/usr/lib/python3.12/functools.py", line 995, in __get__
+    val = self.func(instance)
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 686, in _field_triggers
+    dependencies = list(field.resolve_depends(self))
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 837, in resolve_depends
+    warnings.warn(f"Field {self} cannot be precomputed as it depends on non-precomputed field {field}", stacklevel=1)
+ 
+2026-10-16 18:55:45,244 1 WARNING ddfsc py.warnings: /usr/lib/python3/dist-packages/odoo/orm/fields.py:837: UserWarning: Field sale.order.line.price_tax cannot be precomputed as it depends on non-precomputed field sale.order.line.manual_discount_active
+  File "/usr/bin/odoo", line 6, in <module>
+    odoo.cli.main()
+  File "/usr/lib/python3/dist-packages/odoo/cli/command.py", line 133, in main
+    command().run(args)
+  File "/usr/lib/python3/dist-packages/odoo/cli/server.py", line 127, in run
+    main(args)
+  File "/usr/lib/python3/dist-packages/odoo/cli/server.py", line 118, in main
+    rc = server.start(preload=config['db_name'], stop=stop)
+  File "/usr/lib/python3/dist-packages/odoo/service/server.py", line 1677, in start
+    rc = server.run(preload, stop)
+  File "/usr/lib/python3/dist-packages/odoo/service/server.py", line 714, in run
+    rc = preload_registries(preload)
+  File "/usr/lib/python3/dist-packages/odoo/service/server.py", line 1591, in preload_registries
+    registry = Registry.new(dbname, update_module=update_module, install_modules=config['init'], upgrade_modules=config['update'], reinit_modules=config['reinit'])
+  File "/usr/lib/python3/dist-packages/odoo/tools/func.py", line 88, in locked
+    return func(inst, *args, **kwargs)
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 189, in new
+    load_modules(
+  File "/usr/lib/python3/dist-packages/odoo/modules/loading.py", line 528, in load_modules
+    vacuum_cron._trigger(at=datetime.datetime.now() + datetime.timedelta(minutes=1))
+  File "/usr/lib/python3/dist-packages/odoo/addons/base/models/ir_cron.py", line 762, in _trigger
+    return self._trigger_list(at_list)
+  File "/usr/lib/python3/dist-packages/odoo/addons/base/models/ir_cron.py", line 781, in _trigger_list
+    triggers = self.env['ir.cron.trigger'].sudo().create([
+  File "/usr/lib/python3/dist-packages/odoo/orm/decorators.py", line 369, in create
+    return method(self, vals_list)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 4717, in create
+    records = self._create(data_list)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 4940, in _create
+    records.modified(self._fields, create=True)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 6823, in modified
+    todo = [self._modified([self._fields[fname] for fname in fnames], create)]
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 6875, in _modified
+    tree = self.pool.get_trigger_tree(fields, select=select)
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 591, in get_trigger_tree
+    if field in self._field_triggers
+  File "/usr/lib/python3.12/functools.py", line 995, in __get__
+    val = self.func(instance)
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 686, in _field_triggers
+    dependencies = list(field.resolve_depends(self))
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 837, in resolve_depends
+    warnings.warn(f"Field {self} cannot be precomputed as it depends on non-precomputed field {field}", stacklevel=1)
+ 
+2026-10-16 18:55:45,244 1 WARNING ddfsc py.warnings: /usr/lib/python3/dist-packages/odoo/orm/fields.py:837: UserWarning: Field sale.order.line.price_total cannot be precomputed as it depends on non-precomputed field sale.order.line.manual_discount_active
+  File "/usr/bin/odoo", line 6, in <module>
+    odoo.cli.main()
+  File "/usr/lib/python3/dist-packages/odoo/cli/command.py", line 133, in main
+    command().run(args)
+  File "/usr/lib/python3/dist-packages/odoo/cli/server.py", line 127, in run
+    main(args)
+  File "/usr/lib/python3/dist-packages/odoo/cli/server.py", line 118, in main
+    rc = server.start(preload=config['db_name'], stop=stop)
+  File "/usr/lib/python3/dist-packages/odoo/service/server.py", line 1677, in start
+    rc = server.run(preload, stop)
+  File "/usr/lib/python3/dist-packages/odoo/service/server.py", line 714, in run
+    rc = preload_registries(preload)
+  File "/usr/lib/python3/dist-packages/odoo/service/server.py", line 1591, in preload_registries
+    registry = Registry.new(dbname, update_module=update_module, install_modules=config['init'], upgrade_modules=config['update'], reinit_modules=config['reinit'])
+  File "/usr/lib/python3/dist-packages/odoo/tools/func.py", line 88, in locked
+    return func(inst, *args, **kwargs)
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 189, in new
+    load_modules(
+  File "/usr/lib/python3/dist-packages/odoo/modules/loading.py", line 528, in load_modules
+    vacuum_cron._trigger(at=datetime.datetime.now() + datetime.timedelta(minutes=1))
+  File "/usr/lib/python3/dist-packages/odoo/addons/base/models/ir_cron.py", line 762, in _trigger
+    return self._trigger_list(at_list)
+  File "/usr/lib/python3/dist-packages/odoo/addons/base/models/ir_cron.py", line 781, in _trigger_list
+    triggers = self.env['ir.cron.trigger'].sudo().create([
+  File "/usr/lib/python3/dist-packages/odoo/orm/decorators.py", line 369, in create
+    return method(self, vals_list)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 4717, in create
+    records = self._create(data_list)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 4940, in _create
+    records.modified(self._fields, create=True)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 6823, in modified
+    todo = [self._modified([self._fields[fname] for fname in fnames], create)]
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 6875, in _modified
+    tree = self.pool.get_trigger_tree(fields, select=select)
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 591, in get_trigger_tree
+    if field in self._field_triggers
+  File "/usr/lib/python3.12/functools.py", line 995, in __get__
+    val = self.func(instance)
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 686, in _field_triggers
+    dependencies = list(field.resolve_depends(self))
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 837, in resolve_depends
+    warnings.warn(f"Field {self} cannot be precomputed as it depends on non-precomputed field {field}", stacklevel=1)
+ 
+2026-10-16 18:55:45,244 1 WARNING ddfsc py.warnings: /usr/lib/python3/dist-packages/odoo/orm/fields.py:837: UserWarning: Field sale.order.line.price_reduce_taxexcl cannot be precomputed as it depends on non-precomputed field sale.order.line.price_subtotal
+  File "/usr/bin/odoo", line 6, in <module>
+    odoo.cli.main()
+  File "/usr/lib/python3/dist-packages/odoo/cli/command.py", line 133, in main
+    command().run(args)
+  File "/usr/lib/python3/dist-packages/odoo/cli/server.py", line 127, in run
+    main(args)
+  File "/usr/lib/python3/dist-packages/odoo/cli/server.py", line 118, in main
+    rc = server.start(preload=config['db_name'], stop=stop)
+  File "/usr/lib/python3/dist-packages/odoo/service/server.py", line 1677, in start
+    rc = server.run(preload, stop)
+  File "/usr/lib/python3/dist-packages/odoo/service/server.py", line 714, in run
+    rc = preload_registries(preload)
+  File "/usr/lib/python3/dist-packages/odoo/service/server.py", line 1591, in preload_registries
+    registry = Registry.new(dbname, update_module=update_module, install_modules=config['init'], upgrade_modules=config['update'], reinit_modules=config['reinit'])
+  File "/usr/lib/python3/dist-packages/odoo/tools/func.py", line 88, in locked
+    return func(inst, *args, **kwargs)
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 189, in new
+    load_modules(
+  File "/usr/lib/python3/dist-packages/odoo/modules/loading.py", line 528, in load_modules
+    vacuum_cron._trigger(at=datetime.datetime.now() + datetime.timedelta(minutes=1))
+  File "/usr/lib/python3/dist-packages/odoo/addons/base/models/ir_cron.py", line 762, in _trigger
+    return self._trigger_list(at_list)
+  File "/usr/lib/python3/dist-packages/odoo/addons/base/models/ir_cron.py", line 781, in _trigger_list
+    triggers = self.env['ir.cron.trigger'].sudo().create([
+  File "/usr/lib/python3/dist-packages/odoo/orm/decorators.py", line 369, in create
+    return method(self, vals_list)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 4717, in create
+    records = self._create(data_list)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 4940, in _create
+    records.modified(self._fields, create=True)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 6823, in modified
+    todo = [self._modified([self._fields[fname] for fname in fnames], create)]
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 6875, in _modified
+    tree = self.pool.get_trigger_tree(fields, select=select)
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 591, in get_trigger_tree
+    if field in self._field_triggers
+  File "/usr/lib/python3.12/functools.py", line 995, in __get__
+    val = self.func(instance)
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 686, in _field_triggers
+    dependencies = list(field.resolve_depends(self))
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 837, in resolve_depends
+    warnings.warn(f"Field {self} cannot be precomputed as it depends on non-precomputed field {field}", stacklevel=1)
+ 
+2026-10-16 18:55:45,244 1 WARNING ddfsc py.warnings: /usr/lib/python3/dist-packages/odoo/orm/fields.py:837: UserWarning: Field sale.order.line.price_reduce_taxinc cannot be precomputed as it depends on non-precomputed field sale.order.line.price_total
+  File "/usr/bin/odoo", line 6, in <module>
+    odoo.cli.main()
+  File "/usr/lib/python3/dist-packages/odoo/cli/command.py", line 133, in main
+    command().run(args)
+  File "/usr/lib/python3/dist-packages/odoo/cli/server.py", line 127, in run
+    main(args)
+  File "/usr/lib/python3/dist-packages/odoo/cli/server.py", line 118, in main
+    rc = server.start(preload=config['db_name'], stop=stop)
+  File "/usr/lib/python3/dist-packages/odoo/service/server.py", line 1677, in start
+    rc = server.run(preload, stop)
+  File "/usr/lib/python3/dist-packages/odoo/service/server.py", line 714, in run
+    rc = preload_registries(preload)
+  File "/usr/lib/python3/dist-packages/odoo/service/server.py", line 1591, in preload_registries
+    registry = Registry.new(dbname, update_module=update_module, install_modules=config['init'], upgrade_modules=config['update'], reinit_modules=config['reinit'])
+  File "/usr/lib/python3/dist-packages/odoo/tools/func.py", line 88, in locked
+    return func(inst, *args, **kwargs)
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 189, in new
+    load_modules(
+  File "/usr/lib/python3/dist-packages/odoo/modules/loading.py", line 528, in load_modules
+    vacuum_cron._trigger(at=datetime.datetime.now() + datetime.timedelta(minutes=1))
+  File "/usr/lib/python3/dist-packages/odoo/addons/base/models/ir_cron.py", line 762, in _trigger
+    return self._trigger_list(at_list)
+  File "/usr/lib/python3/dist-packages/odoo/addons/base/models/ir_cron.py", line 781, in _trigger_list
+    triggers = self.env['ir.cron.trigger'].sudo().create([
+  File "/usr/lib/python3/dist-packages/odoo/orm/decorators.py", line 369, in create
+    return method(self, vals_list)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 4717, in create
+    records = self._create(data_list)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 4940, in _create
+    records.modified(self._fields, create=True)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 6823, in modified
+    todo = [self._modified([self._fields[fname] for fname in fnames], create)]
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 6875, in _modified
+    tree = self.pool.get_trigger_tree(fields, select=select)
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 591, in get_trigger_tree
+    if field in self._field_triggers
+  File "/usr/lib/python3.12/functools.py", line 995, in __get__
+    val = self.func(instance)
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 686, in _field_triggers
+    dependencies = list(field.resolve_depends(self))
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 837, in resolve_depends
+    warnings.warn(f"Field {self} cannot be precomputed as it depends on non-precomputed field {field}", stacklevel=1)
+ 
+2026-10-16 18:55:45,252 1 WARNING ddfsc py.warnings: /usr/lib/python3/dist-packages/odoo/orm/fields.py:832: UserWarning: Field daily.sales.total_quantity should be declared with recursive=True
+  File "/usr/bin/odoo", line 6, in <module>
+    odoo.cli.main()
+  File "/usr/lib/python3/dist-packages/odoo/cli/command.py", line 133, in main
+    command().run(args)
+  File "/usr/lib/python3/dist-packages/odoo/cli/server.py", line 127, in run
+    main(args)
+  File "/usr/lib/python3/dist-packages/odoo/cli/server.py", line 118, in main
+    rc = server.start(preload=config['db_name'], stop=stop)
+  File "/usr/lib/python3/dist-packages/odoo/service/server.py", line 1677, in start
+    rc = server.run(preload, stop)
+  File "/usr/lib/python3/dist-packages/odoo/service/server.py", line 714, in run
+    rc = preload_registries(preload)
+  File "/usr/lib/python3/dist-packages/odoo/service/server.py", line 1591, in preload_registries
+    registry = Registry.new(dbname, update_module=update_module, install_modules=config['init'], upgrade_modules=config['update'], reinit_modules=config['reinit'])
+  File "/usr/lib/python3/dist-packages/odoo/tools/func.py", line 88, in locked
+    return func(inst, *args, **kwargs)
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 189, in new
+    load_modules(
+  File "/usr/lib/python3/dist-packages/odoo/modules/loading.py", line 528, in load_modules
+    vacuum_cron._trigger(at=datetime.datetime.now() + datetime.timedelta(minutes=1))
+  File "/usr/lib/python3/dist-packages/odoo/addons/base/models/ir_cron.py", line 762, in _trigger
+    return self._trigger_list(at_list)
+  File "/usr/lib/python3/dist-packages/odoo/addons/base/models/ir_cron.py", line 781, in _trigger_list
+    triggers = self.env['ir.cron.trigger'].sudo().create([
+  File "/usr/lib/python3/dist-packages/odoo/orm/decorators.py", line 369, in create
+    return method(self, vals_list)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 4717, in create
+    records = self._create(data_list)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 4940, in _create
+    records.modified(self._fields, create=True)
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 6823, in modified
+    todo = [self._modified([self._fields[fname] for fname in fnames], create)]
+  File "/usr/lib/python3/dist-packages/odoo/orm/models.py", line 6875, in _modified
+    tree = self.pool.get_trigger_tree(fields, select=select)
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 591, in get_trigger_tree
+    if field in self._field_triggers
+  File "/usr/lib/python3.12/functools.py", line 995, in __get__
+    val = self.func(instance)
+  File "/usr/lib/python3/dist-packages/odoo/orm/registry.py", line 686, in _field_triggers
+    dependencies = list(field.resolve_depends(self))
+  File "/usr/lib/python3/dist-packages/odoo/orm/fields.py", line 832, in resolve_depends
+    warnings.warn(f"Field {self} should be declared with recursive=True", stacklevel=1)
+ 
+2026-10-16 18:55:45,257 1 INFO ddfsc odoo.registry: verifying fields for every extended model 
+2026-10-16 18:55:45,303 1 WARNING ddfsc odoo.addons.base.models.ir_model: Two fields (yohannes_credit_limit, credit_limit) of res.users() have the same label: Credit Limit. [Modules: None and None] 
+2026-10-16 18:55:45,303 1 WARNING ddfsc odoo.addons.base.models.ir_model: Two fields (is_active_product, active) of product.template() have the same label: Active. [Modules: procurement_base and product] 
+2026-10-16 18:55:45,303 1 WARNING ddfsc odoo.addons.base.models.ir_model: Two fields (product_type, type) of product.template() have the same label: Product Type. [Modules: inventory and product] 
+2026-10-16 18:55:45,303 1 WARNING ddfsc odoo.addons.base.models.ir_model: Two fields (is_active_product, active) of product.product() have the same label: Active. [Modules: procurement_base and product] 
+2026-10-16 18:55:45,303 1 WARNING ddfsc odoo.addons.base.models.ir_model: Two fields (product_type, type) of product.product() have the same label: Product Type. [Modules: None and None] 
+2026-10-16 18:55:45,303 1 WARNING ddfsc odoo.addons.base.models.ir_model: Two fields (picking_display_state, state) of stock.picking() have the same label: Status. [Modules: sale_approval_workflow and stock] 
+2026-10-16 18:55:45,921 1 INFO ddfsc odoo.modules.loading: Modules loaded. 
+2026-10-16 18:55:45,940 1 INFO ddfsc odoo.registry: Registry changed, signaling through the database 
+2026-10-16 18:55:45,942 1 INFO ddfsc odoo.registry: Registry loaded in 11.359s 
+2026-10-16 18:55:45,943 1 INFO ddfsc odoo.service.server: Initiating shutdown 
+2026-10-16 18:55:45,943 1 INFO ddfsc odoo.service.server: Hit CTRL-C again or send a second signal to force the shutdown. 
+2026-10-16 18:55:45,944 1 INFO ddfsc odoo.sql_db: ConnectionPool(read/write;used=0/count=0/max=64): Closed 1 connections  
