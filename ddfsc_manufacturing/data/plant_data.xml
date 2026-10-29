@@ -16,6 +16,11 @@
         <field name="location_id" ref="stock.stock_location_stock"/>
         <field name="usage">internal</field>
     </record>
+    <record id="loc_flour_finished" model="stock.location">
+        <field name="name">Flour Temp Finished</field>
+        <field name="location_id" ref="stock.stock_location_stock"/>
+        <field name="usage">internal</field>
+    </record>
     <record id="loc_biscuit" model="stock.location">
         <field name="name">Biscuit Floor</field>
         <field name="location_id" ref="stock.stock_location_stock"/>

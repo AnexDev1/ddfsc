@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="rule_device_company" model="ir.rule">
+        <field name="name">Biometric devices by company</field>
+        <field name="model_id" ref="model_ddfsc_biometric_device"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_punch_company" model="ir.rule">
+        <field name="name">Raw punches by company</field>
+        <field name="model_id" ref="model_ddfsc_biometric_punch"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_sync_log_company" model="ir.rule">
+        <field name="name">Biometric sync logs by company</field>
+        <field name="model_id" ref="model_ddfsc_biometric_sync_log"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_shift_assignment_company" model="ir.rule">
+        <field name="name">Schedule assignments by company</field>
+        <field name="model_id" ref="model_ddfsc_shift_assignment"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_attendance_correction_company" model="ir.rule">
+        <field name="name">Attendance corrections by company</field>
+        <field name="model_id" ref="model_ddfsc_attendance_correction"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+    </record>
+</odoo>

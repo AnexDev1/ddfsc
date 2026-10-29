@@ -158,6 +158,8 @@ class MrpProduction(models.Model):
         string='Plant Transfers',
     )
     ddfsc_picking_count = fields.Integer(compute='_compute_ddfsc_document_counts')
+    ddfsc_quality_lot_ids = fields.Many2many('stock.lot', compute='_compute_ddfsc_quality_lots')
+    ddfsc_quality_lot_count = fields.Integer(compute='_compute_ddfsc_quality_lots')
 
     @api.depends('ddfsc_picking_ids')
     def _compute_ddfsc_document_counts(self):
@@ -165,6 +167,23 @@ class MrpProduction(models.Model):
             production.ddfsc_picking_count = len(production.ddfsc_picking_ids.filtered(
                 lambda picking: picking.state != 'cancel'
             ))
+
+    @api.depends('lot_producing_ids', 'move_finished_ids.move_line_ids.lot_id')
+    def _compute_ddfsc_quality_lots(self):
+        for production in self:
+            lots = production.lot_producing_ids | production.move_finished_ids.move_line_ids.lot_id
+            lots = lots.filtered(lambda lot: lot.product_id == production.product_id)
+            production.ddfsc_quality_lot_ids = lots
+            production.ddfsc_quality_lot_count = len(lots)
+
+    def action_view_ddfsc_quality_lots(self):
+        self.ensure_one()
+        lots = self.ddfsc_quality_lot_ids
+        action = self.env.ref('ddfsc_manufacturing.action_ddfsc_qc_lots').read()[0]
+        action['domain'] = [('id', 'in', lots.ids)]
+        if len(lots) == 1:
+            action.update(view_mode='form', views=[(False, 'form')], res_id=lots.id)
+        return action
 
     def action_view_ddfsc_pickings(self):
         self.ensure_one()
@@ -205,7 +224,7 @@ class MrpProduction(models.Model):
     def _ddfsc_locations_for_code(self, code):
         locations = {
             # (component / floor location, temp finished location)
-            'MILL': ('loc_mill', 'loc_flour'),
+            'MILL': ('loc_mill', 'loc_flour_finished'),
             'PASTA': ('loc_pasta', 'loc_pasta_finished'),
             'MAC': ('loc_macaroni', 'loc_macaroni_finished'),
             'BREAD': ('loc_bread', 'loc_bread_finished'),

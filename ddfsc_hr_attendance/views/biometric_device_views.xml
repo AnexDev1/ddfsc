@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_biometric_device_list" model="ir.ui.view">
+        <field name="name">ddfsc.biometric.device.list</field>
+        <field name="model">ddfsc.biometric.device</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="location"/>
+                <field name="device_type"/>
+                <field name="ip_address" optional="show"/>
+                <field name="last_sync_at" optional="show"/>
+                <field name="last_sync_status" widget="badge" decoration-success="last_sync_status == 'success'" decoration-danger="last_sync_status == 'failed'" optional="show"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_biometric_device_form" model="ir.ui.view">
+        <field name="name">ddfsc.biometric.device.form</field>
+        <field name="model">ddfsc.biometric.device</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_test_connection" string="Test Connection" type="object" class="btn-primary" invisible="device_type != 'zk'"/>
+                    <button name="action_download_punches" string="Download Punches" type="object" invisible="device_type != 'zk'"/>
+                </header>
+                <sheet>
+                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
+                    <div class="oe_title"><label for="name"/><h1><field name="name"/></h1></div>
+                    <group>
+                        <group>
+                            <field name="code"/>
+                            <field name="location"/>
+                            <field name="device_type"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                        <group>
+                            <field name="ip_address" invisible="device_type != 'zk'"/>
+                            <field name="port" invisible="device_type != 'zk'"/>
+                            <field name="password" password="True" invisible="device_type != 'zk'"/>
+                            <field name="protocol" invisible="device_type != 'zk'"/>
+                            <field name="use_device_punch_type" invisible="device_type != 'zk'"/>
+                            <field name="timezone"/>
+                            <field name="last_sync_at"/>
+                            <field name="last_sync_status" widget="badge"/>
+                            <field name="active" invisible="1"/>
+                        </group>
+                    </group>
+                    <group string="Automatic Download" invisible="device_type != 'zk'">
+                        <group>
+                            <field name="auto_sync"/>
+                            <field name="sync_interval_minutes" invisible="not auto_sync"/>
+                            <field name="next_sync_at" invisible="not auto_sync"/>
+                        </group>
+                        <group>
+                            <field name="last_sync_error" readonly="1" invisible="not last_sync_error"/>
+                        </group>
+                    </group>
+                    <group string="Notes"><field name="notes" nolabel="1"/></group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="action_biometric_devices" model="ir.actions.act_window">
+        <field name="name">Attendance Devices</field>
+        <field name="res_model">ddfsc.biometric.device</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

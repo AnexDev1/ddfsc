@@ -1,0 +1,3 @@
+device_user_id,timestamp,punch_type
+EMP-001,2026-10-28 08:00:00,in
+EMP-001,2026-10-28 17:00:00,out

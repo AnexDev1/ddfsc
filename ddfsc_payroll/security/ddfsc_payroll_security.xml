@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="component_type_company_rule" model="ir.rule">
+        <field name="name">Payroll component types: company</field>
+        <field name="model_id" ref="model_ddfsc_payroll_component_type"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="employee_component_company_rule" model="ir.rule">
+        <field name="name">Employee payroll components: company</field>
+        <field name="model_id" ref="model_ddfsc_employee_payroll_component"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+    </record>
+</odoo>

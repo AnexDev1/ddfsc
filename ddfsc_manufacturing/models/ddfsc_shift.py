@@ -130,7 +130,6 @@ class DdfscShift(models.Model):
         quintal = 'ddfsc_manufacturing.uom_quintal'
         kg = 'uom.product_uom_kgm'
         unit = 'uom.product_uom_unit'
-        self._ddfsc_disable_lot_tracking()
         self._ensure_product('product_maize_flour', 'Maize Flour', quintal)
         self._ensure_product('product_abc', 'Ammonium Bicarbonate', kg)
         self._ensure_product('product_sbc', 'Sodium Bicarbonate', kg)
@@ -188,7 +187,13 @@ class DdfscShift(models.Model):
             'usage': 'internal',
         })
         flour_store = self.env.ref('ddfsc_manufacturing.loc_flour')
-        flour_store.ddfsc_flour_hold = True
+        flour_store.ddfsc_flour_hold = False
+        flour_finished = self._ensure_record('loc_flour_finished', 'stock.location', {
+            'name': 'Flour Temp Finished',
+            'location_id': parent.id,
+            'usage': 'internal',
+        })
+        flour_finished.ddfsc_flour_hold = True
         for xmlid, name in (
             ('loc_flour_pasta', 'Pasta Flour Silo'),
             ('loc_flour_macaroni', 'Macaroni Flour Silo'),
@@ -373,16 +378,120 @@ class DdfscShift(models.Model):
         self._line_request('BISC-OR', 'Biscuit Line Orland', 60)
         self._line_request('MILL', 'Flour Mill', 0)
         self._sync_operations()
+        self._sync_quality_control()
 
+    @api.model
+    def _sync_quality_control(self):
+        """Install editable demo QC plans and require lots at release checkpoints."""
+        groups = {
+            'incoming_wheat': ['product_wheat'],
+            'flour_release': ['product_flour_g1', 'product_flour_g2', 'product_flour_scp', 'product_flour_lcp'],
+            'finished_goods': ['product_pasta_long', 'product_pasta_short', 'product_bread_market',
+                               'product_bread_university', 'product_zebib', 'product_defense'],
+        }
+        products = {}
+        for checkpoint, xmlids in groups.items():
+            variants = self.env['product.product']
+            for xmlid in xmlids:
+                template = self.env.ref('ddfsc_manufacturing.%s' % xmlid, raise_if_not_found=False)
+                if template:
+                    variants |= template.product_variant_id
+                    if template.tracking != 'lot':
+                        template.write({'tracking': 'lot'})
+            products[checkpoint] = variants
+        definitions = {
+            'incoming_wheat': ('Incoming Wheat - DEMO limits', [('moisture', False, 0, True, 13.5, '%'), ('impurity', False, 0, True, 2.0, '%'), ('hlw', True, 76.0, False, 0, 'kg/hl'), ('gluten', True, 24.0, False, 0, '%')]),
+            'flour_release': ('Produced Flour - DEMO limits', [('moisture', False, 0, True, 14.0, '%'), ('gluten', True, 24.0, False, 0, '%')]),
+            'finished_goods': ('Finished Products - DEMO limits', [('organoleptic', True, 1.0, True, 1.0, 'Enter 1 when appearance, smell and taste pass'), ('weight', True, 0.98, True, 1.02, 'Actual / labelled weight ratio')]),
+        }
+        for sequence, (checkpoint, (name, lines)) in enumerate(definitions.items(), 1):
+            plan = self.env['ddfsc.quality.plan'].search([('checkpoint', '=', checkpoint)], limit=1)
+            vals = {'name': name, 'checkpoint': checkpoint, 'sequence': sequence * 10,
+                    'product_ids': [Command.set(products[checkpoint].ids)], 'demo_specification': True}
+            if plan:
+                plan.write(vals)
+            else:
+                plan = self.env['ddfsc.quality.plan'].create(vals)
+            existing = {line.check_type: line for line in plan.line_ids}
+            for index, (check_type, use_min, minimum, use_max, maximum, note) in enumerate(lines, 1):
+                line_vals = {'sequence': index * 10, 'check_type': check_type,
+                    'apply_min': use_min, 'standard_min': minimum, 'apply_max': use_max,
+                    'standard_max': maximum, 'note': note}
+                if check_type in existing:
+                    existing[check_type].write(line_vals)
+                else:
+                    plan.line_ids = [Command.create(line_vals)]
+            # Prepared checks keep their measurements, while specifications follow the plan.
+            for check in self.env['ddfsc.quality.check'].search([
+                ('plan_line_id.plan_id', '=', plan.id),
+            ]):
+                line = check.plan_line_id
+                check.write({
+                    'check_type': line.check_type,
+                    'apply_min': line.apply_min,
+                    'standard_min': line.standard_min,
+                    'apply_max': line.apply_max,
+                    'standard_max': line.standard_max,
+                    'note': line.note,
+                })
+        self._migrate_untracked_quality_stock()
+        quality_products = self.env['ddfsc.quality.plan'].search([]).mapped('product_ids')
+        lots_without_tests = self.env['stock.lot'].search([
+            ('product_id', 'in', quality_products.ids), ('quality_check_ids', '=', False),
+            ('name', 'not like', 'LEGACY-OPENING-'),
+        ])
+        lots_without_tests.action_prepare_quality_checks()
+
+    @api.model
+    def _migrate_untracked_quality_stock(self):
+        """Keep stock that predates mandatory tracking usable and auditable."""
+        products = self.env['ddfsc.quality.plan'].search([]).mapped('product_ids')
+        quants = self.env['stock.quant'].search([
+            ('product_id', 'in', products.ids), ('location_id.usage', '=', 'internal'),
+            ('quantity', '!=', 0), ('lot_id', '=', False),
+        ])
+        for product in quants.mapped('product_id'):
+            product_quants = quants.filtered(lambda quant: quant.product_id == product)
+            company = product_quants.company_id[:1] or self.env.company
+            lot_name = 'LEGACY-OPENING-%s' % product.id
+            lot = self.env['stock.lot'].search([
+                ('name', '=', lot_name), ('product_id', '=', product.id),
+                ('company_id', '=', company.id),
+            ], limit=1)
+            if not lot:
+                lot = self.env['stock.lot'].create({
+                    'name': lot_name, 'product_id': product.id, 'company_id': company.id,
+                    'ddfsc_quality_state': 'released',
+                    'quality_release_note': 'Existing balance migrated when mandatory QC tracking was enabled.',
+                    'quality_decision_by_id': self.env.user.id,
+                    'quality_decision_date': fields.Datetime.now(),
+                })
+            product_quants.write({'lot_id': lot.id})
+
+    @api.model
     def _sync_operations(self):
         """Enable multi-location, keep request picking types on the Inventory dashboard."""
         internal_users = self.env.ref('base.group_user')
         multi_locations = self.env.ref('stock.group_stock_multi_locations')
         if multi_locations not in internal_users.implied_ids:
             internal_users.write({'implied_ids': [Command.link(multi_locations.id)]})
+        self._sync_warehouse_defaults()
         self._ensure_request_picking_types()
         self._retire_plant_operation_types()
         self._retire_manufacturing_transfer_menus()
+
+    def _sync_warehouse_defaults(self):
+        """Keep standard receipts and deliveries aligned with the plant stores."""
+        store = self.env.ref('ddfsc_manufacturing.loc_wheat_dock')
+        finished_goods = self.env.ref('ddfsc_manufacturing.loc_finished')
+        warehouses = self.env['stock.warehouse'].search([
+            ('company_id', '=', self.env.company.id),
+        ])
+        for warehouse in warehouses:
+            if warehouse.in_type_id:
+                warehouse.in_type_id.default_location_dest_id = store
+            if warehouse.out_type_id:
+                warehouse.out_type_id.default_location_src_id = finished_goods
 
     def _ensure_request_picking_types(self):
         """Store / FG request pickings need their own operation types to show on Overview."""
@@ -395,11 +504,13 @@ class DdfscShift(models.Model):
             'store_requisition': ('loc_store', 'loc_mill'),
             'fg_receiving': ('loc_flour', 'loc_finished'),
             'byproduct_return': ('loc_byproduct', 'loc_store'),
+            'qc_release': ('loc_wheat_dock', 'loc_store'),
         }
         for xmlid, name, prefix, doc_type, sequence in (
             ('picking_type_store_requisition', 'Store Transfer Request', 'MTR', 'store_requisition', 35),
             ('picking_type_fg_receiving', 'FG Transfer Request', 'FGR', 'fg_receiving', 36),
             ('picking_type_byproduct_return', 'By-product Return', 'BPR', 'byproduct_return', 37),
+            ('picking_type_qc_release', 'QC Release to General Store', 'QCR', 'qc_release', 38),
         ):
             picking_type = self.env.ref('ddfsc_manufacturing.%s' % xmlid, raise_if_not_found=False)
             vals = {

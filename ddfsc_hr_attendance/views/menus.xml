@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_biometric" name="Biometric Integration" parent="hr_attendance.menu_hr_attendance_root" sequence="30" groups="hr_attendance.group_hr_attendance_user"/>
+    <menuitem id="menu_raw_punches" name="Raw Punches &amp; Exceptions" parent="menu_biometric" action="action_biometric_punches" sequence="10"/>
+    <menuitem id="menu_import_punches" name="Import Device Punches" parent="menu_biometric" action="action_attendance_import_wizard" sequence="20" groups="hr_attendance.group_hr_attendance_manager"/>
+    <menuitem id="menu_sync_history" name="Synchronization History" parent="menu_biometric" action="action_biometric_sync_logs" sequence="30"/>
+    <menuitem id="menu_attendance_corrections" name="Correction Requests" parent="hr_attendance.menu_hr_attendance_root" action="action_attendance_corrections" sequence="40" groups="hr_attendance.group_hr_attendance_user"/>
+    <menuitem id="menu_devices" name="Attendance Devices" parent="hr_attendance.menu_hr_attendance_configuration" action="action_biometric_devices" sequence="20" groups="hr_attendance.group_hr_attendance_manager"/>
+    <menuitem id="menu_work_schedules" name="Work Schedules" parent="hr_attendance.menu_hr_attendance_configuration" action="resource.action_resource_calendar_form" sequence="30" groups="hr_attendance.group_hr_attendance_manager"/>
+    <menuitem id="menu_shift_assignments" name="Schedule Assignments" parent="hr_attendance.menu_hr_attendance_configuration" action="action_shift_assignments" sequence="40" groups="hr_attendance.group_hr_attendance_manager"/>
+</odoo>

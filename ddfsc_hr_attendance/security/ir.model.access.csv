@@ -1,0 +1,12 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_device_officer,device officer,model_ddfsc_biometric_device,hr_attendance.group_hr_attendance_user,1,0,0,0
+access_device_manager,device manager,model_ddfsc_biometric_device,hr_attendance.group_hr_attendance_manager,1,1,1,0
+access_punch_officer,punch officer,model_ddfsc_biometric_punch,hr_attendance.group_hr_attendance_user,1,1,1,0
+access_punch_manager,punch manager,model_ddfsc_biometric_punch,hr_attendance.group_hr_attendance_manager,1,1,1,0
+access_import_wizard,import wizard,model_ddfsc_attendance_import_wizard,hr_attendance.group_hr_attendance_manager,1,1,1,1
+access_sync_log_officer,sync log officer,model_ddfsc_biometric_sync_log,hr_attendance.group_hr_attendance_user,1,0,0,0
+access_sync_log_manager,sync log manager,model_ddfsc_biometric_sync_log,hr_attendance.group_hr_attendance_manager,1,0,1,0
+access_shift_assignment_officer,shift assignment officer,model_ddfsc_shift_assignment,hr_attendance.group_hr_attendance_user,1,0,0,0
+access_shift_assignment_manager,shift assignment manager,model_ddfsc_shift_assignment,hr_attendance.group_hr_attendance_manager,1,1,1,1
+access_attendance_correction_officer,attendance correction officer,model_ddfsc_attendance_correction,hr_attendance.group_hr_attendance_user,1,1,1,0
+access_attendance_correction_manager,attendance correction manager,model_ddfsc_attendance_correction,hr_attendance.group_hr_attendance_manager,1,1,1,0

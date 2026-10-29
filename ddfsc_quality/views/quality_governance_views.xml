@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="quality_plan_form_governance" model="ir.ui.view">
+        <field name="name">ddfsc.quality.plan.form.governance</field>
+        <field name="model">ddfsc.quality.plan</field>
+        <field name="inherit_id" ref="ddfsc_manufacturing.ddfsc_quality_plan_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form/sheet" position="before">
+                <header>
+                    <button name="action_approve" type="object" string="Approve Plan" class="btn-primary"
+                            invisible="approval_state != 'draft'" groups="ddfsc_quality.group_ddfsc_quality_manager"/>
+                    <button name="action_new_version" type="object" string="Create New Version"
+                            invisible="approval_state != 'approved'" groups="ddfsc_quality.group_ddfsc_quality_manager"/>
+                    <button name="action_retire" type="object" string="Retire"
+                            invisible="approval_state != 'approved'" groups="ddfsc_quality.group_ddfsc_quality_manager"/>
+                    <field name="approval_state" widget="statusbar" statusbar_visible="draft,approved,retired"/>
+                </header>
+            </xpath>
+            <xpath expr="//form/sheet" position="inside">
+                <div class="alert alert-danger" role="alert" invisible="not demo_specification">
+                    <strong>Demonstration limits:</strong>
+                    this plan cannot be approved for production until the factory Quality Manager
+                    confirms every test, unit, minimum, and maximum and clears Demo Specification.
+                </div>
+            </xpath>
+            <xpath expr="//field[@name='checkpoint']" position="after">
+                <field name="version" readonly="approval_state == 'approved'"/>
+                <field name="effective_from" readonly="approval_state == 'approved'"/>
+                <field name="effective_to" readonly="approval_state == 'approved'"/>
+                <field name="approved_by_id" invisible="not approved_by_id"/>
+                <field name="approved_date" invisible="not approved_date"/>
+            </xpath>
+            <xpath expr="//field[@name='name']" position="attributes">
+                <attribute name="readonly">approval_state == 'approved'</attribute>
+            </xpath>
+            <xpath expr="//field[@name='checkpoint']" position="attributes">
+                <attribute name="readonly">approval_state == 'approved'</attribute>
+            </xpath>
+            <xpath expr="//field[@name='product_ids']" position="attributes">
+                <attribute name="readonly">approval_state == 'approved'</attribute>
+            </xpath>
+            <xpath expr="//field[@name='demo_specification']" position="attributes">
+                <attribute name="readonly">approval_state == 'approved'</attribute>
+            </xpath>
+            <xpath expr="//field[@name='line_ids']" position="attributes">
+                <attribute name="readonly">approval_state == 'approved'</attribute>
+            </xpath>
+            <xpath expr="//field[@name='line_ids']/list/field[@name='check_type']" position="after">
+                <field name="mandatory"/>
+                <field name="result_type"/>
+                <field name="allowed_answers" invisible="result_type != 'qualitative'"/>
+            </xpath>
+            <xpath expr="//field[@name='line_ids']/list/field[@name='limit_type']" position="attributes">
+                <attribute name="invisible">result_type == 'qualitative'</attribute>
+            </xpath>
+            <xpath expr="//field[@name='line_ids']/list/field[@name='standard_min']" position="attributes">
+                <attribute name="invisible">result_type == 'qualitative' or limit_type == 'max'</attribute>
+            </xpath>
+            <xpath expr="//field[@name='line_ids']/list/field[@name='standard_max']" position="attributes">
+                <attribute name="invisible">result_type == 'qualitative' or limit_type == 'min'</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="stock_lot_form_quality_governance" model="ir.ui.view">
+        <field name="name">stock.lot.form.quality.governance</field>
+        <field name="model">stock.lot</field>
+        <field name="inherit_id" ref="ddfsc_manufacturing.stock_lot_form_ddfsc"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='ddfsc_quality_state']/ancestor::group[1]" position="before">
+                <group string="Inspection Review">
+                    <field name="ddfsc_review_state" widget="badge"/>
+                    <field name="quality_submitted_by_id" invisible="not quality_submitted_by_id"/>
+                    <field name="quality_submitted_date" invisible="not quality_submitted_date"/>
+                    <field name="quality_reviewed_by_id" invisible="not quality_reviewed_by_id"/>
+                    <field name="quality_reviewed_date" invisible="not quality_reviewed_date"/>
+                    <button name="action_submit_quality" type="object" string="Submit for QC Approval" class="btn-primary"
+                            invisible="ddfsc_review_state != 'draft'"/>
+                    <button name="action_approve_quality" type="object" string="Approve / Reject Results" class="btn-primary"
+                            invisible="ddfsc_review_state != 'submitted'" groups="ddfsc_quality.group_ddfsc_quality_manager"/>
+                    <field name="correction_reason" placeholder="Reason for correction or reinspection"
+                           invisible="ddfsc_review_state == 'draft'"/>
+                    <button name="action_request_reinspection" type="object" string="Request Correction / Reinspection"
+                            invisible="ddfsc_review_state == 'draft'"/>
+                </group>
+                <group string="Traceability">
+                    <field name="quality_receipt_id" readonly="1" invisible="not quality_receipt_id"/>
+                    <field name="quality_supplier_id" readonly="1" invisible="not quality_supplier_id"/>
+                    <field name="quality_production_id" readonly="1" invisible="not quality_production_id"/>
+                </group>
+            </xpath>
+            <xpath expr="//field[@name='quality_check_ids']/list/field[@name='check_type']" position="after">
+                <field name="mandatory" readonly="1"/>
+                <field name="result_type" column_invisible="1"/>
+                <field name="review_state" column_invisible="1"/>
+            </xpath>
+            <xpath expr="//field[@name='quality_check_ids']/list/field[@name='measured_value']" position="attributes">
+                <attribute name="invisible">result_type == 'qualitative'</attribute>
+                <attribute name="readonly">review_state != 'draft'</attribute>
+            </xpath>
+            <xpath expr="//field[@name='quality_check_ids']/list/field[@name='measured_value']" position="after">
+                <field name="measured_text" string="Observed Result" invisible="result_type != 'qualitative'"
+                       readonly="review_state != 'draft'"/>
+                <field name="entered_by_id" optional="hide"/>
+                <field name="entered_date" optional="hide"/>
+            </xpath>
+            <xpath expr="//sheet" position="inside">
+                <notebook>
+                    <page string="Inspection History" invisible="quality_revision_count == 0">
+                        <field name="quality_revision_count" invisible="1"/>
+                        <field name="quality_revision_ids" readonly="1">
+                            <list>
+                                <field name="create_date"/>
+                                <field name="reason"/>
+                                <field name="review_state"/>
+                                <field name="quality_state"/>
+                                <field name="reviewed_by_id"/>
+                                <field name="reviewed_date"/>
+                            </list>
+                        </field>
+                    </page>
+                    <page string="Non-Conformances" invisible="nonconformance_count == 0">
+                        <field name="nonconformance_count" invisible="1"/>
+                        <field name="nonconformance_ids" readonly="1">
+                            <list>
+                                <field name="name"/>
+                                <field name="severity"/>
+                                <field name="affected_qty"/>
+                                <field name="owner_id"/>
+                                <field name="state" widget="badge"/>
+                            </list>
+                        </field>
+                    </page>
+                </notebook>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="quality_lot_search_governance" model="ir.ui.view">
+        <field name="name">stock.lot.quality.search.governance</field>
+        <field name="model">stock.lot</field>
+        <field name="inherit_id" ref="ddfsc_manufacturing.ddfsc_quality_lot_view_search"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='product_id']" position="after">
+                <field name="quality_supplier_id"/>
+                <field name="quality_production_id"/>
+                <field name="quality_receipt_id"/>
+            </xpath>
+            <xpath expr="//filter[@name='pending']" position="before">
+                <filter name="awaiting_review" string="Awaiting Review"
+                        domain="[('ddfsc_review_state', '=', 'submitted')]"/>
+                <filter name="data_entry" string="Data Entry"
+                        domain="[('ddfsc_review_state', '=', 'draft')]"/>
+                <separator/>
+            </xpath>
+            <xpath expr="//filter[@name='group_product']" position="before">
+                <filter name="group_checkpoint" string="Checkpoint"
+                        context="{'group_by': 'quality_checkpoint'}"/>
+                <filter name="group_review" string="Inspection Status"
+                        context="{'group_by': 'ddfsc_review_state'}"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="quality_lot_pivot" model="ir.ui.view">
+        <field name="name">stock.lot.quality.pivot</field>
+        <field name="model">stock.lot</field>
+        <field name="arch" type="xml">
+            <pivot string="QC Status Analysis">
+                <field name="quality_checkpoint" type="row"/>
+                <field name="product_id" type="row"/>
+                <field name="ddfsc_quality_state" type="col"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="quality_lot_graph" model="ir.ui.view">
+        <field name="name">stock.lot.quality.graph</field>
+        <field name="model">stock.lot</field>
+        <field name="arch" type="xml">
+            <graph string="QC Lots by Status" type="bar">
+                <field name="create_date" interval="month"/>
+                <field name="ddfsc_quality_state"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="ddfsc_manufacturing.ddfsc_quality_check_action" model="ir.actions.act_window">
+        <field name="view_mode">list,pivot,graph,form</field>
+    </record>
+</odoo>

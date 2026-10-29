@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo><record id="hr_employee_form_payroll_components" model="ir.ui.view">
+    <field name="name">hr.employee.form.payroll.components</field><field name="model">hr.employee</field><field name="inherit_id" ref="hr.view_employee_form"/>
+    <field name="arch" type="xml"><xpath expr="//notebook" position="inside">
+        <page name="ddfsc_payroll_components" string="Payroll Components" groups="payroll.group_payroll_user">
+            <field name="payroll_component_ids" context="{'default_employee_id': id, 'default_company_id': company_id}">
+                <list decoration-success="state == 'approved'" decoration-muted="state == 'cancelled'">
+                    <field name="component_type_id"/><field name="component_kind" widget="badge"/><field name="amount"/>
+                    <field name="recurrence"/><field name="date_from"/><field name="date_to"/><field name="state" widget="badge"/>
+                </list>
+            </field>
+        </page>
+    </xpath></field>
+</record></odoo>
+

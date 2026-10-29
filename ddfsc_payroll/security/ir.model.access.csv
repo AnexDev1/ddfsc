@@ -1,0 +1,6 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_component_type_user,Payroll component type user,model_ddfsc_payroll_component_type,payroll.group_payroll_user,1,0,0,0
+access_component_type_manager,Payroll component type manager,model_ddfsc_payroll_component_type,payroll.group_payroll_manager,1,1,1,1
+access_employee_component_user,Employee payroll component user,model_ddfsc_employee_payroll_component,payroll.group_payroll_user,1,0,0,0
+access_employee_component_manager,Employee payroll component manager,model_ddfsc_employee_payroll_component,payroll.group_payroll_manager,1,1,1,1
+

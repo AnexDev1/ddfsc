@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo><record id="hr_payslip_form_component_source" model="ir.ui.view">
+    <field name="name">hr.payslip.form.component.source</field><field name="model">hr.payslip</field><field name="inherit_id" ref="payroll.hr_payslip_view_form"/>
+    <field name="arch" type="xml"><xpath expr="//field[@name='input_line_ids']/list/field[@name='amount']" position="after">
+        <field name="component_ids" widget="many2many_tags" optional="show"/>
+    </xpath></field>
+</record></odoo>
+

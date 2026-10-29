@@ -36,8 +36,11 @@
                 <attribute name="optional">show</attribute>
             </xpath>
             <xpath expr="//header" position="inside">
+                <button name="action_view_ddfsc_quality_lots" type="object" string="Open QC"
+                        invisible="state != 'done' or ddfsc_quality_lot_count == 0"/>
                 <button name="action_request_ingredients" type="object" string="Request Ingredients" invisible="state in ('done', 'cancel') or not bom_id"/>
-                <button name="action_request_finished_goods" type="object" string="Send to Finished Goods" class="btn-primary" invisible="state != 'done'"/>
+                <button name="action_request_finished_goods" type="object" string="Release to Flour Store" class="btn-primary" invisible="state != 'done' or ddfsc_line_code != 'MILL'"/>
+                <button name="action_request_finished_goods" type="object" string="Send to Finished Goods" class="btn-primary" invisible="state != 'done' or ddfsc_line_code == 'MILL'"/>
                 <button name="action_ddfsc_submit" type="object" string="Submit for Approval" class="btn-primary"
                         invisible="ddfsc_approval_state not in ('draft', 'refused')"/>
                 <button name="action_ddfsc_approve" type="object" string="Approve" class="btn-primary"
@@ -53,6 +56,10 @@
             <xpath expr="//div[@name='button_box']" position="inside">
                 <button name="action_view_ddfsc_pickings" type="object" class="oe_stat_button" icon="fa-truck">
                     <field name="ddfsc_picking_count" widget="statinfo" string="Transfers"/>
+                </button>
+                <button name="action_view_ddfsc_quality_lots" type="object" class="oe_stat_button"
+                        icon="fa-check-square-o" invisible="ddfsc_quality_lot_count == 0">
+                    <field name="ddfsc_quality_lot_count" widget="statinfo" string="QC Lots"/>
                 </button>
             </xpath>
             <xpath expr="//page[@name='miscellaneous']" position="before">

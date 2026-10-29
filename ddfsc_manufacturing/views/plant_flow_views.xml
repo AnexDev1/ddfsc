@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <record id="action_ddfsc_qc_lots" model="ir.actions.act_window">
+        <field name="name">QC Lots</field>
+        <field name="res_model">stock.lot</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('id', 'in', context.get('ddfsc_qc_lot_ids', []))]</field>
+    </record>
+
     <!-- Link inventory transfers created from Store Request / manufacturing orders. -->
     <record id="view_picking_form_ddfsc" model="ir.ui.view">
         <field name="name">stock.picking.form.ddfsc</field>
@@ -9,6 +16,12 @@
             <xpath expr="//field[@name='picking_type_id']" position="after">
                 <field name="ddfsc_production_id" readonly="1" invisible="not ddfsc_production_id"/>
                 <field name="ddfsc_store_request_id" readonly="1" invisible="not ddfsc_store_request_id"/>
+            </xpath>
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_ddfsc_quality_lots" type="object" class="oe_stat_button"
+                        icon="fa-check-square-o" invisible="ddfsc_quality_lot_count == 0">
+                    <field name="ddfsc_quality_lot_count" widget="statinfo" string="QC Lots"/>
+                </button>
             </xpath>
         </field>
     </record>

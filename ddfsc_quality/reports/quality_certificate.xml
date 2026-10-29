@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_quality_certificate" model="ir.actions.report">
+        <field name="name">QC Inspection and Release Report</field>
+        <field name="model">stock.lot</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">ddfsc_quality.quality_certificate</field>
+        <field name="report_file">ddfsc_quality.quality_certificate</field>
+        <field name="binding_model_id" ref="stock.model_stock_lot"/>
+        <field name="binding_type">report</field>
+        <field name="print_report_name">'QC - %s' % (object.name)</field>
+    </record>
+    <template id="quality_certificate">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="lot">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <h2>Quality Inspection and Release Report</h2>
+                        <table class="table table-sm table-borderless">
+                            <tr><th>Lot / Batch</th><td><span t-field="lot.name"/></td><th>Product</th><td><span t-field="lot.product_id"/></td></tr>
+                            <tr><th>Checkpoint</th><td><span t-field="lot.quality_checkpoint"/></td><th>QC Plan</th><td><span t-field="lot.quality_plan_id"/></td></tr>
+                            <tr><th>Inspection Status</th><td><span t-field="lot.ddfsc_review_state"/></td><th>Disposition</th><td><span t-field="lot.ddfsc_quality_state"/></td></tr>
+                            <tr><th>Current Location</th><td><span t-field="lot.ddfsc_quality_location"/></td><th>Reviewed By</th><td><span t-field="lot.quality_reviewed_by_id"/></td></tr>
+                            <tr><th>Reviewed On</th><td><span t-field="lot.quality_reviewed_date"/></td><th>Exception / Rejection Reason</th><td><span t-field="lot.quality_release_note"/></td></tr>
+                        </table>
+                        <h3>Laboratory and Inspection Results</h3>
+                        <table class="table table-sm table-bordered">
+                            <thead><tr><th>Test</th><th>Required</th><th>Specification</th><th>Measured / Observed</th><th>Result</th><th>Entered By</th><th>Entered On</th></tr></thead>
+                            <tbody>
+                                <tr t-foreach="lot.quality_check_ids" t-as="check">
+                                    <td><span t-field="check.check_type"/></td>
+                                    <td><span t-if="check.mandatory">Yes</span><span t-else="">Optional</span></td>
+                                    <td><span t-field="check.specification"/></td>
+                                    <td><span t-if="check.result_type == 'qualitative'" t-field="check.measured_text"/><span t-else="" t-field="check.measured_value"/></td>
+                                    <td><span t-field="check.result"/></td>
+                                    <td><span t-field="check.entered_by_id"/></td>
+                                    <td><span t-field="check.entered_date"/></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p><strong>Note:</strong> This report records the electronic QC decision. Any demo specification must be replaced by limits approved by the factory Quality Manager.</p>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <record id="action_nonconformance_report" model="ir.actions.report">
+        <field name="name">Non-Conformance Report</field>
+        <field name="model">ddfsc.quality.nonconformance</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">ddfsc_quality.nonconformance_report</field>
+        <field name="report_file">ddfsc_quality.nonconformance_report</field>
+        <field name="binding_model_id" ref="model_ddfsc_quality_nonconformance"/>
+        <field name="binding_type">report</field>
+        <field name="print_report_name">'NCR - %s' % (object.name)</field>
+    </record>
+    <template id="nonconformance_report">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="ncr">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <h2>Non-Conformance Report <span t-field="ncr.name"/></h2>
+                        <table class="table table-sm table-bordered">
+                            <tr><th>Product</th><td><span t-field="ncr.product_id"/></td><th>Lot</th><td><span t-field="ncr.lot_id"/></td></tr>
+                            <tr><th>Severity</th><td><span t-field="ncr.severity"/></td><th>Affected Quantity</th><td><span t-field="ncr.affected_qty"/></td></tr>
+                            <tr><th>Supplier</th><td><span t-field="ncr.partner_id"/></td><th>Manufacturing Order</th><td><span t-field="ncr.production_id"/></td></tr>
+                            <tr><th>Owner</th><td><span t-field="ncr.owner_id"/></td><th>Due Date</th><td><span t-field="ncr.due_date"/></td></tr>
+                            <tr><th>Status</th><td><span t-field="ncr.state"/></td><th>Disposition</th><td><span t-field="ncr.disposition"/></td></tr>
+                        </table>
+                        <h3>Failure</h3><p t-field="ncr.defect_description"/>
+                        <h3>Root Cause</h3><p t-field="ncr.root_cause"/>
+                        <h3>Corrective Action</h3><p t-field="ncr.corrective_action"/>
+                        <h3>Preventive Action</h3><p t-field="ncr.preventive_action"/>
+                        <h3>Verification and Closure</h3><p t-field="ncr.verification"/><p t-field="ncr.closure_note"/>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

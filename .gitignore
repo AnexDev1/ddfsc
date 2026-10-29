@@ -38,9 +38,10 @@ install-addons.log
 *.backup
 
 # Local project directories
-custom_addons/
 archive_reference/
 /demo/
+docs/qc_preview_pages/
+docs/qc_demo_preview.pdf
 
 # Editors and operating systems
 .idea/

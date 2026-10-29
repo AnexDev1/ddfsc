@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_attendance_form_biometric" model="ir.ui.view">
+        <field name="name">hr.attendance.form.biometric</field>
+        <field name="model">hr.attendance</field>
+        <field name="inherit_id" ref="hr_attendance.hr_attendance_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="action_view_corrections" type="object" string="Correction Requests" invisible="correction_count == 0"/>
+            </xpath>
+            <xpath expr="//field[@name='check_out']" position="after">
+                <field name="source" readonly="1"/>
+                <field name="check_in_punch_id" invisible="not check_in_punch_id"/>
+                <field name="check_out_punch_id" invisible="not check_out_punch_id"/>
+                <field name="correction_reason" placeholder="Explain any manual correction to biometric attendance..."/>
+                <button name="action_request_correction" string="Request Time Correction" type="object" class="btn-link" invisible="source != 'biometric'"/>
+            </xpath>
+            <xpath expr="//sheet" position="inside">
+                <group string="Schedule Comparison">
+                    <group>
+                        <field name="shift_assignment_id"/>
+                        <field name="scheduled_start"/>
+                        <field name="scheduled_end"/>
+                        <field name="scheduled_hours"/>
+                    </group>
+                    <group>
+                        <field name="attendance_exception" widget="badge" decoration-success="attendance_exception == 'none'" decoration-warning="attendance_exception in ('late', 'early', 'incomplete')" decoration-danger="attendance_exception in ('late_early', 'no_schedule')"/>
+                        <field name="late_minutes"/>
+                        <field name="early_departure_minutes"/>
+                    </group>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

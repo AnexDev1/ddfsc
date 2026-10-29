@@ -1,5 +1,5 @@
 from odoo import api, fields, models, _
-from odoo.exceptions import ValidationError
+from odoo.exceptions import RedirectWarning, ValidationError
 from odoo.tools.safe_eval import safe_eval
 
 OUTPUTS = {
@@ -35,13 +35,15 @@ class StoreRequest(models.Model):
 
     @api.model
     def _sync_department_stock_filters(self):
+        flour_products = outputs(self.env, 'flour')
+        flour_products.product_tmpl_id.write({'ddfsc_is_flour': True})
         for department in OUTPUTS:
             products = outputs(self.env, department)
             for suffix in ['flour', 'temp']:
                 if department == 'flour' and suffix == 'flour':
                     continue
                 action = self.env.ref('ddfsc_manufacturing.action_ddfsc_%s_%s' % (department, suffix))
-                allowed = products if suffix == 'temp' else recipes(self.env, products).bom_line_ids.product_id.filtered('ddfsc_is_flour')
+                allowed = products if suffix == 'temp' else recipes(self.env, products).bom_line_ids.product_id & flour_products
                 domain = safe_eval(action.domain)
                 domain = [term for term in domain if not (isinstance(term, (tuple, list)) and term[0] == 'product_id' and term[1] == 'in')]
                 domain.append(('product_id', 'in', allowed.ids))
@@ -107,6 +109,19 @@ class Production(models.Model):
 
     def _action_department_request(self, kind):
         self.ensure_one()
+        if kind == 'finished_goods' and self.state == 'done':
+            blocked = self.ddfsc_quality_lot_ids.filtered(
+                lambda lot: lot.ddfsc_quality_state not in ('pass', 'released')
+            )
+            if blocked:
+                action = self.env.ref('ddfsc_manufacturing.action_ddfsc_qc_lots')
+                raise RedirectWarning(
+                    _('Quality control is required for lot(s) %s before this transfer can be created.')
+                    % ', '.join(blocked.mapped('name')),
+                    action.id,
+                    _('Open QC Lot'),
+                    {'active_ids': blocked.ids, 'ddfsc_qc_lot_ids': blocked.ids},
+                )
         department = LINES.get(self.ddfsc_line_id.code)
         if not department or not self.bom_id:
             raise ValidationError(_('Choose the production line, finished product and recipe first.'))

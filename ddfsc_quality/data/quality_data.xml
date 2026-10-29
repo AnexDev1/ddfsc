@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="seq_ddfsc_qc_inspection" model="ir.sequence">
+        <field name="name">DDFSC QC Inspection</field>
+        <field name="code">ddfsc.qc.inspection</field>
+        <field name="prefix">QC/%(year)s/</field>
+        <field name="padding">5</field>
+    </record>
+    <record id="quality_dashboard_default" model="ddfsc.quality.dashboard">
+        <field name="name">Quality Control Overview</field>
+    </record>
+    <record id="seq_ddfsc_nonconformance" model="ir.sequence">
+        <field name="name">DDFSC Non-Conformance</field>
+        <field name="code">ddfsc.quality.nonconformance</field>
+        <field name="prefix">NCR/%(year)s/</field>
+        <field name="padding">5</field>
+    </record>
+    <record id="cron_ddfsc_quality_overdue_ncr" model="ir.cron">
+        <field name="name">Quality: Notify Overdue Non-Conformances</field>
+        <field name="model_id" ref="model_ddfsc_quality_nonconformance"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_notify_overdue()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="active" eval="True"/>
+    </record>
+</odoo>

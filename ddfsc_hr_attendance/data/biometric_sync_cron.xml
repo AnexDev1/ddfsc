@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="cron_download_biometric_punches" model="ir.cron">
+        <field name="name">DDFSC: Download biometric punches</field>
+        <field name="model_id" ref="model_ddfsc_biometric_device"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_download_punches()</field>
+        <field name="interval_number">10</field>
+        <field name="interval_type">minutes</field>
+        <field name="active">True</field>
+    </record>
+</odoo>

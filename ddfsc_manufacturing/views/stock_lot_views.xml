@@ -8,28 +8,39 @@
             <xpath expr="//group[@name='main_group']" position="after">
                 <group string="Quality">
                     <field name="ddfsc_quality_state" widget="badge"
-                           decoration-danger="ddfsc_quality_state == 'hold'"
+                           decoration-danger="ddfsc_quality_state in ('hold', 'rejected')"
                            decoration-success="ddfsc_quality_state in ('pass', 'released')"/>
-                    <field name="ddfsc_wheat_use"/>
-                    <field name="ddfsc_hectoliter"/>
-                    <field name="ddfsc_gm_approved"/>
-                    <button name="action_gm_approve" type="object" string="General Manager Approval"
-                            invisible="ddfsc_gm_approved"/>
-                    <field name="quality_release_note"/>
-                    <button name="action_quality_hold" type="object" string="Hold" invisible="ddfsc_quality_state == 'hold'"/>
-                    <button name="action_quality_release" type="object" string="Release" invisible="ddfsc_quality_state != 'hold'"/>
+                    <field name="quality_plan_id" readonly="1"/>
+                    <field name="quality_checkpoint" invisible="1"/>
+                    <button name="action_prepare_quality_checks" type="object" string="Refresh Tests from QC Plan"
+                            groups="mrp.group_mrp_manager"
+                            invisible="not quality_plan_id or ddfsc_quality_state in ('released', 'rejected')"/>
+                    <field name="ddfsc_wheat_receiving_qty" readonly="1"
+                           invisible="quality_checkpoint != 'incoming_wheat' or ddfsc_wheat_receiving_qty == 0"/>
+                    <button name="action_release_wheat_to_general_store" type="object"
+                            string="Release to General Store" class="btn-primary"
+                            invisible="quality_checkpoint != 'incoming_wheat' or ddfsc_quality_state not in ('pass', 'released') or ddfsc_wheat_receiving_qty &lt;= 0"/>
+                    <field name="quality_release_note" string="Exception / Rejection Reason"
+                           invisible="ddfsc_quality_state not in ('hold', 'rejected')"/>
+                    <field name="quality_decision_by_id" invisible="not quality_decision_by_id"/>
+                    <field name="quality_decision_date" invisible="not quality_decision_date"/>
+                    <button name="action_quality_hold" type="object" string="Place on Hold"
+                            invisible="ddfsc_quality_state not in ('pending', 'pass')"/>
+                    <button name="action_quality_release" type="object" string="Release by Exception" invisible="ddfsc_quality_state not in ('hold', 'rejected')" groups="mrp.group_mrp_manager"/>
+                    <button name="action_quality_reject" type="object" string="Reject Lot" invisible="ddfsc_quality_state != 'hold'" groups="mrp.group_mrp_manager"/>
                 </group>
-                <field name="quality_check_ids">
-                    <list editable="bottom">
-                        <field name="check_type"/>
+                <field name="quality_check_ids" string="Laboratory Results — Enter only Measured Result">
+                    <list editable="bottom" create="0" delete="0">
+                        <field name="check_type" string="Test" readonly="1"/>
+                        <field name="specification" readonly="1"/>
                         <field name="measured_value"/>
-                        <field name="apply_min"/>
-                        <field name="standard_min"/>
-                        <field name="apply_max"/>
-                        <field name="standard_max"/>
-                        <field name="result"/>
-                        <field name="note"/>
-                        <field name="production_id"/>
+                        <field name="is_measured" optional="show"/>
+                        <field name="result" widget="badge" readonly="1"
+                               decoration-success="result == 'pass'"
+                               decoration-danger="result == 'fail'"
+                               decoration-warning="result == 'pending'"/>
+                        <field name="note" string="Unit / Method" readonly="1" optional="hide"/>
+                        <field name="production_id" readonly="1" optional="hide"/>
                     </list>
                 </field>
             </xpath>
