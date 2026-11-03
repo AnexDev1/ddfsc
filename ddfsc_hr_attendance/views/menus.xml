@@ -5,7 +5,12 @@
     <menuitem id="menu_import_punches" name="Import Device Punches" parent="menu_biometric" action="action_attendance_import_wizard" sequence="20" groups="hr_attendance.group_hr_attendance_manager"/>
     <menuitem id="menu_sync_history" name="Synchronization History" parent="menu_biometric" action="action_biometric_sync_logs" sequence="30"/>
     <menuitem id="menu_attendance_corrections" name="Correction Requests" parent="hr_attendance.menu_hr_attendance_root" action="action_attendance_corrections" sequence="40" groups="hr_attendance.group_hr_attendance_user"/>
+    <menuitem id="menu_attendance_exceptions" name="Attendance Exceptions" parent="hr_attendance.menu_hr_attendance_root" action="action_attendance_exceptions" sequence="35" groups="hr_attendance.group_hr_attendance_user"/>
+    <menuitem id="menu_overtime_requests" name="Overtime Review" parent="hr_attendance.menu_hr_attendance_root" action="action_overtime_requests" sequence="45" groups="hr_attendance.group_hr_attendance_user"/>
+    <menuitem id="menu_attendance_periods" name="Attendance Periods" parent="hr_attendance.menu_hr_attendance_root" action="action_attendance_periods" sequence="50" groups="hr_attendance.group_hr_attendance_manager"/>
     <menuitem id="menu_devices" name="Attendance Devices" parent="hr_attendance.menu_hr_attendance_configuration" action="action_biometric_devices" sequence="20" groups="hr_attendance.group_hr_attendance_manager"/>
     <menuitem id="menu_work_schedules" name="Work Schedules" parent="hr_attendance.menu_hr_attendance_configuration" action="resource.action_resource_calendar_form" sequence="30" groups="hr_attendance.group_hr_attendance_manager"/>
     <menuitem id="menu_shift_assignments" name="Schedule Assignments" parent="hr_attendance.menu_hr_attendance_configuration" action="action_shift_assignments" sequence="40" groups="hr_attendance.group_hr_attendance_manager"/>
+    <menuitem id="menu_overtime_policies" name="Overtime Policies" parent="hr_attendance.menu_hr_attendance_configuration" action="action_overtime_policies" sequence="50" groups="hr_attendance.group_hr_attendance_manager"/>
+    <menuitem id="menu_public_holidays" name="Public Holidays" parent="hr_attendance.menu_hr_attendance_configuration" action="public_holiday_action" sequence="60" groups="hr_attendance.group_hr_attendance_manager"/>
 </odoo>

@@ -148,6 +148,12 @@ class HrAttendance(models.Model):
         }
 
     def write(self, vals):
+        for attendance in self:
+            dates_to_check = [attendance.date]
+            if vals.get("check_in"):
+                dates_to_check.append(fields.Datetime.to_datetime(vals["check_in"]).date())
+            if any(self.env["ddfsc.attendance.period"].is_locked_for(attendance.employee_id, item) for item in dates_to_check if item):
+                raise ValidationError(_("Attendance is locked for this payroll period. Ask an Attendance Administrator to reopen the period with a reason."))
         biometric_records = self.filtered(lambda attendance: attendance.source == "biometric")
         changes_time = {"check_in", "check_out"}.intersection(vals)
         if (
@@ -158,4 +164,23 @@ class HrAttendance(models.Model):
             raise ValidationError(
                 _("Biometric times can only be changed through an approved correction request.")
             )
-        return super().write(vals)
+        result = super().write(vals)
+        if "check_out" in vals:
+            self.env["ddfsc.attendance.exception"].resolve_for_attendance(self)
+        return result
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            employee = self.env["hr.employee"].browse(vals.get("employee_id"))
+            check_in = vals.get("check_in")
+            attendance_date = fields.Datetime.to_datetime(check_in).date() if check_in else False
+            if self.env["ddfsc.attendance.period"].is_locked_for(employee, attendance_date):
+                raise ValidationError(_("Attendance is locked for this payroll period. Ask an Attendance Administrator to reopen the period with a reason."))
+        return super().create(vals_list)
+
+    def unlink(self):
+        for attendance in self:
+            if self.env["ddfsc.attendance.period"].is_locked_for(attendance.employee_id, attendance.date):
+                raise ValidationError(_("Attendance is locked for this payroll period and cannot be deleted."))
+        return super().unlink()

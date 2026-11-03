@@ -1,6 +1,7 @@
 from collections import defaultdict
 
 from odoo import api, fields, models
+from odoo.exceptions import UserError
 
 
 class HrPayslipInput(models.Model):
@@ -10,10 +11,70 @@ class HrPayslipInput(models.Model):
         "ddfsc.employee.payroll.component", "ddfsc_component_payslip_input_rel",
         "input_id", "component_id", string="Source Components", readonly=True,
     )
+    overtime_ids = fields.Many2many(
+        "ddfsc.overtime.request", "ddfsc_overtime_payslip_input_rel", "input_id", "overtime_id",
+        string="Approved Overtime", readonly=True,
+    )
 
 
 class HrPayslip(models.Model):
     _inherit = "hr.payslip"
+
+    ddfsc_basic_pay = fields.Monetary(string="Basic Pay", compute="_compute_ddfsc_payroll_breakdown", currency_field="ddfsc_payroll_currency_id")
+    ddfsc_taxable_earnings = fields.Monetary(string="Taxable Earnings", compute="_compute_ddfsc_payroll_breakdown", currency_field="ddfsc_payroll_currency_id")
+    ddfsc_non_taxable_earnings = fields.Monetary(string="Non-taxable Earnings", compute="_compute_ddfsc_payroll_breakdown", currency_field="ddfsc_payroll_currency_id")
+    ddfsc_total_deductions = fields.Monetary(string="Total Deductions", compute="_compute_ddfsc_payroll_breakdown", currency_field="ddfsc_payroll_currency_id")
+    ddfsc_income_tax = fields.Monetary(string="Income Tax", compute="_compute_ddfsc_payroll_breakdown", currency_field="ddfsc_payroll_currency_id")
+    ddfsc_employee_pension = fields.Monetary(string="Employee Pension", compute="_compute_ddfsc_payroll_breakdown", currency_field="ddfsc_payroll_currency_id")
+    ddfsc_net_pay = fields.Monetary(string="Net Pay", compute="_compute_ddfsc_payroll_breakdown", currency_field="ddfsc_payroll_currency_id")
+    ddfsc_employer_pension = fields.Monetary(string="Employer Pension", compute="_compute_ddfsc_payroll_breakdown", currency_field="ddfsc_payroll_currency_id")
+    ddfsc_payroll_currency_id = fields.Many2one(
+        related="company_id.currency_id", readonly=True, string="Payroll Currency"
+    )
+
+    @api.depends("line_ids.code", "line_ids.total", "line_ids.category_id")
+    def _compute_ddfsc_payroll_breakdown(self):
+        """Present the computed salary rules as a concise gross-to-net summary.
+
+        The values are derived from payslip lines, never manually entered, so the
+        summary always remains consistent with the detailed computation lines.
+        """
+        for payslip in self:
+            totals = {line.code: line.total for line in payslip.line_ids}
+            deductions = sum(
+                line.total for line in payslip.line_ids if line.category_id.code == "DED"
+            )
+            payslip.ddfsc_basic_pay = totals.get("BASIC", 0.0)
+            payslip.ddfsc_taxable_earnings = totals.get("GROSS", 0.0)
+            payslip.ddfsc_non_taxable_earnings = totals.get("NONTAX_ALLOW", 0.0)
+            payslip.ddfsc_total_deductions = abs(deductions)
+            payslip.ddfsc_income_tax = abs(totals.get("ET_PAYE", 0.0))
+            payslip.ddfsc_employee_pension = abs(totals.get("ET_PENSION_EE", 0.0))
+            payslip.ddfsc_net_pay = totals.get("NET", 0.0)
+            payslip.ddfsc_employer_pension = totals.get("ET_PENSION_ER", 0.0)
+
+    def get_ethiopian_monthly_tax(self, taxable_income):
+        """Salary-rule helper for PAY-003.
+
+        Example rule expression: result = payslip.get_ethiopian_monthly_tax(categories.TAXABLE)
+        """
+        self.ensure_one()
+        return self.env["ddfsc.ethiopian.tax.band"].calculate_monthly_tax(
+            taxable_income, self.date_to or self.date_from, self.company_id
+        )
+
+    def get_ethiopian_pension(self, pension_salary):
+        """Salary-rule helper for PAY-004; returns employee/employer amounts."""
+        self.ensure_one()
+        return self.env["ddfsc.ethiopian.pension.config"].calculate_contributions(
+            pension_salary, self.date_to or self.date_from, self.company_id
+        )
+
+    def get_approved_overtime_payment(self, approved_hours, monthly_wage):
+        self.ensure_one()
+        return self.env["ddfsc.overtime.pay.rate"].calculate_payment(
+            approved_hours, monthly_wage, self.date_to or self.date_from, self.company_id
+        )
 
     @api.model
     def get_inputs(self, contracts, date_from, date_to):
@@ -49,5 +110,40 @@ class HrPayslip(models.Model):
                 existing.update(vals)
             else:
                 result.append(vals)
+        approved_overtime = self.env["ddfsc.overtime.request"].search([
+            ("employee_id", "=", self.employee_id.id), ("company_id", "=", self.company_id.id),
+            ("state", "=", "approved"), ("work_date", ">=", date_from), ("work_date", "<=", date_to),
+        ])
+        used_overtime = self.env["hr.payslip.input"].search([
+            ("overtime_ids", "in", approved_overtime.ids), ("payslip_id.state", "=", "done"),
+            ("payslip_id.id", "!=", self.id or 0),
+        ]).mapped("overtime_ids")
+        approved_overtime -= used_overtime
+        if approved_overtime:
+            contract = contracts[:1]
+            if not contract:
+                return result
+            amount = self.get_approved_overtime_payment(
+                sum(approved_overtime.mapped("approved_hours")), contract.wage
+            )
+            overtime_values = {
+                "name": self.env._("Approved Overtime"), "code": "OT_PAY", "amount": amount,
+                "contract_id": contract.id, "overtime_ids": [(6, 0, approved_overtime.ids)],
+            }
+            existing = next((line for line in result if line.get("code") == "OT_PAY"), None)
+            if existing:
+                existing.update(overtime_values)
+            else:
+                result.append(overtime_values)
         return result
+
+    def write(self, vals):
+        if any(payslip.payslip_run_id.state == "close" for payslip in self):
+            raise UserError(self.env._("Payslips in a closed payroll batch are locked. Reopen the batch with a documented reason before changing them."))
+        return super().write(vals)
+
+    def unlink(self):
+        if any(payslip.payslip_run_id.state == "close" for payslip in self):
+            raise UserError(self.env._("Payslips in a closed payroll batch are locked and cannot be deleted."))
+        return super().unlink()
 

@@ -5,3 +5,7 @@ from . import hr_attendance
 from . import hr_employee
 from . import shift_assignment
 from . import attendance_correction
+from . import attendance_exception
+from . import overtime
+from . import attendance_period
+from . import public_holiday

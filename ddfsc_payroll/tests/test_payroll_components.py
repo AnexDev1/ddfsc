@@ -86,3 +86,48 @@ class TestPayrollComponents(TransactionCase):
             })
         with self.assertRaises(ValidationError):
             self._component(amount=0)
+
+    def test_payroll_batch_shows_payslip_progress(self):
+        batch = self.env["hr.payslip.run"].create({
+            "name": "January 2026 Payroll", "date_start": date(2026, 1, 1),
+            "date_end": date(2026, 1, 31), "company_id": self.employee.company_id.id,
+        })
+        payslip = self._payslip()
+        payslip.write({"payslip_run_id": batch.id})
+        self.assertEqual(batch.ddfsc_payslip_count, 1)
+        self.assertEqual(batch.ddfsc_draft_count, 1)
+        self.assertIn("1 payslips: 1 draft", batch.ddfsc_batch_progress)
+
+    def test_empty_payroll_batch_cannot_pass_validation(self):
+        batch = self.env["hr.payslip.run"].create({
+            "name": "Empty Payroll", "date_start": date(2026, 1, 1),
+            "date_end": date(2026, 1, 31), "company_id": self.employee.company_id.id,
+        })
+        result = batch.action_validate_batch()
+        self.assertEqual(result["params"]["type"], "danger")
+        self.assertEqual(batch.ddfsc_validation_state, "failed")
+
+    def test_final_settlement_must_be_one_time_and_documented(self):
+        with self.assertRaises(ValidationError):
+            self._component(adjustment_type="final_settlement", recurrence="one_off")
+        component = self._component(
+            adjustment_type="final_settlement", recurrence="one_off", note="HR exit approval EX-001"
+        )
+        component._check_final_settlement_controls()
+
+    def test_closed_batch_locks_payslips_and_requires_reopen_reason(self):
+        batch = self.env["hr.payslip.run"].create({
+            "name": "Locked Payroll", "date_start": date(2026, 1, 1),
+            "date_end": date(2026, 1, 31), "company_id": self.employee.company_id.id,
+        })
+        payslip = self._payslip()
+        payslip.write({"payslip_run_id": batch.id})
+        batch.write({"state": "close"})
+        with self.assertRaises(UserError):
+            payslip.write({"name": "Changed after close"})
+        with self.assertRaises(UserError):
+            batch.draft_payslip_run()
+        batch.write({"ddfsc_reopen_reason": "Approved correction after close"})
+        batch.draft_payslip_run()
+        self.assertEqual(batch.state, "draft")
+        self.assertEqual(batch.ddfsc_reopened_by, self.env.user)

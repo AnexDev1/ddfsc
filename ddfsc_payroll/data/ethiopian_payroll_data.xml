@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="tax_band_2025_0" model="ddfsc.ethiopian.tax.band"><field name="date_from">2025-07-08</field><field name="lower_bound">0</field><field name="upper_bound">2000</field><field name="rate">0</field></record>
+    <record id="tax_band_2025_15" model="ddfsc.ethiopian.tax.band"><field name="date_from">2025-07-08</field><field name="lower_bound">2000</field><field name="upper_bound">4000</field><field name="rate">15</field><field name="quick_deduction">300</field></record>
+    <record id="tax_band_2025_20" model="ddfsc.ethiopian.tax.band"><field name="date_from">2025-07-08</field><field name="lower_bound">4000</field><field name="upper_bound">7000</field><field name="rate">20</field><field name="quick_deduction">500</field></record>
+    <record id="tax_band_2025_25" model="ddfsc.ethiopian.tax.band"><field name="date_from">2025-07-08</field><field name="lower_bound">7000</field><field name="upper_bound">10000</field><field name="rate">25</field><field name="quick_deduction">850</field></record>
+    <record id="tax_band_2025_30" model="ddfsc.ethiopian.tax.band"><field name="date_from">2025-07-08</field><field name="lower_bound">10000</field><field name="upper_bound">14000</field><field name="rate">30</field><field name="quick_deduction">1350</field></record>
+    <record id="tax_band_2025_35" model="ddfsc.ethiopian.tax.band"><field name="date_from">2025-07-08</field><field name="lower_bound">14000</field><field name="rate">35</field><field name="quick_deduction">2050</field></record>
+    <record id="pension_2025" model="ddfsc.ethiopian.pension.config"><field name="date_from">2025-07-08</field><field name="employee_rate">7</field><field name="employer_rate">11</field></record>
+</odoo>

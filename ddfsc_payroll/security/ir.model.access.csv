@@ -3,4 +3,7 @@ access_component_type_user,Payroll component type user,model_ddfsc_payroll_compo
 access_component_type_manager,Payroll component type manager,model_ddfsc_payroll_component_type,payroll.group_payroll_manager,1,1,1,1
 access_employee_component_user,Employee payroll component user,model_ddfsc_employee_payroll_component,payroll.group_payroll_user,1,0,0,0
 access_employee_component_manager,Employee payroll component manager,model_ddfsc_employee_payroll_component,payroll.group_payroll_manager,1,1,1,1
+access_tax_band_manager,Income tax band manager,model_ddfsc_ethiopian_tax_band,payroll.group_payroll_manager,1,1,1,1
+access_pension_config_manager,Pension configuration manager,model_ddfsc_ethiopian_pension_config,payroll.group_payroll_manager,1,1,1,1
+access_overtime_pay_rate_manager,Overtime pay rate manager,model_ddfsc_overtime_pay_rate,payroll.group_payroll_manager,1,1,1,1
 

@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 
 from odoo.exceptions import ValidationError
+from odoo import fields
 from odoo.tests.common import TransactionCase, tagged
 
 
@@ -44,6 +45,93 @@ class TestBiometricAttendance(TransactionCase):
         punch.action_process()
         self.assertEqual(punch.state, "unmapped")
         self.assertFalse(punch.attendance_id)
+
+    def test_unmatched_checkout_creates_an_actionable_exception(self):
+        punch = self._punch(self.start, "out")
+        punch.action_process()
+        exception = self.env["ddfsc.attendance.exception"].search([("punch_id", "=", punch.id)])
+        self.assertEqual(punch.state, "error")
+        self.assertEqual(exception.issue_type, "unmatched_checkout")
+        self.assertEqual(exception.state, "open")
+
+    def test_overdue_open_attendance_is_flagged_and_checkout_resolves_it(self):
+        attendance = self.env["hr.attendance"].create({
+            "employee_id": self.employee.id,
+            "check_in": fields.Datetime.now() - timedelta(hours=17),
+            "source": "biometric",
+        })
+        self.env["ddfsc.attendance.exception"].refresh_missing_checkouts()
+        exception = self.env["ddfsc.attendance.exception"].search([("attendance_id", "=", attendance.id)])
+        self.assertEqual(exception.issue_type, "missing_checkout")
+        attendance.with_context(biometric_processing=True).write({"check_out": fields.Datetime.now()})
+        self.assertEqual(exception.state, "resolved")
+
+    def test_schedule_review_flags_unexplained_absence(self):
+        calendar = self.env["resource.calendar"].create({
+            "name": "DDFSC Absence Review Shift", "tz": "Africa/Addis_Ababa",
+            "attendance_ids": [(0, 0, {"name": "Weekday", "dayofweek": "2", "day_period": "morning", "hour_from": 8, "hour_to": 17})],
+        })
+        self.env["ddfsc.shift.assignment"].create({
+            "employee_id": self.employee.id, "calendar_id": calendar.id, "date_from": "2026-10-01",
+        })
+        self.env["ddfsc.attendance.exception"].refresh_schedule_exceptions(fields.Date.from_string("2026-10-28"))
+        absence = self.env["ddfsc.attendance.exception"].search([
+            ("employee_id", "=", self.employee.id), ("scheduled_date", "=", "2026-10-28"), ("issue_type", "=", "absence"),
+        ])
+        self.assertEqual(absence.state, "open")
+
+    def test_non_working_public_holiday_does_not_create_absence(self):
+        calendar = self.env["resource.calendar"].create({
+            "name": "DDFSC Holiday Review Shift", "tz": "Africa/Addis_Ababa",
+            "attendance_ids": [(0, 0, {"name": "Weekday", "dayofweek": "2", "day_period": "morning", "hour_from": 8, "hour_to": 17})],
+        })
+        self.env["ddfsc.shift.assignment"].create({
+            "employee_id": self.employee.id, "calendar_id": calendar.id, "date_from": "2026-10-01",
+        })
+        self.env["ddfsc.public.holiday"].create({
+            "name": "DDFSC Test Closure", "date": "2026-10-28", "company_id": self.employee.company_id.id,
+        })
+        self.env["ddfsc.attendance.exception"].refresh_schedule_exceptions(fields.Date.from_string("2026-10-28"))
+        absence = self.env["ddfsc.attendance.exception"].search([
+            ("employee_id", "=", self.employee.id), ("scheduled_date", "=", "2026-10-28"), ("issue_type", "=", "absence"),
+        ])
+        self.assertFalse(absence)
+
+    def test_overtime_candidate_uses_time_outside_the_assigned_shift(self):
+        calendar = self.env["resource.calendar"].create({
+            "name": "DDFSC Overtime Shift", "tz": "Africa/Addis_Ababa",
+            "attendance_ids": [(0, 0, {"name": "Wednesday", "dayofweek": "2", "day_period": "morning", "hour_from": 8, "hour_to": 17})],
+        })
+        self.env["ddfsc.shift.assignment"].create({
+            "employee_id": self.employee.id, "calendar_id": calendar.id, "date_from": "2026-10-01",
+        })
+        self.env["ddfsc.overtime.policy"].create({
+            "name": "Test Policy", "date_from": "2026-01-01", "minimum_minutes": 30,
+        })
+        self.env["hr.attendance"].create({
+            "employee_id": self.employee.id, "check_in": datetime(2026, 10, 28, 5, 30),
+            "check_out": datetime(2026, 10, 28, 15, 30), "source": "biometric",
+        })
+        candidate = self.env["ddfsc.overtime.request"].generate_candidates(fields.Date.from_string("2026-10-28"))
+        self.assertEqual(candidate.employee_id, self.employee)
+        self.assertAlmostEqual(candidate.eligible_hours, 1.5)
+        candidate.action_submit()
+        self.assertEqual(candidate.approved_hours, 1.5)
+
+    def test_locked_attendance_period_blocks_attendance_changes(self):
+        attendance = self.env["hr.attendance"].create({
+            "employee_id": self.employee.id, "check_in": datetime(2026, 10, 28, 5, 30),
+            "check_out": datetime(2026, 10, 28, 13, 30), "source": "biometric",
+        })
+        period = self.env["ddfsc.attendance.period"].create({
+            "date_from": "2026-10-28", "date_to": "2026-10-28",
+        })
+        root = self.env.ref("base.user_root")
+        period.with_user(root).action_validate()
+        period.with_user(root).action_lock()
+        self.assertEqual(period.state, "locked")
+        with self.assertRaises(ValidationError):
+            attendance.with_context(biometric_processing=True).write({"check_out": datetime(2026, 10, 28, 14, 0)})
 
     def test_raw_data_and_biometric_time_are_protected(self):
         punch = self._punch(self.start, "in")

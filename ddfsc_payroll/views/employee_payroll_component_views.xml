@@ -4,7 +4,7 @@
         <field name="name">ddfsc.employee.payroll.component.list</field><field name="model">ddfsc.employee.payroll.component</field>
         <field name="arch" type="xml"><list decoration-success="state == 'approved'" decoration-muted="state == 'cancelled'">
             <field name="employee_id"/><field name="component_type_id"/><field name="component_kind" widget="badge"/>
-            <field name="amount" sum="Total"/><field name="recurrence"/><field name="date_from"/><field name="date_to"/>
+            <field name="amount" sum="Total"/><field name="recurrence"/><field name="adjustment_type" optional="hide"/><field name="date_from"/><field name="date_to"/>
             <field name="state" widget="badge"/><field name="company_id" groups="base.group_multi_company"/>
         </list></field>
     </record>
@@ -16,7 +16,7 @@
                 <button name="action_cancel" type="object" string="Cancel" invisible="state == 'cancelled'"/>
                 <field name="state" widget="statusbar" statusbar_visible="draft,approved,cancelled"/></header>
             <sheet><div class="oe_title"><h1><field name="component_type_id" readonly="state != 'draft'"/></h1></div>
-                <group><group><field name="employee_id" readonly="state != 'draft'"/><field name="amount" readonly="state != 'draft'"/><field name="recurrence" readonly="state != 'draft'"/></group>
+                <group><group><field name="employee_id" readonly="state != 'draft'"/><field name="amount" readonly="state != 'draft'"/><field name="recurrence" readonly="state != 'draft'"/><field name="adjustment_type" readonly="state != 'draft'"/></group>
                 <group><field name="date_from" readonly="state != 'draft'"/><field name="date_to" readonly="state != 'draft'"/><field name="company_id" groups="base.group_multi_company" readonly="state != 'draft'"/></group></group>
                 <field name="note" placeholder="Reason, approval reference, or payroll note..." readonly="state != 'draft'"/>
             </sheet><chatter/></form></field>
@@ -27,6 +27,7 @@
             <filter name="approved" string="Approved" domain="[('state','=','approved')]"/>
             <filter name="recurring" string="Recurring" domain="[('recurrence','=','recurring')]"/>
             <filter name="one_off" string="One-time" domain="[('recurrence','=','one_off')]"/>
+            <filter name="deductions" string="Deductions" domain="[('component_kind','=','deduction')]"/>
             <group><filter name="group_employee" string="Employee" context="{'group_by':'employee_id'}"/>
                 <filter name="group_type" string="Component Type" context="{'group_by':'component_type_id'}"/>
                 <filter name="group_state" string="Status" context="{'group_by':'state'}"/></group>

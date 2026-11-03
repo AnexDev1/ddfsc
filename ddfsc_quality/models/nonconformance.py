@@ -1,4 +1,4 @@
-from odoo import _, api, fields, models
+from odoo import Command, _, api, fields, models
 from odoo.exceptions import AccessError, UserError, ValidationError
 
 
@@ -41,6 +41,8 @@ class DdfscQualityNonconformance(models.Model):
     closure_note = fields.Text(tracking=True)
     closed_by_id = fields.Many2one("res.users", readonly=True, copy=False)
     closed_date = fields.Datetime(readonly=True, copy=False)
+    disposition_move_id = fields.Many2one("stock.move", readonly=True, copy=False, string="Disposition Move")
+    disposition_scrap_id = fields.Many2one("stock.scrap", readonly=True, copy=False, string="Scrap Record")
     active = fields.Boolean(default=True)
 
     @api.depends("due_date", "state")
@@ -169,16 +171,75 @@ class DdfscQualityNonconformance(models.Model):
         for record in self:
             if not record.disposition or not record.verification or not record.closure_note:
                 raise UserError(_("Disposition, verification, and closure note are required before closure."))
+            record._execute_disposition()
             record.write({"state": "closed", "closed_by_id": self.env.user.id, "closed_date": fields.Datetime.now()})
             summary = _("Investigate non-conformance %s") % record.name
             record.activity_ids.filtered(lambda activity: activity.summary == summary).action_done()
         return True
 
+    def _source_quant(self):
+        self.ensure_one()
+        quants = self.lot_id.quant_ids.filtered(lambda quant: quant.location_id.usage == "internal" and quant.quantity > 0)
+        available = sum(quants.mapped("quantity"))
+        if self.affected_qty > available:
+            raise UserError(_("Only %(available)s is available for lot %(lot)s; the NCR affects %(affected)s.", available=available, lot=self.lot_id.name, affected=self.affected_qty))
+        return quants.sorted(lambda quant: quant.quantity, reverse=True)[:1]
+
+    def _create_done_move(self, destination, label):
+        self.ensure_one()
+        source = self._source_quant()
+        move = self.env["stock.move"].create({
+            "name": "%s %s" % (label, self.name), "origin": self.name,
+            "product_id": self.product_id.id, "product_uom_qty": self.affected_qty,
+            "product_uom": self.product_id.uom_id.id, "location_id": source.location_id.id,
+            "location_dest_id": destination.id, "picked": True,
+            "move_line_ids": [Command.create({
+                "product_id": self.product_id.id, "product_uom_id": self.product_id.uom_id.id,
+                "quantity": self.affected_qty, "location_id": source.location_id.id,
+                "location_dest_id": destination.id, "lot_id": self.lot_id.id,
+            })],
+        })
+        move._action_done()
+        return move
+
+    def _execute_disposition(self):
+        self.ensure_one()
+        if self.disposition in ("other",):
+            raise UserError(_("Use a specific disposition or record the stock action before closing."))
+        if self.disposition == "retest":
+            if not self.inspection_id or self.inspection_id.state != "approved":
+                raise UserError(_("Start and approve the reinspection before closing a retest disposition."))
+            return
+        if self.disposition == "exception":
+            self.lot_id.write({"quality_release_note": _("NCR %(ncr)s: %(note)s", ncr=self.name, note=self.closure_note)})
+            self.lot_id.action_quality_release()
+            return
+        if self.disposition == "scrap":
+            source = self._source_quant()
+            scrap = self.env["stock.scrap"].create({
+                "product_id": self.product_id.id, "scrap_qty": self.affected_qty,
+                "product_uom_id": self.product_id.uom_id.id, "location_id": source.location_id.id,
+                "lot_id": self.lot_id.id, "origin": self.name,
+            })
+            scrap.do_scrap()
+            self.disposition_scrap_id = scrap
+            return
+        if self.disposition == "rework":
+            destination = self.env.ref("ddfsc_quality.loc_qc_rework")
+            self.disposition_move_id = self._create_done_move(destination, _("QC Rework"))
+            return
+        if self.disposition == "return":
+            destination = self.env.ref("stock.stock_location_suppliers")
+            self.disposition_move_id = self._create_done_move(destination, _("Return to Supplier"))
+            return
+
     def action_reinspect(self):
         self.ensure_one()
         if self.inspection_id:
             self.inspection_id.reinspection_reason = _("Reinspection requested from %s") % self.name
-            return self.inspection_id.action_start_reinspection()
+            action = self.inspection_id.action_start_reinspection()
+            self.inspection_id = self.env["ddfsc.qc.inspection"].browse(action["res_id"])
+            return action
         self.lot_id.correction_reason = _("Reinspection requested from %s") % self.name
         self.lot_id.action_request_reinspection()
         return {"type": "ir.actions.act_window", "res_model": "stock.lot", "view_mode": "form", "res_id": self.lot_id.id}

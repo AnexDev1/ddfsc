@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="hr_payslip_run_form_ddfsc_progress" model="ir.ui.view">
+        <field name="name">hr.payslip.run.form.ddfsc.progress</field>
+        <field name="model">hr.payslip.run</field>
+        <field name="inherit_id" ref="payroll.hr_payslip_run_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="action_compute_draft_payslips" type="object" string="Calculate Draft Payslips"
+                        invisible="state != 'draft'" class="btn-secondary"/>
+                <button name="action_validate_batch" type="object" string="Validate Batch"
+                        invisible="state != 'draft' or ddfsc_payslip_count == 0" class="btn-secondary"/>
+                <button name="action_approve_batch" type="object" string="Approve Batch"
+                        invisible="state != 'draft' or ddfsc_validation_state != 'passed' or ddfsc_approved_by"
+                        class="oe_highlight" groups="payroll.group_payroll_manager"/>
+                <button name="draft_payslip_run" type="object" string="Reopen Batch"
+                        invisible="state != 'close'" class="btn-secondary" groups="payroll.group_payroll_manager"/>
+            </xpath>
+            <xpath expr="(//header/button[@name='draft_payslip_run'])[1]" position="attributes">
+                <attribute name="invisible">True</attribute>
+            </xpath>
+            <xpath expr="//group[@name='other']" position="inside">
+                <field name="ddfsc_batch_progress" readonly="1"/>
+                <field name="ddfsc_validation_state" widget="badge" readonly="1"/>
+                <field name="ddfsc_validated_by" readonly="1" invisible="not ddfsc_validated_by"/>
+                <field name="ddfsc_approved_by" readonly="1" invisible="not ddfsc_approved_by"/>
+                <field name="ddfsc_reopened_by" readonly="1" invisible="not ddfsc_reopened_by"/>
+            </xpath>
+            <xpath expr="//field[@name='slip_ids']" position="after">
+                <group string="Validation Notes" invisible="not ddfsc_validation_note">
+                    <field name="ddfsc_validation_note" nolabel="1" readonly="1"/>
+                </group>
+            </xpath>
+            <xpath expr="//field[@name='slip_ids']" position="before">
+                <group string="Controlled Reopening" invisible="state != 'close'">
+                    <field name="ddfsc_reopen_reason" placeholder="Why must this closed batch be reopened?" required="state == 'close'"/>
+                </group>
+            </xpath>
+            <xpath expr="//field[@name='slip_ids']" position="before">
+                <group string="Batch Progress" col="4">
+                    <field name="ddfsc_draft_count" readonly="1"/>
+                    <field name="ddfsc_waiting_count" readonly="1"/>
+                    <field name="ddfsc_done_count" readonly="1"/>
+                    <field name="ddfsc_rejected_count" readonly="1"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

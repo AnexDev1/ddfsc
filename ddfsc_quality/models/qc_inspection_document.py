@@ -147,8 +147,20 @@ class DdfscQcInspection(models.Model):
 
     def _ensure_nonconformance(self):
         for inspection in self:
-            open_ncr = inspection.nonconformance_ids.filtered(lambda ncr: ncr.state not in ("closed", "canceled"))
+            # An NCR belongs to the lot's unresolved quality issue, not to one
+            # individual test attempt.  A failed reinspection must continue the
+            # existing NCR instead of creating a duplicate.
+            open_ncr = self.env["ddfsc.quality.nonconformance"].search([
+                ("lot_id", "=", inspection.lot_id.id),
+                ("state", "not in", ("closed", "canceled")),
+            ], order="create_date asc, id asc", limit=1)
             if open_ncr:
+                if open_ncr.inspection_id != inspection:
+                    open_ncr.write({"inspection_id": inspection.id})
+                    open_ncr.message_post(body=_(
+                        "Failed reinspection %(inspection)s is linked to this existing NCR.",
+                        inspection=inspection.name,
+                    ))
                 continue
             failed = inspection.line_ids.filtered(lambda line: line.mandatory and line.result == "fail")
             self.env["ddfsc.quality.nonconformance"].create({

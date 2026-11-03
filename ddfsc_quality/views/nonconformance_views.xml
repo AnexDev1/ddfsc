@@ -71,6 +71,8 @@
                             <field name="disposition"/>
                             <field name="closed_by_id" invisible="not closed_by_id"/>
                             <field name="closed_date" invisible="not closed_date"/>
+                            <field name="disposition_move_id" readonly="1" invisible="not disposition_move_id"/>
+                            <field name="disposition_scrap_id" readonly="1" invisible="not disposition_scrap_id"/>
                         </group>
                     </group>
                     <notebook>

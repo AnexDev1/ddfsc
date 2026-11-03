@@ -78,4 +78,38 @@
             </t>
         </t>
     </template>
+
+    <record id="action_qc_inspection_report" model="ir.actions.report">
+        <field name="name">Laboratory Inspection Report</field><field name="model">ddfsc.qc.inspection</field>
+        <field name="report_type">qweb-pdf</field><field name="report_name">ddfsc_quality.qc_inspection_report</field>
+        <field name="report_file">ddfsc_quality.qc_inspection_report</field><field name="binding_model_id" ref="model_ddfsc_qc_inspection"/>
+        <field name="binding_type">report</field><field name="print_report_name">'QC Inspection - %s' % (object.name)</field>
+    </record>
+    <template id="qc_inspection_report">
+        <t t-call="web.html_container"><t t-foreach="docs" t-as="inspection"><t t-call="web.external_layout"><div class="page">
+            <h2>Laboratory Inspection Report</h2>
+            <table class="table table-sm table-bordered"><tr><th>Inspection</th><td t-field="inspection.name"/><th>Checkpoint</th><td t-field="inspection.checkpoint"/></tr>
+            <tr><th>Lot / Batch</th><td t-field="inspection.lot_id"/><th>Product</th><td t-field="inspection.product_id"/></tr>
+            <tr><th>QC Plan</th><td t-field="inspection.plan_id"/><th>Result</th><td t-field="inspection.result_state"/></tr>
+            <tr><th>Inspector</th><td t-field="inspection.inspector_id"/><th>Review status</th><td t-field="inspection.state"/></tr></table>
+            <h3>Results</h3><table class="table table-sm table-bordered"><thead><tr><th>Test</th><th>Required Range</th><th>Measured / Observed</th><th>Result</th><th>Method / Unit</th></tr></thead><tbody>
+            <tr t-foreach="inspection.line_ids" t-as="line"><td t-field="line.name"/><td t-field="line.specification"/><td><span t-if="line.result_type == 'qualitative'" t-field="line.measured_text"/><span t-else="" t-field="line.measured_value"/></td><td t-field="line.result"/><td t-field="line.note"/></tr>
+            </tbody></table><p t-if="inspection.reinspection_reason"><strong>Reinspection reason:</strong> <span t-field="inspection.reinspection_reason"/></p>
+        </div></t></t></t>
+    </template>
+
+    <record id="action_rejection_summary_report" model="ir.actions.report">
+        <field name="name">Rejection Summary</field><field name="model">ddfsc.quality.nonconformance</field>
+        <field name="report_type">qweb-pdf</field><field name="report_name">ddfsc_quality.rejection_summary_report</field>
+        <field name="report_file">ddfsc_quality.rejection_summary_report</field><field name="binding_model_id" ref="model_ddfsc_quality_nonconformance"/>
+        <field name="binding_type">report</field><field name="print_report_name">'QC Rejection Summary'</field>
+    </record>
+    <template id="rejection_summary_report">
+        <t t-call="web.html_container"><t t-call="web.external_layout"><div class="page">
+            <h2>QC Rejection Summary</h2><p>Selected non-conformance records: <span t-esc="len(docs)"/></p>
+            <table class="table table-sm table-bordered"><thead><tr><th>NCR</th><th>Lot</th><th>Product</th><th>Severity</th><th>Quantity</th><th>Disposition</th><th>Status</th></tr></thead><tbody>
+            <tr t-foreach="docs" t-as="ncr"><td t-field="ncr.name"/><td t-field="ncr.lot_id"/><td t-field="ncr.product_id"/><td t-field="ncr.severity"/><td t-field="ncr.affected_qty"/><td t-field="ncr.disposition"/><td t-field="ncr.state"/></tr>
+            </tbody><tfoot><tr><th colspan="4">Total affected quantity</th><th t-esc="sum(docs.mapped('affected_qty'))"/><th colspan="2"/></tr></tfoot></table>
+        </div></t></t>
+    </template>
 </odoo>

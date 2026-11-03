@@ -58,12 +58,11 @@ EMP-001,2026-10-28 17:00:00,out
   times, with manager approval before a correction is applied.
 - HR-006 and HR-009: unique employee numbers, payroll eligibility, and controlled
   employee termination using Odoo's standard contract and departure data.
-- HR-011 to HR-014 and HR-016: standard work calendars, effective-dated employee
-  schedule assignments, grace periods, historical schedule selection, and
-  timezone-aware expected hours.
+- HR-011 to HR-016: standard work calendars, effective-dated employee schedule
+  assignments, grace periods, public-holiday closures, historical schedule
+  selection, and timezone-aware expected hours.
 - AT-003: late arrival, early departure, missing check-out, and missing-schedule
   exceptions calculated against the effective schedule.
 
-Daily absence generation, leave integration, overtime policy, attendance-period
-locking, payroll calculation, accounting posting, and CBE export still require
-the client's approved rules and representative expected results.
+The client must still confirm official holiday dates, statutory payroll treatment,
+and representative expected results before production rollout.

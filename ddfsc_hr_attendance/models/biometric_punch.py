@@ -145,6 +145,10 @@ class DdfscBiometricPunch(models.Model):
 
         if effective_type == "in":
             if open_attendance:
+                self.env["ddfsc.attendance.exception"].create_from_punch(
+                    self, "repeated_checkin",
+                    _("An open attendance already exists from %s.") % open_attendance.check_in,
+                )
                 raise ValidationError(
                     _("An open attendance already exists from %s.", open_attendance.check_in)
                 )
@@ -158,11 +162,18 @@ class DdfscBiometricPunch(models.Model):
             )
         else:
             if not open_attendance:
+                self.env["ddfsc.attendance.exception"].create_from_punch(
+                    self, "unmatched_checkout", _("No earlier open check-in was found for this check-out."),
+                )
                 raise ValidationError(_("No earlier open check-in was found for this check-out."))
             if self.event_time < open_attendance.check_in:
+                self.env["ddfsc.attendance.exception"].create_from_punch(
+                    self, "invalid_sequence", _("The check-out time is earlier than the open check-in."),
+                )
                 raise ValidationError(_("Check-out time is earlier than the open check-in."))
             open_attendance.with_context(biometric_processing=True).write(
                 {"check_out": self.event_time, "check_out_punch_id": self.id, "source": "biometric"}
             )
             attendance = open_attendance
+            self.env["ddfsc.attendance.exception"].resolve_for_attendance(attendance)
         self.write({"state": "processed", "attendance_id": attendance.id, "error_message": False})

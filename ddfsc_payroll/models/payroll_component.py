@@ -60,6 +60,19 @@ class EmployeePayrollComponent(models.Model):
     recurrence = fields.Selection(
         [("recurring", "Recurring"), ("one_off", "One-time")], required=True, default="recurring", tracking=True,
     )
+    adjustment_type = fields.Selection(
+        [
+            ("standard", "Standard component"),
+            ("advance_recovery", "Salary advance recovery"),
+            ("payroll_correction", "Payroll correction"),
+            ("other_deduction", "Other approved deduction"),
+            ("final_settlement", "Final settlement"),
+        ],
+        required=True,
+        default="standard",
+        tracking=True,
+        help="Explains why this payroll component is being applied. It does not change the configured salary rule.",
+    )
     date_from = fields.Date(required=True, default=fields.Date.context_today, tracking=True)
     date_to = fields.Date(tracking=True)
     state = fields.Selection(
@@ -79,6 +92,14 @@ class EmployeePayrollComponent(models.Model):
         for record in self:
             if record.date_to and record.date_to < record.date_from:
                 raise ValidationError(self.env._("End date cannot be earlier than start date."))
+
+    @api.constrains("adjustment_type", "recurrence", "note")
+    def _check_final_settlement_controls(self):
+        for record in self.filtered(lambda component: component.adjustment_type == "final_settlement"):
+            if record.recurrence != "one_off":
+                raise ValidationError(self.env._("A final-settlement component must be one-time."))
+            if not (record.note or "").strip():
+                raise ValidationError(self.env._("Record the approved termination or settlement reference in the note."))
 
     @api.constrains("employee_id", "company_id")
     def _check_employee_company(self):
@@ -109,7 +130,7 @@ class EmployeePayrollComponent(models.Model):
         return super().unlink()
 
     def write(self, vals):
-        protected = {"employee_id", "component_type_id", "amount", "recurrence", "date_from", "date_to", "company_id"}
+        protected = {"employee_id", "component_type_id", "amount", "recurrence", "adjustment_type", "date_from", "date_to", "company_id"}
         approved = self.filtered(lambda record: record.state == "approved")
         if approved and protected.intersection(vals):
             raise UserError(self.env._("Reset approved components to draft before changing payroll values."))
