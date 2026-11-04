@@ -110,6 +110,55 @@
                             </div>
                         </div>
 
+                        <!-- Multi-Step Approvals -->
+                        <div class="mt-4" t-if="doc.commercial_approver_id or doc.finance_approver_id or doc.production_approver_id or doc.sales_purchase_approver_id or doc.gm_approver_id" style="page-break-inside: avoid;">
+                            <div style="font-size: 16px; font-weight: bold; border-bottom: 1px solid #ddd; padding-bottom: 5px; margin-bottom: 10px;">
+                                Approval History
+                            </div>
+                            <table class="table table-sm" style="font-size: 12px;">
+                                <thead>
+                                    <tr>
+                                        <th>Step</th>
+                                        <th>Role / Department</th>
+                                        <th>Approver</th>
+                                        <th>Date &amp; Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr t-if="doc.commercial_approver_id">
+                                        <td>1</td>
+                                        <td>Commercial Dep't</td>
+                                        <td><span t-field="doc.commercial_approver_id.name"/></td>
+                                        <td><span t-field="doc.commercial_approval_date" t-options='{"widget": "datetime"}'/></td>
+                                    </tr>
+                                    <tr t-if="doc.finance_approver_id">
+                                        <td>2</td>
+                                        <td>Finance</td>
+                                        <td><span t-field="doc.finance_approver_id.name"/></td>
+                                        <td><span t-field="doc.finance_approval_date" t-options='{"widget": "datetime"}'/></td>
+                                    </tr>
+                                    <tr t-if="doc.production_approver_id">
+                                        <td>3</td>
+                                        <td>Production Head</td>
+                                        <td><span t-field="doc.production_approver_id.name"/></td>
+                                        <td><span t-field="doc.production_approval_date" t-options='{"widget": "datetime"}'/></td>
+                                    </tr>
+                                    <tr t-if="doc.sales_purchase_approver_id">
+                                        <td>4</td>
+                                        <td>Sales &amp; Purchase</td>
+                                        <td><span t-field="doc.sales_purchase_approver_id.name"/></td>
+                                        <td><span t-field="doc.sales_purchase_approval_date" t-options='{"widget": "datetime"}'/></td>
+                                    </tr>
+                                    <tr t-if="doc.gm_approver_id">
+                                        <td>5</td>
+                                        <td>General Manager</td>
+                                        <td><span t-field="doc.gm_approver_id.name"/></td>
+                                        <td><span t-field="doc.gm_approval_date" t-options='{"widget": "datetime"}'/></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
                         <!-- Committee Actions & Approvals -->
                         <div class="mt-4" t-if="doc.approval_ids" style="page-break-inside: avoid;">
                             <div style="font-size: 16px; font-weight: bold; border-bottom: 1px solid #ddd; padding-bottom: 5px; margin-bottom: 10px;">

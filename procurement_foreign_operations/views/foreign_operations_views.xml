@@ -11,7 +11,7 @@
             <xpath expr="//header" position="inside">
                  <button name="action_create_lc" string="Create LC/TT/CAD" type="object" class="oe_highlight" invisible="request_type != 'foreign' or state in ('purchase', 'done') or lc_count &gt; 0" groups="procurement_foreign_purchase.group_foreign_purchase_operation_manager"/>
                 <button name="action_open_margin_modal" string="Manage Margins" type="object" class="oe_highlight" invisible="request_type != 'foreign' or has_standard_bill"/>
-                <button name="action_draft_landed_cost" string="Draft Landed Cost" type="object" class="oe_highlight" invisible="request_type != 'foreign' or landed_cost_count &gt; 0" groups="account.group_account_invoice"/>
+                <button name="action_draft_landed_cost" string="Draft Landed Cost" type="object" class="oe_highlight" invisible="request_type != 'foreign'" groups="account.group_account_invoice"/>
                 <button name="action_create_payment_request" string="Create Payment" type="object" class="oe_highlight" invisible="request_type != 'foreign' " groups="procurement_foreign_purchase.group_foreign_purchase_operation_manager"/>
             </xpath>
 
@@ -80,9 +80,6 @@
                                     <field name="import_permit_attachment" widget="many2many_binary"/>
                                 </group>
                             </group>
-            
-
-                    
                         </page>
 
                         <!-- LC -->
@@ -235,12 +232,15 @@
                         <list editable="bottom" create="false" delete="false">
                             <field name="product_id" readonly="1"/>
                             <field name="product_qty" string="Quantity" readonly="1" sum="Total Quantity"/>
-                            <field name="price_unit" string="Actual Product Cost" readonly="1" sum="Total Actual Cost"/>
-                            <field name="exchange_rate_related" string="Exchange Rate"/>
-                            <field name="price_unit_etb" string="Actual Cost (ETB)" readonly="1" sum="Total Actual Cost ETB"/>
-                            <field name="price_subtotal" string="Sub Total" readonly="1" sum="Total Sub Total"/>
-                            <field name="customs_product_cost" sum="Total Customs Cost"/>
-                            <field name="cost_difference" readonly="1" decoration-danger="cost_difference &gt; 0" decoration-success="cost_difference &lt; 0" sum="Total Variance"/>
+                            <field name="price_unit" string="Actual Cost (USD)" readonly="1"/>
+                            <field name="exchange_rate_related" string="Exchange Rate" readonly="1"/>
+                            <field name="price_unit_etb" string="Actual Cost (ETB)" readonly="1"/>
+                            <field name="price_subtotal" string="Subtotal (USD)" readonly="1" sum="Total Subtotal (USD)"/>
+                            <field name="price_subtotal_etb" string="Subtotal (ETB)" readonly="1" sum="Total Subtotal (ETB)"/>
+                            <field name="customs_product_cost" string="Customs Cost/Unit (ETB)"/>
+                            <field name="customs_total_amount" string="Customs Total (ETB)" readonly="1" sum="Total Customs (ETB)"/>
+                            <field name="cost_difference" string="Unit Variance (ETB)" readonly="1" decoration-danger="cost_difference &gt; 0" decoration-success="cost_difference &lt; 0" optional="show"/>
+                            <field name="cost_difference_total" string="Total Variance (ETB)" readonly="1" decoration-danger="cost_difference_total &gt; 0" decoration-success="cost_difference_total &lt; 0" sum="Total Variance (ETB)"/>
                         </list>
                     </field>
                 </page>
@@ -338,6 +338,55 @@
             </form>
         </field>
     </record>
+    <!-- Minimal selector used while recording landed-cost products. Product
+         identifiers such as Product Code and HS Code are intentionally omitted. -->
+    <record id="view_landed_cost_product_selection_list" model="ir.ui.view">
+        <field name="name">product.product.landed.cost.selection.list</field>
+        <field name="model">product.product</field>
+        <field name="arch" type="xml">
+            <list string="Landed Cost Products" create="0" edit="0">
+                <field name="name" string="Product"/>
+                <field name="categ_id" optional="hide"/>
+                <field name="standard_price" string="Cost" optional="show"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_landed_cost_product_selection_form" model="ir.ui.view">
+        <field name="name">product.product.landed.cost.selection.form</field>
+        <field name="model">product.product</field>
+        <field name="arch" type="xml">
+            <form string="Landed Cost Product">
+                <sheet>
+                    <field name="type" invisible="1"/>
+                    <field name="landed_cost_ok" invisible="1"/>
+                    <group>
+                        <group>
+                            <field name="name" string="Landed Cost Product"/>
+                            <field name="categ_id" options="{'no_create': True}"/>
+                            <field name="standard_price" string="Default Cost"/>
+                        </group>
+                        <group>
+                            <field name="split_method_landed_cost"/>
+                            <field name="property_account_expense_id" options="{'no_create': True}"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_landed_cost_product_selection_search" model="ir.ui.view">
+        <field name="name">product.product.landed.cost.selection.search</field>
+        <field name="model">product.product</field>
+        <field name="arch" type="xml">
+            <search string="Landed Cost Products">
+                <field name="name" string="Product"/>
+                <field name="categ_id"/>
+            </search>
+        </field>
+    </record>
+
     <!-- Extend Landed Cost Form - Add Product Summary Tab -->
     <record id="view_stock_landed_cost_form_foreign_ops" model="ir.ui.view">
         <field name="name">stock.landed.cost.form.foreign.ops</field>
@@ -353,11 +402,19 @@
             <xpath expr="//field[@name='cost_lines']/list" position="attributes">
                 <attribute name="create">0</attribute>
             </xpath>
+            <xpath expr="//field[@name='cost_lines']/form//field[@name='product_id']" position="attributes">
+                <attribute name="context">{'default_landed_cost_ok': True, 'default_type': 'service', 'display_default_code': False, 'landed_cost_product_entry': True, 'tree_view_ref': 'procurement_foreign_operations.view_landed_cost_product_selection_list', 'form_view_ref': 'procurement_foreign_operations.view_landed_cost_product_selection_form', 'search_view_ref': 'procurement_foreign_operations.view_landed_cost_product_selection_search'}</attribute>
+            </xpath>
+            <xpath expr="//field[@name='cost_lines']/list//field[@name='product_id']" position="attributes">
+                <attribute name="context">{'default_landed_cost_ok': True, 'default_type': 'service', 'display_default_code': False, 'landed_cost_product_entry': True, 'tree_view_ref': 'procurement_foreign_operations.view_landed_cost_product_selection_list', 'form_view_ref': 'procurement_foreign_operations.view_landed_cost_product_selection_form', 'search_view_ref': 'procurement_foreign_operations.view_landed_cost_product_selection_search'}</attribute>
+            </xpath>
             <xpath expr="//notebook/page[last()]" position="after">
                 <page string="Product Summary">
                     <field name="summary_line_ids" readonly="1">
                         <list>
-                            <field name="product_id"/>
+                            <field name="product_id"
+                                   context="{'display_default_code': False}"
+                                   options="{'no_open': True}"/>
                             <field name="quantity" sum="Total Quantity"/>
                             <field name="customs_cost_value" sum="Total Customs Value"/>
                             <field name="former_cost" sum="Total Original Value"/>

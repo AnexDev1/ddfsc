@@ -13,9 +13,9 @@
                 <field name="date_rfq"/>
                 <field name="amount_total" optional="show" sum="Total"/>
                 <field name="state"
-                       decoration-info="state == 'draft'"
-                       decoration-warning="state in ['winner-picked', 'checked', 'committee-approved']"
-                       decoration-success="state == 'approved'"
+                       decoration-info="state in ['draft', 'winner_picked']"
+                       decoration-warning="state in ['submitted', 'finance_approval', 'production_approval', 'sales_purchase_approval', 'gm_approval']"
+                       decoration-success="state in ['approved', 'po_created']"
                        decoration-danger="state == 'cancel'"
                        widget="badge"/>
             </list>
@@ -49,43 +49,58 @@
         <field name="arch" type="xml">
             <form string="Request for Quotation">
                 <header>
-                    <button name="action_submit" type="object"
-                            string="Submit" invisible="state != 'draft'" class="oe_highlight"/>
-                    
                     <button name="action_select_winners" type="object"
-                            string="Pick Winners" invisible="state not in ['draft']"/>
+                            string="Pick Winners" invisible="state not in ['draft', 'winner_picked']"
+                            class="oe_highlight"/>
 
-                    <button name="action_check" type="object"
-                            string="Check" invisible="state != 'winner-picked'" class="oe_highlight" 
-                            groups="procurement_local_rfq.group_local_rfq_committee"/>
+                    <button name="action_submit" type="object"
+                            string="Submit" invisible="state not in ['draft', 'winner_picked']"
+                            class="oe_highlight"/>
 
-                    <button name="action_committee_approve" type="object"
-                            string="Committee Approve" invisible="state != 'checked'" class="oe_highlight" 
-                            groups="procurement_local_rfq.group_local_rfq_committee"/>
-                    
-                    <button name="action_committee_reject" type="object"
-                            string="Reject" invisible="state != 'checked'" class="btn-danger" 
-                            groups="procurement_local_rfq.group_local_rfq_committee"/>
+                    <!-- Step 1: Commercial Dep't Approval -->
+                    <button name="action_commercial_approve" type="object"
+                            string="Approve" invisible="state != 'submitted'" class="oe_highlight"
+                            groups="procurement_local_rfq.group_local_rfq_commercial"/>
 
-                    <button name="action_approve" type="object"
-                            string="GM/CEO Approve" invisible="state != 'committee-approved'" class="oe_highlight" 
-                            groups="procurement_local_purchase.group_local_purchase_pr_manager"/>
+                    <!-- Step 2: Finance Approval -->
+                    <button name="action_finance_approve" type="object"
+                            string="Approve" invisible="state != 'finance_approval'" class="oe_highlight"
+                            groups="procurement_local_rfq.group_local_rfq_finance"/>
+
+                    <!-- Step 3: Production Head Approval -->
+                    <button name="action_production_approve" type="object"
+                            string="Approve" invisible="state != 'production_approval'" class="oe_highlight"
+                            groups="procurement_local_rfq.group_local_rfq_production_head"/>
+
+                    <!-- Step 4: Sales & Purchase Approval -->
+                    <button name="action_sales_purchase_approve" type="object"
+                            string="Approve" invisible="state != 'sales_purchase_approval'" class="oe_highlight"
+                            groups="procurement_local_rfq.group_local_rfq_sales_purchase"/>
+
+                    <!-- Step 5: General Manager Approval -->
+                    <button name="action_gm_approve" type="object"
+                            string="Approve" invisible="state != 'gm_approval'" class="oe_highlight"
+                            groups="procurement_local_rfq.group_local_rfq_general_manager"/>
 
                     <button name="action_create_po" type="object"
                             string="Create PO" invisible="state != 'approved' or po_count > 0" class="oe_highlight"
-                            groups="procurement_local_purchase.group_local_purchase_pr_manager"/>
+                            groups="procurement_local_purchase.group_local_purchase_pr_manager,procurement_local_purchase.group_local_purchase_ceo"/>
+
+                    <button name="action_reject" type="object"
+                            string="Reject" invisible="state not in ['submitted', 'finance_approval', 'production_approval', 'sales_purchase_approval', 'gm_approval']"
+                            groups="procurement_local_rfq.group_local_rfq_commercial,procurement_local_rfq.group_local_rfq_finance,procurement_local_rfq.group_local_rfq_production_head,procurement_local_rfq.group_local_rfq_sales_purchase,procurement_local_rfq.group_local_rfq_general_manager,procurement_local_purchase.group_local_purchase_pr_manager,procurement_local_purchase.group_local_purchase_ceo"/>
 
                     <button name="action_cancel" type="object"
-                            string="Cancel" invisible="state in ['approved', 'cancel','po-created']"
-                            groups="procurement_local_purchase.group_local_purchase_pr_manager"/>
+                            string="Cancel" invisible="state not in ['draft', 'winner_picked']"/>
 
                     <button name="action_draft" type="object"
-                            string="Reset to Draft" invisible="state not in ['cancel']"/>
+                            string="Reset to Draft" invisible="state != 'cancel'"/>
 
                     <button name="action_view_comparison_matrix" type="object"
                             string="Comparison Matrix" class="btn-secondary" icon="fa-table"/>
 
-                    <field name="state" widget="statusbar" statusbar_visible="draft,winner-picked,checked,committee-approved,approved"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,winner_picked,submitted,finance_approval,production_approval,sales_purchase_approval,gm_approval,approved"/>
                 </header>
 
                 <sheet>
@@ -103,22 +118,24 @@
                         <group>
                             <field name="requisition_id" readonly="1"/>
                             <field name="requested_by" invisible="1"/>
-                            <field name="date_rfq" readonly="state != 'draft'"/>
-                            <field name="committee_ids" readonly="state != 'draft'" widget="many2many_tags"/>
+                            <field name="date_rfq" readonly="state not in ['draft', 'winner_picked']"/>
+                            <field name="committee_ids" invisible="1"/>
                         </group>
                         <group>
-                            <field name="winner_selection_method" readonly="state != 'draft'"/>
-                            <field name="vendor_ids" widget="many2many_tags" readonly="state != 'draft'"/>
+                            <field name="winner_selection_method" readonly="state not in ['draft', 'winner_picked']"/>
+                            <field name="vendor_ids" widget="many2many_tags" readonly="state not in ['draft', 'winner_picked']"/>
                             <field name="amount_total" readonly="1"/>
                         </group>
                     </group>
 
                     <notebook>
                         <page string="Request for Quotation" name="comparison">
-                            <field name="quote_ids" readonly="state != 'draft'">
+                            <field name="quote_ids" readonly="state not in ['draft', 'winner_picked']">
                                 <list editable="bottom" create="0" delete="0">
                                     <field name="pr_line_id" readonly="1" force_save="1" column_invisible="True"/>
+                                    <field name="image_1920" string="Image" widget="image" options="{'zoom': true, 'preview_image': 'image_128', 'size': [40, 40]}" width="45" optional="show"/>
                                     <field name="product_id" readonly="1" force_save="1"/>
+                                    <field name="categ_id" optional="show"/>
                                     <field name="partner_id" readonly="1" force_save="1"/>
                                     <field name="cost_center_id" readonly="1" force_save="1" optional="show"/>
                                     <field name="price_unit"/>
@@ -126,19 +143,39 @@
                                     <field name="financial_percent" optional="hide"/>
                                     <field name="technical_percent" optional="hide"/>
                                     <field name="total_percent"/>
-                                    <field name="selected" widget="boolean_toggle" readonly="1"/>
+                                    <field name="selected" widget="boolean_toggle"/>
                                 </list>
                             </field>
                         </page>
-                        <page string="Committee Sign-offs" name="approvals" invisible="state == 'draft'">
-                            <field name="approval_ids">
-                                <list create="0" edit="0" delete="0">
-                                    <field name="user_id"/>
-                                    <field name="action_type"/>
-                                    <field name="approval_date"/>
-                                    <field name="comment"/>
-                                </list>
-                            </field>
+
+                        <page string="Approval History" name="approval_history">
+                            <group>
+                                <group string="1. Commercial Dep't">
+                                    <field name="commercial_approver_id"/>
+                                    <field name="commercial_approval_date"/>
+                                </group>
+                                <group string="2. Finance">
+                                    <field name="finance_approver_id"/>
+                                    <field name="finance_approval_date"/>
+                                </group>
+                                <group string="3. Production Head">
+                                    <field name="production_approver_id"/>
+                                    <field name="production_approval_date"/>
+                                </group>
+                                <group string="4. Sales &amp; Purchase">
+                                    <field name="sales_purchase_approver_id"/>
+                                    <field name="sales_purchase_approval_date"/>
+                                </group>
+                                <group string="5. General Manager">
+                                    <field name="gm_approver_id"/>
+                                    <field name="gm_approval_date"/>
+                                </group>
+                                <group string="Rejection / Cancellation" invisible="not rejected_by and not rejection_date">
+                                    <field name="rejected_by"/>
+                                    <field name="rejection_date"/>
+                                    <field name="rejection_reason"/>
+                                </group>
+                            </group>
                         </page>
                     </notebook>
                 </sheet>

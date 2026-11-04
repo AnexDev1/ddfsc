@@ -2,19 +2,76 @@
 <odoo>
     <data noupdate="0">
 
-        <!-- Privilege for Committee - Use the shared category -->
-        <record id="privilege_local_rfq_committee" model="res.groups.privilege">
-            <field name="name">Local RFQ: Committee</field>
+        <!-- 1. Commercial Dep't -->
+        <record id="privilege_local_rfq_commercial" model="res.groups.privilege">
+            <field name="name">Local RFQ: Commercial Dep't</field>
             <field name="category_id" ref="procurement_store_requisition.category_store_requisition"/>
-            <field name="sequence">70</field>
+            <field name="sequence">51</field>
         </record>
-
-        <!-- New Group for Local RFQ Committee -->
-        <record id="group_local_rfq_committee" model="res.groups">
+        <record id="group_local_rfq_commercial" model="res.groups">
             <field name="name">Allowed</field>
-            <field name="privilege_id" ref="privilege_local_rfq_committee"/>
+            <field name="privilege_id" ref="privilege_local_rfq_commercial"/>
             <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
             <field name="sequence">1</field>
+        </record>
+
+        <!-- 2. Finance -->
+        <record id="privilege_local_rfq_finance" model="res.groups.privilege">
+            <field name="name">Local RFQ: Finance</field>
+            <field name="category_id" ref="procurement_store_requisition.category_store_requisition"/>
+            <field name="sequence">52</field>
+        </record>
+        <record id="group_local_rfq_finance" model="res.groups">
+            <field name="name">Allowed</field>
+            <field name="privilege_id" ref="privilege_local_rfq_finance"/>
+            <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+            <field name="sequence">2</field>
+        </record>
+
+        <!-- 3. Production Head -->
+        <record id="privilege_local_rfq_production_head" model="res.groups.privilege">
+            <field name="name">Local RFQ: Production Head</field>
+            <field name="category_id" ref="procurement_store_requisition.category_store_requisition"/>
+            <field name="sequence">53</field>
+        </record>
+        <record id="group_local_rfq_production_head" model="res.groups">
+            <field name="name">Allowed</field>
+            <field name="privilege_id" ref="privilege_local_rfq_production_head"/>
+            <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+            <field name="sequence">3</field>
+        </record>
+
+        <!-- 4. Sales & Purchase -->
+        <record id="privilege_local_rfq_sales_purchase" model="res.groups.privilege">
+            <field name="name">Local RFQ: Sales &amp; Purchase</field>
+            <field name="category_id" ref="procurement_store_requisition.category_store_requisition"/>
+            <field name="sequence">54</field>
+        </record>
+        <record id="group_local_rfq_sales_purchase" model="res.groups">
+            <field name="name">Allowed</field>
+            <field name="privilege_id" ref="privilege_local_rfq_sales_purchase"/>
+            <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+            <field name="sequence">4</field>
+        </record>
+
+        <!-- 5. General Manager -->
+        <record id="privilege_local_rfq_general_manager" model="res.groups.privilege">
+            <field name="name">Local RFQ: General Manager</field>
+            <field name="category_id" ref="procurement_store_requisition.category_store_requisition"/>
+            <field name="sequence">55</field>
+        </record>
+        <record id="group_local_rfq_general_manager" model="res.groups">
+            <field name="name">Allowed</field>
+            <field name="privilege_id" ref="privilege_local_rfq_general_manager"/>
+            <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+            <field name="sequence">5</field>
+        </record>
+
+        <!-- Legacy group retained for backward compatibility -->
+        <record id="group_local_rfq_committee" model="res.groups">
+            <field name="name">Legacy Local RFQ Committee</field>
+            <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+            <field name="sequence">10</field>
         </record>
 
     </data>

@@ -37,18 +37,29 @@ class ForeignRFQ(models.Model):
     )
 
     currency_id = fields.Many2one('res.currency', string='Currency', required=True, default=lambda self: self.env.company.currency_id, tracking=True)
-    exchange_rate = fields.Float(string='Exchange Rate', compute='_compute_exchange_rate', store=True, tracking=True, help='Exchange rate applied if supplier currency differs from payment currency')
+    exchange_rate = fields.Float(
+        string='Exchange Rate',
+        default=1.0,
+        store=True,
+        tracking=True,
+        help='Exchange rate applied if supplier currency differs from payment currency'
+    )
 
-    @api.depends('currency_id', 'date_rfq', 'company_id')
-    def _compute_exchange_rate(self):
+    @api.onchange('currency_id', 'date_rfq')
+    def _onchange_exchange_rate_suggestion(self):
+        """Auto-suggest the live exchange rate when currency or RFQ date changes.
+        This only runs in the UI and never overwrites a manually set value on save."""
         for rec in self:
             if rec.currency_id and rec.company_id:
-                rec.exchange_rate = rec.currency_id._get_conversion_rate(
-                    rec.currency_id,
-                    rec.company_id.currency_id,
-                    rec.company_id,
-                    rec.date_rfq or fields.Date.context_today(rec)
-                )
+                if rec.currency_id == rec.company_id.currency_id:
+                    rec.exchange_rate = 1.0
+                else:
+                    rec.exchange_rate = rec.currency_id._get_conversion_rate(
+                        rec.currency_id,
+                        rec.company_id.currency_id,
+                        rec.company_id,
+                        rec.date_rfq or fields.Date.context_today(rec)
+                    )
             else:
                 rec.exchange_rate = 1.0
     requisition_id = fields.Many2one(
@@ -218,7 +229,7 @@ class ForeignRFQ(models.Model):
             raise UserError(_("Please provide the Proforma Invoice Number."))
         state_map = {
             'draft': 'submitted',
-            'submitted': 'verified',
+            'submitted': 'pending_currency',
             'verified': 'pending_currency',
         }
 
@@ -279,9 +290,9 @@ class ForeignRFQ(models.Model):
             )
 
         group_xmlid_map = {
-            'submitted': 'procurement_foreign_purchase.group_foreign_purchase_manager', # Verify button
-            'verified': 'procurement_foreign_purchase.group_foreign_purchase_ceo', # CEO Approve button
-            'pending_currency': 'procurement_foreign_purchase.group_foreign_purchase_manager', # Request Currency
+            'submitted': 'procurement_foreign_purchase.group_foreign_purchase_manager',
+            'pending_currency': 'procurement_foreign_purchase.group_foreign_purchase_operation_manager',
+            'approved': 'procurement_foreign_purchase.group_foreign_purchase_operation_manager',
         }
         
         group_xmlid = group_xmlid_map.get(next_state)
@@ -425,8 +436,11 @@ class ForeignRFQLine(models.Model):
     rfq_id = fields.Many2one('foreign.rfq', string='RFQ', ondelete='cascade')
     line_no = fields.Integer(string="Line No", compute="_compute_line_no", store=True)
     product_id = fields.Many2one('product.product', string='Product', required=True)
-    hs_code = fields.Char(string="HS Code")
-    hs_description = fields.Char(string="HS Description")
+    categ_id = fields.Many2one('product.category', string='Category', related='product_id.categ_id', readonly=True)
+    image_128 = fields.Image(string='Image', related='product_id.image_128', readonly=True)
+    image_1920 = fields.Image(string='Full Image', related='product_id.image_1920', readonly=True)
+    hs_code = fields.Char(string="HS Code", compute="_compute_hs_info", store=True, readonly=False)
+    hs_description = fields.Char(string="HS Description", compute="_compute_hs_info", store=True, readonly=False)
     description = fields.Char(string='Description')
     cost_center_id = fields.Many2one('account.analytic.account', string='Cost Center')
 
@@ -440,12 +454,29 @@ class ForeignRFQLine(models.Model):
     price_unit_etb = fields.Float(string='Unit Price (ETB)', compute='_compute_etb_values', store=True)
     price_subtotal_etb = fields.Float(string='Subtotal (ETB)', compute='_compute_etb_values', store=True)
 
+    @api.depends('product_id')
+    def _compute_hs_info(self):
+        for line in self:
+            if line.product_id:
+                if hasattr(line.product_id, 'hs_code') and line.product_id.hs_code:
+                    line.hs_code = line.product_id.hs_code
+                elif not line.hs_code:
+                    line.hs_code = False
+                if hasattr(line.product_id, 'hs_description') and line.product_id.hs_description:
+                    line.hs_description = line.product_id.hs_description
+                elif not line.hs_description:
+                    line.hs_description = False
+            else:
+                if not line.hs_code:
+                    line.hs_code = False
+                if not line.hs_description:
+                    line.hs_description = False
+
     @api.depends('rfq_id', 'rfq_id.line_ids')
     def _compute_line_no(self):
         for rfq in self.mapped('rfq_id'):
             for index, line in enumerate(rfq.line_ids.sorted('id'), start=1):
                 line.line_no = index
-
 
     @api.depends('quantity', 'price_unit')
     def _compute_price_subtotal(self):
@@ -465,6 +496,10 @@ class ForeignRFQLine(models.Model):
             self.description = self.product_id.display_name
             self.price_unit = self.product_id.standard_price
             self.uom_id = self.product_id.uom_id.id
+            if hasattr(self.product_id, 'hs_code') and self.product_id.hs_code:
+                self.hs_code = self.product_id.hs_code
+            if hasattr(self.product_id, 'hs_description') and self.product_id.hs_description:
+                self.hs_description = self.product_id.hs_description
 
 class PurchaseOrder(models.Model):
     _inherit = 'purchase.order'
@@ -475,25 +510,35 @@ class PurchaseOrder(models.Model):
     currency_id_etb = fields.Many2one(
         'res.currency',
         string="ETB Currency",
-        compute="_compute_currency_id_etb"
+        compute="_compute_currency_id_etb",
+        store=True,
     )
-    exchange_rate = fields.Float(string='Exchange Rate', compute='_compute_exchange_rate', store=True, readonly=False)
+    # exchange_rate is defined as a plain editable Float in procurement_foreign_purchase.
+    # We intentionally do NOT redeclare it as computed here — doing so would cause Odoo
+    # to overwrite the user's manual value on every save. Instead, we use @api.onchange
+    # to auto-suggest the live rate only when currency or date_order changes.
 
+    @api.depends('company_id')
     def _compute_currency_id_etb(self):
         etb_currency = self.env['res.currency'].with_context(active_test=False).search([('name', '=', 'ETB')], limit=1)
         for order in self:
             order.currency_id_etb = etb_currency or order.company_id.currency_id
 
-    @api.depends('currency_id', 'date_order', 'company_id')
-    def _compute_exchange_rate(self):
+    @api.onchange('currency_id', 'date_order')
+    def _onchange_exchange_rate_suggestion(self):
+        """Auto-suggest the live exchange rate when currency or order date changes.
+        This only runs in the UI and never overwrites a manually set value on save."""
         for rec in self:
             if rec.currency_id and rec.company_id:
-                rec.exchange_rate = rec.currency_id._get_conversion_rate(
-                    rec.currency_id,
-                    rec.company_id.currency_id,
-                    rec.company_id,
-                    rec.date_order or fields.Datetime.now()
-                )
+                if rec.currency_id == rec.company_id.currency_id:
+                    rec.exchange_rate = 1.0
+                else:
+                    rec.exchange_rate = rec.currency_id._get_conversion_rate(
+                        rec.currency_id,
+                        rec.company_id.currency_id,
+                        rec.company_id,
+                        rec.date_order or fields.Datetime.now()
+                    )
             else:
                 rec.exchange_rate = 1.0
 
@@ -515,20 +560,14 @@ class PurchaseOrder(models.Model):
         store=True
     )
 
-    @api.depends('order_line.price_subtotal_usd', 'order_line.price_subtotal_etb', 'exchange_rate', 'currency_id', 'request_type')
+    @api.depends('amount_total', 'exchange_rate', 'currency_id', 'currency_id_etb', 'request_type')
     def _compute_totals_foreign(self):
         for order in self:
-            if order.request_type == 'foreign' and order.exchange_rate and order.exchange_rate > 1:
+            if order.request_type == 'foreign' and order.exchange_rate and order.exchange_rate > 0:
                 rate = order.exchange_rate
-
-                # Derive USD and ETB totals directly from lines — the source of truth
-                usd_val = sum(order.order_line.mapped('price_subtotal_usd'))
-                etb_val = sum(order.order_line.mapped('price_subtotal_etb'))
-
-                # Fallback: if lines have no USD subtotals yet, divide amount_total by rate
-                if not usd_val and order.amount_total:
-                    usd_val = order.amount_total / rate
-                    etb_val = order.amount_total
+                usd_val = order.amount_total
+                etb_currency = order.currency_id_etb or order.company_id.currency_id
+                etb_val = etb_currency.round(order.amount_total * rate) if etb_currency else round(order.amount_total * rate, 2)
 
                 order.amount_total_usd = usd_val
                 order.amount_total_etb = etb_val

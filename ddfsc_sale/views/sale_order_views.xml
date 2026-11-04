@@ -1,0 +1,370 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_order_form_inherit_ddfsc_warehouse" model="ir.ui.view">
+        <field name="name">sale.order.form.inherit.ddfsc.warehouse</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale_stock.view_order_form_inherit_sale_stock"/>
+        <field name="priority">30</field>
+        <field name="arch" type="xml">
+            <!-- Update Statusbar to show Waiting Quotation Approval & Waiting Discount Approval -->
+            <xpath expr="//field[@name='state']" position="attributes">
+                <attribute name="statusbar_visible">draft,sent,to_approve,to_approve_discount,sale</attribute>
+            </xpath>
+
+            <!-- Make Confirm button visible only to Managers/GM on draft/sent; salespeople must submit for approval -->
+            <xpath expr="//button[@id='action_confirm']" position="attributes">
+                <attribute name="invisible">state not in ('draft', 'sent') or not is_sales_approver</attribute>
+            </xpath>
+            <!-- Eliminate duplicate Confirm button: hide the secondary un-IDed button -->
+            <xpath expr="//button[@name='action_confirm' and not(@id)]" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+
+            <!-- Add Approval buttons in header -->
+            <xpath expr="//header" position="inside">
+                <field name="has_excessive_discount" invisible="1"/>
+                <field name="is_sales_approver" invisible="1"/>
+                <button name="action_submit_approval"
+                        string="Submit for Approval"
+                        type="object"
+                        class="btn-primary"
+                        invisible="state not in ('draft', 'sent')"/>
+                <button name="action_approve_quotation"
+                        string="Approve Quotation"
+                        type="object"
+                        class="btn-success"
+                        invisible="state != 'to_approve' or not is_sales_approver"/>
+                <button name="action_approve_discount"
+                        string="Approve Discount"
+                        type="object"
+                        class="btn-success"
+                        invisible="state != 'to_approve_discount' or not is_sales_approver"/>
+                <button name="action_reject_wizard"
+                        string="Reject"
+                        type="object"
+                        class="btn-danger"
+                        invisible="state not in ('to_approve', 'to_approve_discount') or not is_sales_approver"/>
+            </xpath>
+
+            <!-- Rejection, Approval, Credit, and Discount Alert Banners -->
+            <xpath expr="//header" position="after">
+                <div class="alert alert-danger" role="alert" invisible="not rejection_reason or state not in ('draft', 'sent')">
+                    <strong>Order Was Rejected by Management: </strong>
+                    <field name="rejection_reason" readonly="1" class="d-inline fw-bold"/>
+                </div>
+                <div class="alert alert-info" role="alert" invisible="state != 'to_approve'">
+                    <strong>Quotation Approval Required: </strong> This quotation is pending Manager/GM review and approval.
+                </div>
+                <div class="alert alert-warning" role="alert" invisible="state != 'to_approve_discount'">
+                    <strong>Discount Approval Required: </strong> The quotation has been approved, but contains a discount of <field name="max_discount" class="d-inline fw-bold"/>% (&gt; 5.0%). Manager/GM discount approval is required before confirmation.
+                </div>
+                <div class="alert alert-warning" role="alert" invisible="sale_type != 'credit' or partner_credit_status != 'warning'">
+                    <strong>Credit Warning: </strong> This customer has reached the credit warning threshold.
+                </div>
+                <div class="alert alert-danger" role="alert" invisible="sale_type != 'credit' or partner_credit_status != 'blocked'">
+                    <strong>Credit Blocked: </strong> This customer has reached the credit blocking limit. Credit sales cannot be submitted or approved.
+                </div>
+                <div class="alert alert-warning" role="alert" invisible="not has_excessive_discount or state in ('to_approve_discount', 'sale', 'done', 'cancel')">
+                    <strong>Discount Limit Exceeded: </strong> This quotation has a discount of <field name="max_discount" class="d-inline fw-bold"/>%. Discounts above 5.0% will require secondary Discount Approval.
+                </div>
+                <div class="alert alert-info" role="alert" invisible="not apply_withholding_tax or state in ('sale', 'done', 'cancel')">
+                    <strong>Withholding Tax (3%) Applied: </strong> 3% Withholding tax is applied to this order.
+                </div>
+            </xpath>
+
+            <!-- Place Sale Type, Location, Warehouse, and Order Discount right after Customer -->
+            <xpath expr="//field[@name='partner_id']" position="after">
+                <field name="sale_type" widget="radio" options="{'horizontal': true}" readonly="state == 'sale'"/>
+                <field name="partner_credit_status" invisible="1"/>
+                <field name="analytic_account_id" string="Location" options="{'no_create': True}" readonly="state == 'sale'"/>
+                <field name="warehouse_id"
+                       domain="[('analytic_account_id', '=', analytic_account_id)] if analytic_account_id else []"
+                       options="{'no_create': True}"
+                       force_save="1"
+                       readonly="state == 'sale'"/>
+                <field name="apply_order_discount"
+                       string="Order Discount"
+                       readonly="state in ('sale', 'done', 'cancel')"/>
+                <label for="order_discount_percent" string="Discount (%)" invisible="not apply_order_discount"/>
+                <div class="d-flex align-items-center" invisible="not apply_order_discount">
+                    <field name="order_discount_percent"
+                           class="oe_inline text-end pe-1"
+                           style="max-width: 90px;"
+                           readonly="state in ('sale', 'done', 'cancel')"/>
+                    <span class="fw-bold ms-1">%</span>
+                </div>
+                <field name="apply_withholding_tax"
+                       string="Withholding Tax"
+                       widget="boolean_toggle"
+                       readonly="state in ('sale', 'done', 'cancel')"/>
+            </xpath>
+
+            <!-- Order Discount display in Totals summary box (Option B) -->
+            <xpath expr="//field[@name='tax_totals']" position="before">
+                <field name="gross_amount_untaxed" string="Gross Subtotal" invisible="not apply_order_discount or order_discount_percent == 0" readonly="1"/>
+                <field name="order_discount_amount" string="Order Discount" class="text-danger fw-bold" invisible="not apply_order_discount or order_discount_percent == 0" readonly="1"/>
+            </xpath>
+
+            <!-- Product Image and Part Number Columns in Order Lines List View -->
+            <xpath expr="//field[@name='order_line']/list//field[@name='product_template_id']" position="before">
+                <field name="image_1920" string="Image" widget="image" options="{'zoom': true, 'preview_image': 'image_128', 'size': [40, 40]}" width="45" optional="show" readonly="1"/>
+            </xpath>
+
+            <!-- Place Payment Proof and Payment Note right after Payment Terms -->
+            <xpath expr="//field[@name='payment_term_id']" position="after">
+                <field name="payment_proof_filename" invisible="1"/>
+                <field name="payment_proof" widget="image" filename="payment_proof_filename" options="{'size': [110, 110]}"/>
+                <field name="payment_note" placeholder="Txn ID, Bank Ref, Telebirr / CBE confirmation..."/>
+            </xpath>
+
+            <!-- Hide duplicate Warehouse field in Delivery/Shipping section -->
+            <xpath expr="//group[@name='sale_shipping']//field[@name='warehouse_id']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+
+            <!-- Approver and Approval Date in Other Info tab -->
+            <xpath expr="//group[@name='sales_person']" position="inside">
+                <field name="quotation_approver_id" readonly="1" invisible="not quotation_approver_id"/>
+                <field name="quotation_approval_date" readonly="1" invisible="not quotation_approval_date"/>
+                <field name="discount_approver_id" readonly="1" invisible="not discount_approver_id"/>
+                <field name="discount_approval_date" readonly="1" invisible="not discount_approval_date"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Orders Tree / List View: Append Sale Type badge -->
+    <record id="view_order_tree_inherit_ddfsc" model="ir.ui.view">
+        <field name="name">sale.order.list.inherit.ddfsc.sale.type</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='partner_id']" position="before">
+                <field name="sale_type"
+                       widget="badge"
+                       decoration-success="sale_type == 'cash'"
+                       decoration-info="sale_type == 'credit'"
+                       optional="show"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Quotations Tree / List View: Append Sale Type badge -->
+    <record id="view_quotation_tree_inherit_ddfsc" model="ir.ui.view">
+        <field name="name">sale.quotation.list.inherit.ddfsc.sale.type</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_quotation_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='partner_id']" position="before">
+                <field name="sale_type"
+                       widget="badge"
+                       decoration-success="sale_type == 'cash'"
+                       decoration-info="sale_type == 'credit'"
+                       optional="show"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Search View: Add Waiting Approval, Cash, and Credit filters -->
+    <record id="view_sales_order_filter_inherit_ddfsc" model="ir.ui.view">
+        <field name="name">sale.order.list.select.inherit.ddfsc</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_sales_order_filter"/>
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='my_sale_orders_filter']" position="after">
+                <filter string="Waiting Approval" name="filter_to_approve" domain="[('state', 'in', ('to_approve', 'to_approve_discount'))]"/>
+                <filter string="Waiting Discount Approval" name="filter_to_approve_discount" domain="[('state', '=', 'to_approve_discount')]"/>
+                <filter string="Discounts &gt; 5%" name="filter_excessive_discount" domain="[('has_excessive_discount', '=', True)]"/>
+                <separator/>
+                <filter string="Cash Sales" name="filter_cash_sales" domain="[('sale_type', '=', 'cash')]"/>
+                <filter string="Credit Sales" name="filter_credit_sales" domain="[('sale_type', '=', 'credit')]"/>
+            </xpath>
+            <xpath expr="//group" position="inside">
+                <filter string="Sale Type" name="groupby_sale_type" domain="[]" context="{'group_by': 'sale_type'}"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- WINDOW ACTIONS -->
+    <record id="action_orders_cash" model="ir.actions.act_window">
+        <field name="name">Cash Sales</field>
+        <field name="res_model">sale.order</field>
+        <field name="view_mode">list,kanban,form,calendar,pivot,graph,activity</field>
+        <field name="search_view_id" ref="sale.sale_order_view_search_inherit_sale"/>
+        <field name="domain">[('state', 'in', ('sale', 'done')), ('sale_type', '=', 'cash')]</field>
+        <field name="context">{'default_sale_type': 'cash', 'search_default_my_sale_orders_filter': 0}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No Cash Sales orders found!
+            </p>
+        </field>
+    </record>
+
+    <record id="action_orders_credit" model="ir.actions.act_window">
+        <field name="name">Credit Sales</field>
+        <field name="res_model">sale.order</field>
+        <field name="view_mode">list,kanban,form,calendar,pivot,graph,activity</field>
+        <field name="search_view_id" ref="sale.sale_order_view_search_inherit_sale"/>
+        <field name="domain">[('state', 'in', ('sale', 'done')), ('sale_type', '=', 'credit')]</field>
+        <field name="context">{'default_sale_type': 'credit', 'search_default_my_sale_orders_filter': 0}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No Credit Sales orders found!
+            </p>
+        </field>
+    </record>
+
+    <record id="action_orders_to_invoice_cash" model="ir.actions.act_window">
+        <field name="name">Cash to Invoice</field>
+        <field name="res_model">sale.order</field>
+        <field name="view_mode">list,form,calendar,graph,pivot,kanban,activity</field>
+        <field name="domain">[('invoice_status', '=', 'to invoice'), ('sale_type', '=', 'cash')]</field>
+        <field name="context">{'create': False}</field>
+        <field name="search_view_id" ref="sale.view_sales_order_filter"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No cash orders to invoice found.
+            </p>
+        </field>
+    </record>
+
+    <record id="action_orders_to_invoice_credit" model="ir.actions.act_window">
+        <field name="name">Credit to Invoice</field>
+        <field name="res_model">sale.order</field>
+        <field name="view_mode">list,form,calendar,graph,pivot,kanban,activity</field>
+        <field name="domain">[('invoice_status', '=', 'to invoice'), ('sale_type', '=', 'credit')]</field>
+        <field name="context">{'create': False}</field>
+        <field name="search_view_id" ref="sale.view_sales_order_filter"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No credit orders to invoice found.
+            </p>
+        </field>
+    </record>
+
+    <record id="action_orders_upselling_cash" model="ir.actions.act_window">
+        <field name="name">Cash to Upsell</field>
+        <field name="res_model">sale.order</field>
+        <field name="view_mode">list,form,calendar,graph,pivot,kanban,activity</field>
+        <field name="domain">[('invoice_status', '=', 'upselling'), ('sale_type', '=', 'cash')]</field>
+        <field name="context">{'create': False}</field>
+        <field name="search_view_id" ref="sale.view_sales_order_filter"/>
+    </record>
+
+    <record id="action_orders_upselling_credit" model="ir.actions.act_window">
+        <field name="name">Credit to Upsell</field>
+        <field name="res_model">sale.order</field>
+        <field name="view_mode">list,form,calendar,graph,pivot,kanban,activity</field>
+        <field name="domain">[('invoice_status', '=', 'upselling'), ('sale_type', '=', 'credit')]</field>
+        <field name="context">{'create': False}</field>
+        <field name="search_view_id" ref="sale.view_sales_order_filter"/>
+    </record>
+
+    <record id="action_orders_cancelled" model="ir.actions.act_window">
+        <field name="name">Cancelled Orders</field>
+        <field name="res_model">sale.order</field>
+        <field name="view_mode">list,kanban,form,calendar,pivot,graph,activity</field>
+        <field name="search_view_id" ref="sale.sale_order_view_search_inherit_sale"/>
+        <field name="domain">[('state', '=', 'cancel')]</field>
+        <field name="context">{'create': False}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No cancelled orders found.
+            </p>
+        </field>
+    </record>
+
+    <!-- Top Menu: Rename 'To Invoice' -> 'Orders to Invoice' -->
+    <record id="sale.menu_sale_invoicing" model="ir.ui.menu">
+        <field name="name">Orders to Invoice</field>
+    </record>
+
+    <!-- Adjust menu order for Customers and Sales Teams -->
+    <record id="sale.res_partner_menu" model="ir.ui.menu">
+        <field name="sequence">30</field>
+    </record>
+    <record id="sale.report_sales_team" model="ir.ui.menu">
+        <field name="sequence">40</field>
+    </record>
+
+    <!-- Action: Orders to Approve -->
+    <record id="action_orders_to_approve" model="ir.actions.act_window">
+        <field name="name">Orders to Approve</field>
+        <field name="res_model">sale.order</field>
+        <field name="view_mode">list,kanban,form,calendar,pivot,graph,activity</field>
+        <field name="search_view_id" ref="sale.sale_order_view_search_inherit_sale"/>
+        <field name="domain">[('state', 'in', ('to_approve', 'to_approve_discount'))]</field>
+        <field name="context">{'create': False, 'search_default_my_sale_orders_filter': 0}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No orders waiting for approval!
+            </p>
+        </field>
+    </record>
+
+    <!-- MENUS (Hierarchical Tree Structure) -->
+    <!-- Under Orders (sale.menu_sale_order) -->
+    <menuitem id="menu_sale_order_to_approve"
+              name="Orders to Approve"
+              action="action_orders_to_approve"
+              parent="sale.sale_order_menu"
+              groups="sales_team.group_sale_salesman"
+              sequence="5"/>
+
+    <menuitem id="menu_sale_order_cash"
+              name="Cash Sales"
+              action="action_orders_cash"
+              parent="sale.menu_sale_order"
+              groups="sales_team.group_sale_salesman"
+              sequence="10"/>
+
+    <menuitem id="menu_sale_order_credit"
+              name="Credit Sales"
+              action="action_orders_credit"
+              parent="sale.menu_sale_order"
+              groups="sales_team.group_sale_salesman"
+              sequence="20"/>
+
+    <!-- Cancelled Orders under Orders dropdown -->
+    <menuitem id="menu_sale_order_cancelled"
+              name="Cancelled Orders"
+              action="action_orders_cancelled"
+              parent="sale.sale_order_menu"
+              groups="sales_team.group_sale_salesman"
+              sequence="50"/>
+
+    <!-- Invoicing under Sales -->
+    <menuitem id="sale.menu_sale_invoicing"
+              name="Invoicing"
+              parent="sale.sale_menu_root"
+              sequence="20"/>
+
+    <!-- Under Orders to Invoice (sale.menu_sale_order_invoice) -->
+    <menuitem id="menu_sale_order_invoice_cash"
+              name="Cash to Invoice"
+              action="action_orders_to_invoice_cash"
+              parent="sale.menu_sale_order_invoice"
+              groups="sales_team.group_sale_salesman"
+              sequence="10"/>
+
+    <menuitem id="menu_sale_order_invoice_credit"
+              name="Credit to Invoice"
+              action="action_orders_to_invoice_credit"
+              parent="sale.menu_sale_order_invoice"
+              groups="sales_team.group_sale_salesman"
+              sequence="20"/>
+
+    <!-- Under Orders to Upsell (sale.menu_sale_order_upselling) -->
+    <menuitem id="menu_sale_order_upselling_cash"
+              name="Cash to Upsell"
+              action="action_orders_upselling_cash"
+              parent="sale.menu_sale_order_upselling"
+              groups="sales_team.group_sale_salesman"
+              sequence="10"/>
+
+    <menuitem id="menu_sale_order_upselling_credit"
+              name="Credit to Upsell"
+              action="action_orders_upselling_credit"
+              parent="sale.menu_sale_order_upselling"
+              groups="sales_team.group_sale_salesman"
+              sequence="20"/>
+</odoo>

@@ -49,7 +49,7 @@ class ForeignPurchaseRequisition(models.Model):
     )
     state = fields.Selection([
         ('draft', 'Draft'),
-        ('submitted', 'Waiting Manager Verification'),
+        ('submitted', 'Waiting Approval'),
         ('manager_verified', 'Waiting Finance Approval'),
         ('budget_approved', 'Waiting CEO Approval'),
         ('approved', 'Ready for Procurement'),
@@ -126,14 +126,10 @@ class ForeignPurchaseRequisition(models.Model):
                     'name': f"{template.name} ({self.env['res.company'].browse(company_id).name})"
                 })
 
-    def action_approve(self):
+    def action_submit(self):
         self.ensure_one()
-
-        # Validation: Check if there are any products before proceeding
         if not self.line_ids:
             raise ValidationError(_("You cannot proceed without adding at least one product."))
-
-        # Validation checks based on the current state before transitioning
         if self.state == 'draft':
             if not self.department_id:
                 raise ValidationError(_("Please specify the requesting Department before submitting."))
@@ -142,34 +138,26 @@ class ForeignPurchaseRequisition(models.Model):
             for line in self.line_ids:
                 if line.unit_price <= 0:
                     raise ValidationError(_("Product %s has zero or negative price. 0 price is not allowed.") % line.product_id.name)
-
-            # Validation: Block negative margins
-            for line in self.line_ids:
                 if line.margin < 0:
                     raise ValidationError(_("You cannot proceed with a negative margin for product: %s. Please adjust the Estimated Selling Price or Unit Price.") % line.product_id.display_name)
 
-            # Validation: At least one market analysis must exist before submission
-            
+            self.write({'state': 'submitted'})
+            self.message_post(body=_("Requisition submitted by %s") % self.env.user.name)
+            self._notify_next_approver('submitted')
 
-        elif self.state == 'submitted':
-            pass # Verification step, move to manager_verified
+    def action_approve(self):
+        self.ensure_one()
+        if not self.line_ids:
+            raise ValidationError(_("You cannot proceed without adding at least one product."))
 
-        elif self.state == 'manager_verified':
-            pass
-
-        state_map = {
-            'draft': 'submitted',
-            'submitted': 'manager_verified',
-            'manager_verified': 'budget_approved',
-            'budget_approved': 'approved',
-        }
-        next_state = state_map.get(self.state)
-        if next_state:
-            self.write({'state': next_state})
-            self.message_post(body=_(self._description + " moved to %s by %s" % (next_state.replace('_', ' ').capitalize(), self.env.user.name)))
-            self._notify_next_approver(next_state)
+        if self.state in ['submitted', 'manager_verified', 'budget_approved']:
+            next_state = 'approved'
         else:
             raise UserError(_("No further processing step for the current state."))
+
+        self.write({'state': next_state})
+        self.message_post(body=_(self._description + " moved to %s by %s" % (next_state.replace('_', ' ').capitalize(), self.env.user.name)))
+        self._notify_next_approver(next_state)
 
     def _notify_next_approver(self, next_state):
         # Clear old activities for this record first
@@ -187,8 +175,7 @@ class ForeignPurchaseRequisition(models.Model):
 
         group_xmlid_map = {
             'submitted': 'procurement_foreign_purchase.group_foreign_purchase_manager',
-            'manager_verified': 'procurement_foreign_purchase.group_foreign_purchase_budget',
-            'budget_approved': 'procurement_foreign_purchase.group_foreign_purchase_ceo',
+            'approved': 'procurement_foreign_purchase.group_foreign_purchase_operation_manager',
         }
         
         group_xmlid = group_xmlid_map.get(next_state)
@@ -287,6 +274,7 @@ class PurchaseOrder(models.Model):
     _inherit = 'purchase.order'
 
     foreign_purchase_request_id = fields.Many2one('foreign.purchase.requisition', string='Source Foreign Requisition')
+    exchange_rate = fields.Float(string='Exchange Rate', default=1.0, digits=(12, 4))
 
 class PurchaseOrderLine(models.Model):
     _inherit = 'purchase.order.line'
@@ -295,18 +283,38 @@ class PurchaseOrderLine(models.Model):
         string='Customs Product Cost',
         help='The value assigned by customs during import clearance.'
     )
+    customs_total_amount = fields.Float(
+        string='Customs Total (ETB)',
+        compute='_compute_cost_difference',
+        store=True,
+        help='Total Customs Value in ETB (Customs Product Cost * Quantity)'
+    )
     cost_difference = fields.Float(
         string='Cost Difference',
         compute='_compute_cost_difference',
         store=True,
         help='Customs Product Cost - Actual Product Cost'
     )
+    cost_difference_total = fields.Float(
+        string='Total Variance (ETB)',
+        compute='_compute_cost_difference',
+        store=True,
+        help='Total Cost Difference in ETB (Cost Difference * Quantity)'
+    )
 
-    @api.depends('customs_product_cost', 'price_unit')
+    @api.depends('customs_product_cost', 'price_unit', 'product_qty', 'order_id.exchange_rate')
     def _compute_cost_difference(self):
         for rec in self:
-            etb_price = rec.price_unit * (rec.order_id.exchange_rate or 1.0)
-            rec.cost_difference = rec.customs_product_cost - etb_price
+            rate = (getattr(rec.order_id, 'exchange_rate', 1.0) if rec.order_id else 1.0) or 1.0
+            unit_actual_etb = (rec.price_unit or 0.0) * rate
+            if rec.customs_product_cost:
+                rec.cost_difference = rec.customs_product_cost - unit_actual_etb
+                rec.customs_total_amount = rec.customs_product_cost * (rec.product_qty or 0.0)
+                rec.cost_difference_total = rec.cost_difference * (rec.product_qty or 0.0)
+            else:
+                rec.cost_difference = 0.0
+                rec.customs_total_amount = 0.0
+                rec.cost_difference_total = 0.0
 
 class ForeignPurchaseRequisitionLine(models.Model):
     _name = 'foreign.purchase.requisition.line'
@@ -360,6 +368,43 @@ class ForeignPurchaseRequisitionLine(models.Model):
         domain="[('type', '=', parent.product_type), ('landed_cost_ok', '=', False), ('is_active_product', '=', True)]",
         required=True
     )
+    product_tmpl_id = fields.Many2one(
+        'product.template',
+        related='product_id.product_tmpl_id',
+        string='Product Template',
+        readonly=True,
+    )
+    hs_code = fields.Char(
+        string='HS Code',
+        compute='_compute_hs_code',
+        store=True,
+        readonly=False,
+    )
+
+    @api.depends('product_id')
+    def _compute_hs_code(self):
+        for line in self:
+            if line.product_id and hasattr(line.product_id, 'hs_code'):
+                line.hs_code = line.product_id.hs_code or False
+            elif not line.product_id:
+                line.hs_code = False
+
+    categ_id = fields.Many2one(
+        'product.category',
+        string='Category',
+        related='product_id.categ_id',
+        readonly=True,
+    )
+    image_128 = fields.Image(
+        string='Image',
+        related='product_id.image_128',
+        readonly=True,
+    )
+    image_1920 = fields.Image(
+        string='Full Image',
+        related='product_id.image_1920',
+        readonly=True,
+    )
     analytic_line_ids = fields.One2many(
         'account.analytic.line',
         'requisition_line_id',
@@ -408,6 +453,9 @@ class ForeignPurchaseRequisitionLine(models.Model):
             self.product_uom_id = self.product_id.uom_id
             # Auto fill unit price from product standard price (cost)
             self.unit_price = self.product_id.standard_price
+            if hasattr(self.product_id, 'hs_code') and self.product_id.hs_code:
+                self.hs_code = self.product_id.hs_code
+
 
     order_qty_and_current_stock= fields.Float(string="Order Qty and Current Stock",compute='_compute_ordered_and_stock_qty')
     four_month_qty = fields.Float(
@@ -423,20 +471,13 @@ class ForeignPurchaseRequisitionLine(models.Model):
         store=False,
         readonly=True
     )
-    @api.depends('product_id', 'requisition_id.company_id')
+    @api.depends('avg_monthly_consumption')
     def _compute_period_consumption(self):
         for rec in self:
-            if rec.product_id and rec.requisition_id.company_id:
-                product = rec.product_id.with_company(
-                    rec.requisition_id.company_id
-                )
-                monthly = rec.avg_monthly_consumption or 0.0
+            monthly = rec.avg_monthly_consumption or 0.0
+            rec.four_month_qty = monthly * 4
+            rec.six_month_qty = monthly * 6
 
-                rec.four_month_qty = monthly * 4
-                rec.six_month_qty = monthly * 6
-            else:
-                rec.four_month_qty = 0.0
-                rec.six_month_qty = 0.0
     @api.depends('requisition_id','quantity','product_id','current_balance')
     def _compute_ordered_and_stock_qty(self):
         for rec in self:
@@ -453,33 +494,19 @@ class ForeignPurchaseRequisitionLine(models.Model):
     avg_monthly_consumption = fields.Float(
         string="Average Monthly Consumption",
         compute="_compute_avg_monthly_consumption",
-        store=True
+        store=True,
+        readonly=False
     )
 
     @api.depends('product_id', 'requisition_id.company_id')
     def _compute_avg_monthly_consumption(self):
         for rec in self:
             if rec.product_id:
-                rec.avg_monthly_consumption = rec.product_id.with_company(
-                    rec.requisition_id.company_id
-                ).product_tmpl_id.avg_monthly_consumption or 0.0
+                company = rec.requisition_id.company_id or self.env.company
+                product_tmpl = rec.product_id.with_company(company).product_tmpl_id
+                rec.avg_monthly_consumption = getattr(product_tmpl, 'avg_monthly_consumption', 0.0) or 0.0
             else:
                 rec.avg_monthly_consumption = 0.0
-
-    @api.depends('product_id', 'requisition_id.company_id')
-    def _compute_period_consumption(self):
-        for rec in self:
-            if rec.product_id and rec.requisition_id.company_id:
-                product_template = rec.product_id.product_tmpl_id.with_company(
-                    rec.requisition_id.company_id
-                )
-                monthly = getattr(product_template, 'avg_monthly_consumption', 0.0)
-
-                rec.four_month_qty = monthly * 4
-                rec.six_month_qty = monthly * 6
-            else:
-                rec.four_month_qty = 0.0
-                rec.six_month_qty = 0.0
     current_balance = fields.Float(
         string="Current Balance",
         compute="_compute_current_balance",

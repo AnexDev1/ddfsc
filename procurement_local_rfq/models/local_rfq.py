@@ -75,14 +75,36 @@ class LocalRFQ(models.Model):
 
     state = fields.Selection([
         ('draft', 'Draft'),
-        ('winner-picked', 'Waiting Committee Check'),
-        ('checked', 'Waiting Committee Approval'),
-        ('committee-approved', 'Waiting GM/CEO Approval'),
-        ('on-progress', 'On Progress'),
-        ('approved', 'Approved / Ready for PO'),
+        ('winner_picked', 'Winner Picked'),
+        ('submitted', 'Commercial Dep\'t'),
+        ('finance_approval', 'Finance'),
+        ('production_approval', 'Production Head'),
+        ('sales_purchase_approval', 'Sales & Purchase'),
+        ('gm_approval', 'General Manager'),
+        ('approved', 'Approved'),
         ('po_created', 'PO Created'),
         ('cancel', 'Cancelled'),
     ], default='draft', string="Status", tracking=True)
+
+    # 5-step approval workflow fields
+    commercial_approver_id = fields.Many2one('res.users', string='Commercial Approver', readonly=True, copy=False, tracking=True)
+    commercial_approval_date = fields.Datetime(string='Commercial Approval Date', readonly=True, copy=False, tracking=True)
+
+    finance_approver_id = fields.Many2one('res.users', string='Finance Approver', readonly=True, copy=False, tracking=True)
+    finance_approval_date = fields.Datetime(string='Finance Approval Date', readonly=True, copy=False, tracking=True)
+
+    production_approver_id = fields.Many2one('res.users', string='Production Head Approver', readonly=True, copy=False, tracking=True)
+    production_approval_date = fields.Datetime(string='Production Head Approval Date', readonly=True, copy=False, tracking=True)
+
+    sales_purchase_approver_id = fields.Many2one('res.users', string='Sales & Purchase Approver', readonly=True, copy=False, tracking=True)
+    sales_purchase_approval_date = fields.Datetime(string='Sales & Purchase Approval Date', readonly=True, copy=False, tracking=True)
+
+    gm_approver_id = fields.Many2one('res.users', string='General Manager Approver', readonly=True, copy=False, tracking=True)
+    gm_approval_date = fields.Datetime(string='GM Approval Date', readonly=True, copy=False, tracking=True)
+
+    rejected_by = fields.Many2one('res.users', string='Rejected By', readonly=True, copy=False, tracking=True)
+    rejection_date = fields.Datetime(string='Rejection Date', readonly=True, copy=False, tracking=True)
+    rejection_reason = fields.Text(string='Rejection Reason', copy=False, tracking=True)
 
     @api.depends('po_ids')
     def _compute_po_count(self):
@@ -116,151 +138,158 @@ class LocalRFQ(models.Model):
                 })
 
     def action_submit(self):
+        self.ensure_one()
         selected_quotes = self.quote_ids.filtered(lambda q: q.selected)
         if not selected_quotes:
-            raise UserError(_("Please select winning vendors in the Comparison Sheet."))
-        self.write({'state': 'winner-picked'})
-        self._notify_next_approver('winner-picked')
+            raise UserError(_("Please select winning vendors in the Comparison Sheet before submitting."))
+        self.write({'state': 'submitted'})
+        self.message_post(body=_("Local RFQ submitted for Commercial Dep't approval by %s.") % self.env.user.name)
+        self._notify_next_approver('submitted')
+
+    def action_commercial_approve(self):
+        self.ensure_one()
+        if self.state != 'submitted':
+            raise UserError(_("Commercial approval is only allowed in 'Commercial Dep't' approval state."))
+        if not (self.env.user.has_group('procurement_local_rfq.group_local_rfq_commercial') or self.env.is_superuser()):
+            raise UserError(_("Only Commercial Department members can approve at this step."))
+        self.write({
+            'state': 'finance_approval',
+            'commercial_approver_id': self.env.user.id,
+            'commercial_approval_date': fields.Datetime.now(),
+        })
+        self.message_post(body=_("Approved by Commercial Dep't (%s). Waiting for Finance approval.") % self.env.user.name)
+        self._notify_next_approver('finance_approval')
+
+    def action_finance_approve(self):
+        self.ensure_one()
+        if self.state != 'finance_approval':
+            raise UserError(_("Finance approval is only allowed in 'Finance' approval state."))
+        if not (self.env.user.has_group('procurement_local_rfq.group_local_rfq_finance') or self.env.is_superuser()):
+            raise UserError(_("Only Finance members can approve at this step."))
+        self.write({
+            'state': 'production_approval',
+            'finance_approver_id': self.env.user.id,
+            'finance_approval_date': fields.Datetime.now(),
+        })
+        self.message_post(body=_("Approved by Finance (%s). Waiting for Production Head approval.") % self.env.user.name)
+        self._notify_next_approver('production_approval')
+
+    def action_production_approve(self):
+        self.ensure_one()
+        if self.state != 'production_approval':
+            raise UserError(_("Production Head approval is only allowed in 'Production Head' approval state."))
+        if not (self.env.user.has_group('procurement_local_rfq.group_local_rfq_production_head') or self.env.is_superuser()):
+            raise UserError(_("Only Production Head can approve at this step."))
+        self.write({
+            'state': 'sales_purchase_approval',
+            'production_approver_id': self.env.user.id,
+            'production_approval_date': fields.Datetime.now(),
+        })
+        self.message_post(body=_("Approved by Production Head (%s). Waiting for Sales & Purchase approval.") % self.env.user.name)
+        self._notify_next_approver('sales_purchase_approval')
+
+    def action_sales_purchase_approve(self):
+        self.ensure_one()
+        if self.state != 'sales_purchase_approval':
+            raise UserError(_("Sales & Purchase approval is only allowed in 'Sales & Purchase' approval state."))
+        if not (self.env.user.has_group('procurement_local_rfq.group_local_rfq_sales_purchase') or self.env.is_superuser()):
+            raise UserError(_("Only Sales & Purchase members can approve at this step."))
+        self.write({
+            'state': 'gm_approval',
+            'sales_purchase_approver_id': self.env.user.id,
+            'sales_purchase_approval_date': fields.Datetime.now(),
+        })
+        self.message_post(body=_("Approved by Sales & Purchase (%s). Waiting for General Manager approval.") % self.env.user.name)
+        self._notify_next_approver('gm_approval')
+
+    def action_gm_approve(self):
+        self.ensure_one()
+        if self.state != 'gm_approval':
+            raise UserError(_("General Manager approval is only allowed in 'General Manager' approval state."))
+        if not (self.env.user.has_group('procurement_local_rfq.group_local_rfq_general_manager') or self.env.is_superuser()):
+            raise UserError(_("Only General Manager can approve at this step."))
+        self.write({
+            'state': 'approved',
+            'gm_approver_id': self.env.user.id,
+            'gm_approval_date': fields.Datetime.now(),
+        })
+        self.message_post(body=_("Approved by General Manager (%s). Ready for PO creation.") % self.env.user.name)
+        self._notify_next_approver('approved')
+
+    def action_approve(self):
+        self.ensure_one()
+        if self.state == 'submitted':
+            return self.action_commercial_approve()
+        elif self.state == 'finance_approval':
+            return self.action_finance_approve()
+        elif self.state == 'production_approval':
+            return self.action_production_approve()
+        elif self.state == 'sales_purchase_approval':
+            return self.action_sales_purchase_approve()
+        elif self.state == 'gm_approval':
+            return self.action_gm_approve()
+        else:
+            raise UserError(_("No approval step is pending for the current state (%s).") % self.state)
+
+    def action_reject(self):
+        self.ensure_one()
+        self.write({
+            'state': 'cancel',
+            'rejected_by': self.env.user.id,
+            'rejection_date': fields.Datetime.now(),
+        })
+        self.message_post(body=_("Rejected by %s.") % self.env.user.name)
+        self._notify_next_approver('cancel')
+
+    def action_cancel(self):
+        return self.action_reject()
+
+    def action_draft(self):
+        self.ensure_one()
+        self.write({
+            'state': 'draft',
+            'commercial_approver_id': False,
+            'commercial_approval_date': False,
+            'finance_approver_id': False,
+            'finance_approval_date': False,
+            'production_approver_id': False,
+            'production_approval_date': False,
+            'sales_purchase_approver_id': False,
+            'sales_purchase_approval_date': False,
+            'gm_approver_id': False,
+            'gm_approval_date': False,
+            'rejected_by': False,
+            'rejection_date': False,
+            'rejection_reason': False,
+        })
+        self.message_post(body=_("Reset to Draft by %s.") % self.env.user.name)
+        self._notify_next_approver('draft')
 
     @api.depends('approval_ids', 'committee_ids', 'state')
     def _compute_committee_status_html(self):
         for rec in self:
             rec.committee_status_html = ""
 
-    def action_check(self):
-        self.ensure_one()
-        if self.state != 'winner-picked':
-            raise UserError(_("Check is only allowed in 'Winner Picked' state."))
-        
-        # Validation: Must be in committee
-        # Fix: Compare users, not employee vs user
-        # if self.committee_ids:
-        #     committee_users = self.committee_ids.mapped('user_id')
-        #     if self.env.user not in committee_users:
-        #          raise UserError(_("Only checking committee members can perform this action."))
-
-        if not self.env.user.has_group('procurement_local_rfq.group_local_rfq_committee'):
-             raise UserError(_("Only committee members can perform this action."))
-
-        # Check if already checked
-        if self.approval_ids.filtered(lambda a: a.user_id == self.env.user and a.action_type == 'check'):
-            raise UserError(_("You have already checked this RFQ."))
-
-        # Record Check
-        self.env['local.rfq.committee.action'].create({
-            'rfq_id': self.id,
-            'user_id': self.env.user.id,
-            'approval_date': fields.Datetime.now(),
-            'action_type': 'check'
-        })
-        self.message_post(body=_("Committee member %s checked the RFQ.") % self.env.user.name)
-
-        # Transition Logic: 3 committee members must check
-        checked_count = len(self.approval_ids.filtered(lambda a: a.action_type == 'check'))
-        if checked_count >= 3:
-            self.write({'state': 'checked'})
-            self.message_post(body=_("Committee check completed (3 members). Moving to 'Checked' state."))
-            self._notify_next_approver('checked')
-    
-    def action_committee_approve(self):
-        self.ensure_one()
-        if self.state != 'checked':
-            raise UserError(_("Committee Approval is only allowed in 'Checked' state."))
-        
-        if not self.env.user.has_group('procurement_local_rfq.group_local_rfq_committee'):
-             raise UserError(_("Only committee members can perform this action."))
-
-        # Check if already voted (approve or reject)
-        if self.approval_ids.filtered(lambda a: a.user_id == self.env.user and a.action_type in ['approve', 'reject']):
-            raise UserError(_("You have already voted on this RFQ."))
-
-        # Record Approve
-        self.env['local.rfq.committee.action'].create({
-            'rfq_id': self.id,
-            'user_id': self.env.user.id,
-            'approval_date': fields.Datetime.now(),
-            'action_type': 'approve'
-        })
-        self.message_post(body=_("Committee member %s approved the RFQ.") % self.env.user.name)
-
-        # Transition Logic: 2 approvals required
-        approval_count = len(self.approval_ids.filtered(lambda a: a.action_type == 'approve'))
-        if approval_count >= 2:
-            self.write({'state': 'committee-approved'})
-            self.message_post(body=_("Committee approval secured (2 votes). Moving to 'Committee Approved'."))
-            self._notify_next_approver('committee-approved')
-
-    def action_committee_reject(self):
-        self.ensure_one()
-        if self.state != 'checked':
-            raise UserError(_("Committee Rejection is only allowed in 'Checked' state."))
-        
-        if not self.env.user.has_group('procurement_local_rfq.group_local_rfq_committee'):
-             raise UserError(_("Only committee members can perform this action."))
-
-        # Check if already voted
-        if self.approval_ids.filtered(lambda a: a.user_id == self.env.user and a.action_type in ['approve', 'reject']):
-            raise UserError(_("You have already voted on this RFQ."))
-
-        # Record Reject
-        self.env['local.rfq.committee.action'].create({
-            'rfq_id': self.id,
-            'user_id': self.env.user.id,
-            'approval_date': fields.Datetime.now(),
-            'action_type': 'reject'
-        })
-        self.message_post(body=_("Committee member %s rejected the RFQ.") % self.env.user.name)
-
-    def action_approve(self):
-        self.ensure_one()
-        next_state = False
-        if self.state == 'committee-approved':
-            threshold = self.company_id.pr_ceo_approval_threshold
-            if self.amount_total <= threshold:
-                next_state = 'approved'
-                self.message_post(body=_("CEO approval skipped as amount (%.2f) is below or equal to threshold (%.2f)." % (self.amount_total, threshold)))
-            else:
-                next_state = 'approved' # Fallback or CEO step if we had one.
-                # Actually, the user suggested GM/CEO as a single step or GM then CEO if threshold.
-                # In PR we had 'budget_approved' as the CEO step.
-                # Here 'ceo-approved' was used. Let's keep it if we want a separate CEO step.
-                # But looking at 'state' selection above, I removed 'ceo-approved' to simplify.
-                # If they want a separate CEO step for RFQ:
-                # next_state = 'budget_approved' (Wait, I didn't add it to selection).
-                
-                # Let's re-read the request: "Procurement Committee → GM/CEO → Purchase Officer"
-                # This implies GM/CEO is the final approval step.
-                next_state = 'approved'
-
-        if next_state:
-            self.write({'state': next_state})
-            self.message_post(body=_(self._description + " moved to %s by %s" % (next_state.replace('-', ' ').replace('_', ' ').capitalize(), self.env.user.name)))
-            self._notify_next_approver(next_state)
-        else:
-            raise UserError(_("No further processing step for the current state or requirement not met (e.g., 3 committee checks)."))
-
-    def action_reject(self):
-        self.write({'state': 'cancel'})
-        self._notify_next_approver('cancel')
-
     def _notify_next_approver(self, next_state):
-        # Clear old activities for this record first
         self.activity_unlink(['mail.mail_activity_data_todo'])
 
-        # Notify requester of the update
         requester_user = self.requested_by if self.requested_by else self.create_uid
+        state_label = dict(self._fields['state'].selection).get(next_state, next_state)
         if requester_user:
             self.activity_schedule(
                 'mail.mail_activity_data_todo',
                 user_id=requester_user.id,
                 summary=_("Local RFQ Update: %s") % self.name,
-                note=_("Your local RFQ (%s) is now in state: %s.") % (self.name, next_state.replace('_', ' ').replace('-', ' ').capitalize())
+                note=_("Your local RFQ (%s) is now in state: %s.") % (self.name, state_label)
             )
 
         group_xmlid_map = {
-            'winner-picked': 'procurement_local_rfq.group_local_rfq_committee',
-            'checked': 'procurement_local_rfq.group_local_rfq_committee',
-            'committee-approved': 'procurement_local_purchase.group_local_purchase_pr_manager', # GM/CEO
+            'submitted': 'procurement_local_rfq.group_local_rfq_commercial',
+            'finance_approval': 'procurement_local_rfq.group_local_rfq_finance',
+            'production_approval': 'procurement_local_rfq.group_local_rfq_production_head',
+            'sales_purchase_approval': 'procurement_local_rfq.group_local_rfq_sales_purchase',
+            'gm_approval': 'procurement_local_rfq.group_local_rfq_general_manager',
+            'approved': 'procurement_local_purchase.group_local_purchase_pr_manager',
         }
         
         group_xmlid = group_xmlid_map.get(next_state)
@@ -281,16 +310,8 @@ class LocalRFQ(models.Model):
                 'mail.mail_activity_data_todo',
                 user_id=user.id,
                 summary=_("RFQ Action Required"),
-                note=_("Local RFQ (%s) is awaiting your action (State: %s).") % (self.name, next_state)
+                note=_("Local RFQ (%s) is awaiting your action (State: %s).") % (self.name, state_label)
             )
-
-    def action_cancel(self):
-        self.write({'state': 'cancel'})
-        self._notify_next_approver('cancel')
-
-    def action_draft(self):
-        self.write({'state': 'draft'})
-        self._notify_next_approver('draft')
 
     # ---- Auto generate quotes when vendor added ----
     @api.onchange('vendor_ids', 'show_financial', 'show_technical')
@@ -369,9 +390,13 @@ class LocalRFQ(models.Model):
                 # Pick the first one in case of a value tie
                 winner[:1].write({'selected': True})
         
+        if not self.quote_ids.filtered(lambda q: q.selected):
+            raise UserError(_("No quotes could be selected as winners. Please ensure prices or scores are entered."))
+
+        self.write({'state': 'winner_picked'})
+        self.message_post(body=_("Winners picked based on %s selection method.") % dict(self._fields['winner_selection_method'].selection).get(self.winner_selection_method))
         return True
 
- 
     def action_view_comparison_matrix(self):
         self.ensure_one()
         action = self.env.ref('procurement_local_rfq.action_local_rfq_comparison_matrix').read()[0]
@@ -380,6 +405,8 @@ class LocalRFQ(models.Model):
 
     def action_create_po(self):
         self.ensure_one()
+        if self.state != 'approved':
+            raise UserError(_("Purchase Order can only be created once the RFQ is fully approved."))
         selected_quotes = self.quote_ids.filtered(lambda q: q.selected)
         if not selected_quotes:
             raise UserError(_("Please select winning vendors in the Comparison Sheet."))
@@ -433,6 +460,9 @@ class LocalRFQQuote(models.Model):
         ondelete='restrict'
     )
     product_id = fields.Many2one('product.product', string='Product', related='pr_line_id.product_id')
+    categ_id = fields.Many2one('product.category', string='Category', related='product_id.categ_id', readonly=True)
+    image_128 = fields.Image(string='Image', related='product_id.image_128', readonly=True)
+    image_1920 = fields.Image(string='Full Image', related='product_id.image_1920', readonly=True)
     partner_id = fields.Many2one('res.partner', string='Vendor', required=True, domain="[('vendor_type', '=', 'local')]")
     cost_center_id = fields.Many2one('account.analytic.account', string='Cost Center', related='pr_line_id.cost_center_id')
     

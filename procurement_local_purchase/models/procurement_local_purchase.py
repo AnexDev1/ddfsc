@@ -68,7 +68,7 @@ class LocalPurchaseRequisition(models.Model):
     purpose = fields.Text(string='Purpose')
     state = fields.Selection([
         ('draft', 'Draft'),
-        ('submitted', 'Waiting Dept Manager Approval'),
+        ('submitted', 'Waiting Approval'),
         ('verified', 'Waiting Finance Approval'),
         ('pr_manager_approved', 'Waiting CEO Approval'),
         ('approved', 'Ready for Procurement'),
@@ -174,32 +174,14 @@ class LocalPurchaseRequisition(models.Model):
     def action_approve(self):
         self.ensure_one()
 
-        state_map = {
-            'draft': 'submitted',
-            'submitted': 'verified',        # Dept Manager → Finance
-            'pr_manager_approved': 'approved',         # CEO → approved
-        }
-
-        # Threshold check: now happens after Finance Approval ('verified')
-        if self.state == 'verified':
-            threshold = self.company_id.pr_ceo_approval_threshold
-            if threshold and self.amount_total <= threshold:
-                next_state = 'approved'  # skip CEO
-                self.message_post(
-                    body=_("CEO approval skipped as amount (%.2f) is below or equal to threshold (%.2f).") 
-                    % (self.amount_total, threshold)
-                )
-            else:
-                next_state = 'pr_manager_approved'  # go to CEO
-        else:
-            next_state = state_map.get(self.state)
-
-        if next_state:
-            self.write({'state': next_state})
-            self.message_post(body=_(self._description + " moved to %s by %s" % (next_state.replace('_', ' ').capitalize(), self.env.user.name)))
-            self._notify_next_approver(next_state)
+        if self.state in ['submitted', 'verified', 'pr_manager_approved']:
+            next_state = 'approved'
         else:
             raise UserError(_("No further processing step for the current state."))
+
+        self.write({'state': next_state})
+        self.message_post(body=_(self._description + " moved to %s by %s" % (next_state.replace('_', ' ').capitalize(), self.env.user.name)))
+        self._notify_next_approver(next_state)
         
     def action_submit(self):
         self.ensure_one()
@@ -234,9 +216,8 @@ class LocalPurchaseRequisition(models.Model):
             )
 
         group_xmlid_map = {
-            'submitted':          'procurement_local_purchase.group_local_purchase_dept_manager',  # Dept Manager
-            'verified':           'procurement_store_requisition.group_store_requisition_budget_manager',  # Finance
-            'pr_manager_approved': 'procurement_local_purchase.group_local_purchase_ceo',          # CEO
+            'submitted': 'procurement_local_purchase.group_local_purchase_dept_manager',
+            'approved': 'procurement_local_purchase.group_local_purchase_pr_manager',
         }
         
         group_xmlid = group_xmlid_map.get(next_state)
@@ -332,6 +313,30 @@ class LocalPurchaseRequisitionLine(models.Model):
         domain="[('type', '=', parent.product_type), ('landed_cost_ok', '=', False), ('is_active_product', '=', True)]",
         required=True
     )
+    product_tmpl_id = fields.Many2one(
+        'product.template',
+        related='product_id.product_tmpl_id',
+        string='Product Template',
+        readonly=True,
+    )
+
+
+    categ_id = fields.Many2one(
+        'product.category',
+        string='Category',
+        related='product_id.categ_id',
+        readonly=True,
+    )
+    image_128 = fields.Image(
+        string='Image',
+        related='product_id.image_128',
+        readonly=True,
+    )
+    image_1920 = fields.Image(
+        string='Full Image',
+        related='product_id.image_1920',
+        readonly=True,
+    )
     description = fields.Char(string='Description', store=True, translate=True)
     account_id = fields.Many2one('account.account', string='GL Account', compute='_compute_account_id', store=True, readonly=False)
 
@@ -350,6 +355,7 @@ class LocalPurchaseRequisitionLine(models.Model):
             # so writing here is safe and does NOT propagate to product.product.
             self.description = self.product_id.name
             self.product_uom_id = self.product_id.uom_id
+
 
     cost_center_id = fields.Many2one(
         'account.analytic.account',

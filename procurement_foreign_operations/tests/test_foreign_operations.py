@@ -8,6 +8,11 @@ _logger = logging.getLogger(__name__)
 @tagged('post_install', '-at_install')
 class TestForeignOperations(TransactionCase):
 
+    def _create_product(self, vals):
+        """Keep this module's tests independent from optional product-code rules."""
+        return self.env['product.product'].with_context(
+            landed_cost_product_entry=True,
+        ).create(vals)
 
     def setUp(self):
 
@@ -57,7 +62,7 @@ class TestForeignOperations(TransactionCase):
             'order_line': [
                 (0, 0, {
                     'name': 'Test Product',
-                    'product_id': self.env['product.product'].create({'name': 'Test Product'}).id,
+                    'product_id': self._create_product({'name': 'Test Product'}).id,
                     'product_qty': 10,
                     'product_uom_id': self.env.ref('uom.product_uom_unit').id,
                     'price_unit': 100,
@@ -87,7 +92,7 @@ class TestForeignOperations(TransactionCase):
     def test_02_payment_request_lifecycle(self):
         """Test Foreign Payment Request creation and state transitions"""
         # We need a product with landed_cost_ok for the payment line
-        product = self.env['product.product'].create({
+        product = self._create_product({
             'name': 'Landed Cost Test',
             'landed_cost_ok': True,
         })
@@ -141,6 +146,18 @@ class TestForeignOperations(TransactionCase):
         line.price_unit_usd = 50.0
         self.assertEqual(line.price_subtotal_usd, 500.0, "Subtotal USD should be quantity(10) * unit_usd(50)")
 
+        # Test ETB and Customs fields
+        line.price_unit = 50.0
+        line.order_id.exchange_rate = 120.0
+        line._compute_etb_fields()
+        self.assertEqual(line.price_unit_etb, 6000.0, "Unit Price ETB should be 50 * 120 = 6000")
+        self.assertEqual(line.price_subtotal_etb, 60000.0, "Subtotal ETB should be 10 * 6000 = 60000")
+
+        line.customs_product_cost = 6500.0
+        self.assertEqual(line.customs_total_amount, 65000.0, "Customs Total ETB should be 10 * 6500 = 65000")
+        self.assertEqual(line.cost_difference, 500.0, "Cost difference should be 6500 - 6000 = 500")
+        self.assertEqual(line.cost_difference_total, 5000.0, "Total variance should be 10 * 500 = 5000")
+
     def test_05_lc_expiry_calculation(self):
         """Test the days_to_expiry and is_expired logic"""
         today = fields.Date.today()
@@ -179,21 +196,27 @@ class TestForeignOperations(TransactionCase):
 
     def test_07_custom_split_method(self):
         """Test custom split method based on Customs Product Cost"""
+        valuation_account = self.env['account.account'].create({
+            'name': 'Landed Cost Stock Valuation',
+            'code': 'LCSTKVAL',
+            'account_type': 'asset_current',
+        })
         # Create a FIFO/real_time product category
         categ_fifo = self.env['product.category'].create({
             'name': 'FIFO Test Category',
             'property_cost_method': 'fifo',
             'property_valuation': 'real_time',
+            'property_stock_valuation_account_id': valuation_account.id,
         })
         
         # Create storable products using FIFO
-        p1 = self.env['product.product'].create({
+        p1 = self._create_product({
             'name': 'FIFO Product 1',
             'categ_id': categ_fifo.id,
             'standard_price': 100.0,
             'is_storable': True,
         })
-        p2 = self.env['product.product'].create({
+        p2 = self._create_product({
             'name': 'FIFO Product 2',
             'categ_id': categ_fifo.id,
             'standard_price': 200.0,
@@ -261,7 +284,7 @@ class TestForeignOperations(TransactionCase):
         })
 
         # Create a landed cost product
-        lc_product = self.env['product.product'].create({
+        lc_product = self._create_product({
             'name': 'Freight Cost',
             'landed_cost_ok': True,
             'split_method_landed_cost': 'by_customs_amount',
@@ -290,6 +313,15 @@ class TestForeignOperations(TransactionCase):
         self.assertAlmostEqual(p1_adj.additional_landed_cost, 300.0)
         self.assertAlmostEqual(p2_adj.additional_landed_cost, 750.0)
 
+        # Validation capitalises the allocated costs into the receipt values and
+        # refreshes the displayed FIFO/average product costs.
+        lc_rec.button_validate()
+        self.assertEqual(lc_rec.state, 'done')
+        self.assertAlmostEqual(picking.move_ids.filtered(lambda m: m.product_id == p1).value, 500.0)
+        self.assertAlmostEqual(picking.move_ids.filtered(lambda m: m.product_id == p2).value, 1350.0)
+        self.assertAlmostEqual(p1.standard_price, 250.0)
+        self.assertAlmostEqual(p2.standard_price, 450.0)
+
     def test_08_draft_landed_cost_validation_and_account_mapping(self):
         """Test Landed Cost drafting with customs cost validation and account mapping from vendor bill"""
         from odoo.exceptions import ValidationError
@@ -300,7 +332,7 @@ class TestForeignOperations(TransactionCase):
             'property_valuation': 'real_time',
         })
         
-        product = self.env['product.product'].create({
+        product = self._create_product({
             'name': 'FIFO Product 3',
             'categ_id': categ_fifo.id,
             'standard_price': 100.0,
@@ -337,16 +369,22 @@ class TestForeignOperations(TransactionCase):
         picking.with_context(skip_approval=True).button_validate()
 
         # Create a landed cost product
-        lc_product = self.env['product.product'].create({
+        lc_product = self._create_product({
             'name': 'Custom Broker Fee',
             'landed_cost_ok': True,
         })
+
+        foreign_currency = self.env.ref('base.USD')
+        if foreign_currency == self.env.company.currency_id:
+            foreign_currency = self.env.ref('base.EUR')
+        foreign_currency.active = True
 
         payment_request = self.env['foreign.payment.request'].create({
             'purchase_order_id': po.id,
             'vendor_id': self.vendor.id,
             'amount': 200.0,
-            'currency_id': self.currency.id,
+            'currency_id': foreign_currency.id,
+            'exchange_rate': 60.0,
             'payment_type': 'landed_cost',
             'line_ids': [
                 (0, 0, {
@@ -389,6 +427,11 @@ class TestForeignOperations(TransactionCase):
         
         # Verify that split method is 'by_customs_amount'
         self.assertEqual(landed_cost.cost_lines[0].split_method, 'by_customs_amount')
+
+        # Landed costs are held in company currency, while the vendor bill keeps
+        # the payment-request currency.
+        self.assertEqual(payment_request.vendor_bill_id.currency_id, foreign_currency)
+        self.assertAlmostEqual(landed_cost.cost_lines[0].price_unit, 12000.0)
         
         # Verify that the account_id was taken from the payment bill line
         self.assertEqual(landed_cost.cost_lines[0].account_id.id, custom_mapping_account.id)
@@ -468,7 +511,7 @@ class TestForeignOperations(TransactionCase):
             'order_line': [
                 (0, 0, {
                     'name': 'Test Product No Margin',
-                    'product_id': self.env['product.product'].create({'name': 'Test Product No Margin'}).id,
+                    'product_id': self._create_product({'name': 'Test Product No Margin'}).id,
                     'product_qty': 5,
                     'product_uom_id': self.env.ref('uom.product_uom_unit').id,
                     'price_unit': 10,
@@ -493,7 +536,7 @@ class TestForeignOperations(TransactionCase):
         etb_currency = self.env['res.currency'].with_context(active_test=False).search([('name', '=', 'ETB')], limit=1)
         if etb_currency and not etb_currency.active:
             etb_currency.sudo().write({'active': True})
-        product = self.env['product.product'].create({
+        product = self._create_product({
             'name': 'Landed Cost Test 2',
             'landed_cost_ok': True,
         })
@@ -605,7 +648,7 @@ class TestForeignOperations(TransactionCase):
             'order_line': [
                 (0, 0, {
                     'name': 'Test Product',
-                    'product_id': self.env['product.product'].create({'name': 'Test Product Temp'}).id,
+                    'product_id': self._create_product({'name': 'Test Product Temp'}).id,
                     'product_qty': 5,
                     'product_uom_id': self.env.ref('uom.product_uom_unit').id,
                     'price_unit': 10,
@@ -686,5 +729,4 @@ class TestForeignOperations(TransactionCase):
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
-        print("✅ All Foreign Purchase Operations tests passed successfully!")
-        _logger.info("✅ All Foreign Purchase Operations tests passed successfully!")
+        _logger.info("All Foreign Purchase Operations tests passed successfully!")
