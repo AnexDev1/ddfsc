@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="group_ddfsc_quality_user" model="res.groups">
+        <field name="name">DDFSC Quality User</field>
+        <field name="comment">Records laboratory and production quality results.</field>
+        <field name="implied_ids" eval="[(4, ref('quality_control_oca.group_quality_control_user')), (4, ref('stock.group_stock_user'))]"/>
+    </record>
+
+    <record id="group_ddfsc_quality_manager" model="res.groups">
+        <field name="name">DDFSC Quality Manager</field>
+        <field name="comment">Maintains specifications and authorises quality dispositions.</field>
+        <field name="implied_ids" eval="[(4, ref('ddfsc_quality.group_ddfsc_quality_user')), (4, ref('quality_control_oca.group_quality_control_manager')), (4, ref('mrp.group_mrp_manager'))]"/>
+        <field name="user_ids" eval="[(4, ref('base.user_root')), (4, ref('base.user_admin'))]"/>
+    </record>
+
+    <record id="ddfsc_manufacturing.group_ddfsc_operation_manager" model="res.groups">
+        <field name="implied_ids" eval="[(4, ref('ddfsc_quality.group_ddfsc_quality_user'))]"/>
+    </record>
+</odoo>

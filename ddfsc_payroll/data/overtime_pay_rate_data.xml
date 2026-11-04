@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="overtime_rate_default" model="ddfsc.overtime.pay.rate">
+        <field name="name">DDFSC baseline overtime rate — confirm before use</field>
+        <field name="date_from">2025-07-08</field>
+        <field name="multiplier">1.5</field>
+        <field name="monthly_standard_hours">208</field>
+        <field name="note">Baseline configuration only. HR and Finance must confirm multiplier and standard-hour basis before production payroll.</field>
+    </record>
+</odoo>

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_attendance_correction_list" model="ir.ui.view">
+        <field name="name">ddfsc.attendance.correction.list</field>
+        <field name="model">ddfsc.attendance.correction</field>
+        <field name="arch" type="xml">
+            <list create="1" delete="0" decoration-info="state == 'submitted'" decoration-success="state == 'approved'" decoration-danger="state == 'rejected'">
+                <field name="employee_id"/>
+                <field name="attendance_id"/>
+                <field name="requested_check_in"/>
+                <field name="requested_check_out"/>
+                <field name="requested_by"/>
+                <field name="state" widget="badge" decoration-info="state == 'submitted'" decoration-success="state == 'approved'" decoration-danger="state == 'rejected'"/>
+                <field name="reviewed_by" optional="show"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_attendance_correction_form" model="ir.ui.view">
+        <field name="name">ddfsc.attendance.correction.form</field>
+        <field name="model">ddfsc.attendance.correction</field>
+        <field name="arch" type="xml">
+            <form delete="0">
+                <header>
+                    <button name="action_submit" string="Submit for Approval" type="object" class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_approve" string="Approve &amp; Apply" type="object" class="btn-primary" groups="hr_attendance.group_hr_attendance_manager" invisible="state != 'submitted'"/>
+                    <button name="action_reject" string="Reject" type="object" groups="hr_attendance.group_hr_attendance_manager" invisible="state != 'submitted'"/>
+                    <button name="action_cancel" string="Cancel" type="object" invisible="state not in ('draft', 'submitted')"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,submitted,approved,rejected,cancelled"/>
+                </header>
+                <sheet>
+                    <div class="oe_title"><h1><field name="employee_id" readonly="1"/></h1></div>
+                    <group>
+                        <group string="Original Attendance">
+                            <field name="attendance_id" readonly="state != 'draft'"/>
+                            <field name="original_check_in" readonly="1"/>
+                            <field name="original_check_out" readonly="1"/>
+                        </group>
+                        <group string="Requested Correction">
+                            <field name="requested_check_in" readonly="state != 'draft'"/>
+                            <field name="requested_check_out" readonly="state != 'draft'"/>
+                            <field name="reason" readonly="state != 'draft'" placeholder="Explain why the device attendance must be corrected..."/>
+                        </group>
+                    </group>
+                    <group string="Review" invisible="state in ('draft', 'submitted')">
+                        <field name="reviewed_by"/>
+                        <field name="reviewed_at"/>
+                        <field name="review_note" readonly="state in ('approved', 'rejected', 'cancelled')"/>
+                    </group>
+                    <field name="company_id" invisible="1"/>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="action_attendance_corrections" model="ir.actions.act_window">
+        <field name="name">Correction Requests</field>
+        <field name="res_model">ddfsc.attendance.correction</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_submitted': 1}</field>
+    </record>
+</odoo>

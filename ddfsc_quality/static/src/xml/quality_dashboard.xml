@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="ddfsc_quality.QualityDashboard">
+        <div class="o_ddfsc_quality_dashboard p-4" t-if="!state.loading and state.data">
+            <section class="o_qc_hero mb-4">
+                <div>
+                    <span class="o_qc_eyebrow">DIRE DAWA FOOD COMPLEX</span>
+                    <h1>Quality Control Overview</h1>
+                    <p>Prioritise release decisions, blocked stock, and non-conformance follow-up.</p>
+                </div>
+                <button class="btn btn-light o_qc_refresh" t-on-click="refresh">
+                    <i class="fa fa-refresh me-1"/> Refresh
+                </button>
+            </section>
+
+            <section class="o_qc_kpis mb-4">
+                <button class="o_qc_kpi o_qc_kpi-review" t-on-click="() => this.openLots('QC Lots Awaiting Review', [['ddfsc_review_state', '=', 'submitted']])">
+                    <span class="o_qc_kpi_icon"><i class="fa fa-clipboard"/></span>
+                    <span><strong t-esc="state.data.metrics.awaiting_review"/><small>Awaiting Review</small></span>
+                </button>
+                <button class="o_qc_kpi o_qc_kpi-entry" t-on-click="() => this.openLots('QC Lots in Data Entry', [['ddfsc_review_state', '=', 'draft'], ['ddfsc_quality_state', '=', 'pending']])">
+                    <span class="o_qc_kpi_icon"><i class="fa fa-pencil"/></span>
+                    <span><strong t-esc="state.data.metrics.data_entry"/><small>In Data Entry</small></span>
+                </button>
+                <button class="o_qc_kpi o_qc_kpi-blocked" t-on-click="() => this.openLots('Blocked QC Lots', [['ddfsc_quality_state', 'in', ['hold', 'rejected']]])">
+                    <span class="o_qc_kpi_icon"><i class="fa fa-ban"/></span>
+                    <span><strong t-esc="state.data.metrics.blocked"/><small>Blocked Lots</small></span>
+                </button>
+                <button class="o_qc_kpi o_qc_kpi-ncr" t-on-click="() => this.openNcrs('Open Non-Conformances', [['state', 'not in', ['closed', 'canceled']]])">
+                    <span class="o_qc_kpi_icon"><i class="fa fa-exclamation-triangle"/></span>
+                    <span><strong t-esc="state.data.metrics.open_ncr"/><small>Open NCRs</small></span>
+                </button>
+            </section>
+
+            <section class="o_qc_visuals mb-4">
+                <article class="o_qc_panel o_qc_release_panel">
+                    <div class="o_qc_panel_title"><h2>Release readiness</h2><span>All governed lots</span></div>
+                    <div class="o_qc_release_content">
+                        <div class="o_qc_donut" t-att-style="'--release-rate:' + state.data.release_rate + '%'">
+                            <div><strong t-esc="state.data.release_rate + '%'"/><span>approved</span></div>
+                        </div>
+                        <div class="o_qc_release_copy">
+                            <strong t-esc="state.data.metrics.approved"/>
+                            <span>approved or exception-released lots out of <t t-esc="state.data.governed_lots"/> governed lots.</span>
+                            <button class="btn btn-sm btn-outline-primary mt-2" t-on-click="() => this.openLots('Approved QC Lots', [['ddfsc_quality_state', 'in', ['pass', 'released']]])">View approved lots</button>
+                        </div>
+                    </div>
+                </article>
+                <article class="o_qc_panel">
+                    <div class="o_qc_panel_title"><h2>QC status distribution</h2><span>Current lots</span></div>
+                    <div class="o_qc_status_list">
+                        <t t-foreach="state.data.status_data" t-as="status" t-key="status.key">
+                            <button t-attf-class="o_qc_status_row o_qc_tone-#{status.tone}" t-on-click="() => this.openLots(status.label + ' QC Lots', [['ddfsc_quality_state', '=', status.key]])">
+                                <span><i class="fa fa-circle"/><t t-esc="status.label"/></span><strong t-esc="status.count"/>
+                            </button>
+                        </t>
+                    </div>
+                </article>
+                <article class="o_qc_panel">
+                    <div class="o_qc_panel_title"><h2>Open NCR severity</h2><span>Requires follow-up</span></div>
+                    <div class="o_qc_chart">
+                        <t t-foreach="state.data.severity_data" t-as="severity" t-key="severity.key">
+                            <button class="o_qc_bar_row" t-on-click="() => this.openNcrs(severity.label + ' NCRs', [['state', 'not in', ['closed', 'canceled']], ['severity', '=', severity.key]])">
+                                <span t-esc="severity.label"/><div class="o_qc_bar_track"><div t-attf-class="o_qc_bar o_qc_bar-#{severity.key}" t-att-style="'width:' + severity.percent + '%'"/></div><strong t-esc="severity.count"/>
+                            </button>
+                        </t>
+                    </div>
+                    <button class="o_qc_overdue_link" t-on-click="() => this.openNcrs('Overdue Non-Conformances', [['state', 'not in', ['closed', 'canceled']], ['is_overdue', '=', true]])">
+                        <i class="fa fa-clock-o"/> <t t-esc="state.data.metrics.overdue_ncr"/> overdue NCRs
+                    </button>
+                </article>
+            </section>
+
+            <section class="o_qc_panel mb-4">
+                <div class="o_qc_panel_title"><h2>QC workload by checkpoint</h2><span>Governed batches in the system</span></div>
+                <div class="o_qc_checkpoint_chart">
+                    <t t-foreach="state.data.checkpoint_data" t-as="checkpoint" t-key="checkpoint.key">
+                        <button class="o_qc_checkpoint" t-on-click="() => this.openLots(checkpoint.label + ' QC Lots', [['quality_checkpoint', '=', checkpoint.key]])">
+                            <div class="o_qc_column"><div class="o_qc_column_fill" t-att-style="'height:' + checkpoint.percent + '%'"/></div>
+                            <strong t-esc="checkpoint.count"/><span t-esc="checkpoint.label"/>
+                        </button>
+                    </t>
+                </div>
+            </section>
+
+            <section class="o_qc_queues">
+                <article class="o_qc_panel">
+                    <div class="o_qc_panel_title"><h2>Awaiting review</h2><button class="btn btn-link" t-on-click="() => this.openLots('QC Lots Awaiting Review', [['ddfsc_review_state', '=', 'submitted']])">View all</button></div>
+                    <div class="o_qc_empty" t-if="!state.data.review_lots.length">No lots are waiting for review.</div>
+                    <div class="o_qc_table" t-else="">
+                        <t t-foreach="state.data.review_lots" t-as="lot" t-key="lot.id"><button t-on-click="() => this.openLot(lot.id)"><span><strong t-esc="lot.name"/><small t-esc="lot.product"/></span><span><small t-esc="lot.checkpoint"/><b t-esc="lot.progress + ' tests'"/></span></button></t>
+                    </div>
+                </article>
+                <article class="o_qc_panel">
+                    <div class="o_qc_panel_title"><h2>Blocked lots</h2><button class="btn btn-link" t-on-click="() => this.openLots('Blocked QC Lots', [['ddfsc_quality_state', 'in', ['hold', 'rejected']]])">View all</button></div>
+                    <div class="o_qc_empty" t-if="!state.data.blocked_lots.length">No lots are currently blocked.</div>
+                    <div class="o_qc_table" t-else="">
+                        <t t-foreach="state.data.blocked_lots" t-as="lot" t-key="lot.id"><button t-on-click="() => this.openLot(lot.id)"><span><strong t-esc="lot.name"/><small t-esc="lot.product"/></span><span><small t-esc="lot.checkpoint"/><b class="text-danger" t-esc="lot.status"/></span></button></t>
+                    </div>
+                </article>
+                <article class="o_qc_panel">
+                    <div class="o_qc_panel_title"><h2>Open NCRs</h2><button class="btn btn-link" t-on-click="() => this.openNcrs('Open Non-Conformances', [['state', 'not in', ['closed', 'canceled']]])">View all</button></div>
+                    <div class="o_qc_empty" t-if="!state.data.open_ncrs.length">No open non-conformances.</div>
+                    <div class="o_qc_table" t-else="">
+                        <t t-foreach="state.data.open_ncrs" t-as="ncr" t-key="ncr.id"><button t-on-click="() => this.openNcr(ncr.id)"><span><strong t-esc="ncr.name"/><small t-esc="ncr.product + ' · ' + ncr.owner"/></span><span><small t-esc="ncr.state"/><b t-attf-class="o_qc_severity o_qc_severity-#{ncr.severity_key}" t-esc="ncr.severity"/></span></button></t>
+                    </div>
+                </article>
+            </section>
+        </div>
+        <div class="o_ddfsc_quality_dashboard o_qc_loading" t-else=""><i class="fa fa-spinner fa-spin"/> Loading Quality Control Overview…</div>
+    </t>
+</templates>

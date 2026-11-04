@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- The previous shortcuts remain in the database for upgrade safety, but
+         QC now has one clear, standalone application entry point. -->
+    <record id="ddfsc_manufacturing.menu_ddfsc_quality_check" model="ir.ui.menu">
+        <field name="active" eval="False"/>
+    </record>
+    <record id="ddfsc_manufacturing.menu_ddfsc_quality_plan" model="ir.ui.menu">
+        <field name="active" eval="False"/>
+    </record>
+
+    <!--
+        quality_control_oca remains an installed technical dependency.  Its
+        generic Inspection, Test, Test Category, and Trigger menus create a
+        second, ungoverned QC path, however, so they are deliberately hidden
+        from the DDFSC workspace.  Factory users configure Acceptance Plans
+        and operate QC Lots, where quarantine, approval, NCR, and inventory
+        release rules are enforced.
+    -->
+    <record id="quality_control_oca.qc_inspection_menu_parent" model="ir.ui.menu">
+        <field name="active" eval="False"/>
+    </record>
+    <record id="quality_control_oca.qc_menu_test_parent" model="ir.ui.menu">
+        <field name="active" eval="False"/>
+    </record>
+    <record id="quality_control_oca.menu_qc_config" model="ir.ui.menu">
+        <field name="active" eval="False"/>
+    </record>
+    <record id="quality_control_oca.qc_inspection_menu" model="ir.ui.menu">
+        <field name="active" eval="False"/>
+    </record>
+    <record id="quality_control_oca.qc_inspection_lines_menu" model="ir.ui.menu">
+        <field name="active" eval="False"/>
+    </record>
+    <record id="quality_control_oca.qc_test_menu" model="ir.ui.menu">
+        <field name="active" eval="False"/>
+    </record>
+    <record id="quality_control_oca.qc_test_category_menu" model="ir.ui.menu">
+        <field name="active" eval="False"/>
+    </record>
+    <record id="quality_control_oca.qc_trigger_menu" model="ir.ui.menu">
+        <field name="active" eval="False"/>
+    </record>
+
+    <record id="quality_dashboard_form" model="ir.ui.view">
+        <field name="name">ddfsc.quality.dashboard.form</field>
+        <field name="model">ddfsc.quality.dashboard</field>
+        <field name="arch" type="xml">
+            <form create="0" edit="0" delete="0" string="Quality Control Overview">
+                <sheet>
+                    <div class="oe_title">
+                        <h1>Quality Control Overview</h1>
+                        <p class="text-muted">Live factory QC workload, holds, releases, and non-conformance follow-up.</p>
+                    </div>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_awaiting_review" type="object" class="oe_stat_button" icon="fa-clipboard-check">
+                            <field name="awaiting_review_count" widget="statinfo" string="Awaiting Review"/>
+                        </button>
+                        <button name="action_open_data_entry" type="object" class="oe_stat_button" icon="fa-pencil-square-o">
+                            <field name="data_entry_count" widget="statinfo" string="Data Entry"/>
+                        </button>
+                        <button name="action_open_blocked_lots" type="object" class="oe_stat_button text-danger" icon="fa-ban">
+                            <field name="blocked_lot_count" widget="statinfo" string="Blocked Lots"/>
+                        </button>
+                        <button name="action_open_approved_lots" type="object" class="oe_stat_button text-success" icon="fa-check-circle">
+                            <field name="approved_lot_count" widget="statinfo" string="Approved Lots"/>
+                        </button>
+                        <button name="action_open_ncrs" type="object" class="oe_stat_button text-warning" icon="fa-exclamation-triangle">
+                            <field name="open_ncr_count" widget="statinfo" string="Open NCRs"/>
+                        </button>
+                        <button name="action_open_overdue_ncrs" type="object" class="oe_stat_button text-danger" icon="fa-clock-o">
+                            <field name="overdue_ncr_count" widget="statinfo" string="Overdue NCRs"/>
+                        </button>
+                    </div>
+                    <div class="alert alert-danger" role="alert" invisible="not overdue_ncr_count">
+                        <strong>Action needed:</strong> one or more non-conformances are overdue. Open the overdue counter to assign or follow up corrective action.
+                    </div>
+                    <div class="alert alert-warning" role="alert" invisible="not blocked_lot_count">
+                        <strong>Stock protection active:</strong> held or rejected lots cannot leave controlled locations until a Quality Manager records a valid disposition.
+                    </div>
+                    <notebook>
+                        <page string="Awaiting Quality Review">
+                            <p class="text-muted">Lots whose completed results have been submitted and now require a Quality Manager decision.</p>
+                            <field name="awaiting_review_lot_ids" readonly="1">
+                                <list create="0" delete="0">
+                                    <field name="name"/>
+                                    <field name="product_id"/>
+                                    <field name="quality_checkpoint"/>
+                                    <field name="ddfsc_quality_progress" string="Tests"/>
+                                    <field name="quality_submitted_date"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Blocked Lots">
+                            <p class="text-muted">Lots on hold or rejected by QC. Resolve their non-conformance before they can move to available stock.</p>
+                            <field name="blocked_lot_ids" readonly="1">
+                                <list create="0" delete="0" decoration-danger="ddfsc_quality_state in ('hold', 'rejected')">
+                                    <field name="name"/>
+                                    <field name="product_id"/>
+                                    <field name="quality_checkpoint"/>
+                                    <field name="ddfsc_quality_state" widget="badge"/>
+                                    <field name="ddfsc_quality_location" string="Location"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Open Non-Conformances">
+                            <p class="text-muted">Corrective-action work that still needs investigation, action, verification, or closure.</p>
+                            <field name="open_ncr_ids" readonly="1">
+                                <list create="0" delete="0" decoration-danger="severity == 'critical'" decoration-warning="is_overdue">
+                                    <field name="name"/>
+                                    <field name="lot_id"/>
+                                    <field name="product_id"/>
+                                    <field name="severity" widget="badge"/>
+                                    <field name="owner_id"/>
+                                    <field name="due_date"/>
+                                    <field name="state" widget="badge"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Recent Approved Lots">
+                            <p class="text-muted">Recently approved lots that are available for the next authorised process step.</p>
+                            <field name="recently_approved_lot_ids" readonly="1">
+                                <list create="0" delete="0">
+                                    <field name="name"/>
+                                    <field name="product_id"/>
+                                    <field name="quality_checkpoint"/>
+                                    <field name="ddfsc_quality_state" widget="badge"/>
+                                    <field name="quality_reviewed_date"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_quality_dashboard_client" model="ir.actions.client">
+        <field name="name">Quality Overview</field>
+        <field name="tag">ddfsc_quality.quality_dashboard</field>
+    </record>
+
+    <menuitem id="menu_ddfsc_qc_operations"
+              name="DDFSC Operations"
+              parent="quality_control_oca.qc_menu"
+              sequence="1"
+              groups="ddfsc_quality.group_ddfsc_quality_user"/>
+
+    <menuitem id="menu_ddfsc_qc_dashboard"
+              name="Quality Overview"
+              parent="quality_control_oca.qc_menu"
+              action="action_quality_dashboard_client"
+              sequence="0"
+              groups="ddfsc_quality.group_ddfsc_quality_user"/>
+
+    <menuitem id="menu_ddfsc_qc_lots"
+              name="QC Inspections"
+              parent="menu_ddfsc_qc_operations"
+              action="action_qc_inspection_document"
+              sequence="10"
+              groups="ddfsc_quality.group_ddfsc_quality_user"/>
+
+    <menuitem id="menu_ddfsc_qc_reports"
+              name="QC Reports"
+              parent="menu_ddfsc_qc_operations"
+              action="ddfsc_manufacturing.action_ddfsc_quality_report"
+              sequence="20"
+              groups="ddfsc_quality.group_ddfsc_quality_user"/>
+
+    <menuitem id="menu_ddfsc_qc_standards"
+              name="DDFSC Standards"
+              parent="quality_control_oca.qc_menu"
+              sequence="2"
+              groups="ddfsc_quality.group_ddfsc_quality_manager"/>
+
+    <menuitem id="menu_ddfsc_qc_plans"
+              name="Acceptance Plans"
+              parent="menu_ddfsc_qc_standards"
+              action="ddfsc_manufacturing.ddfsc_quality_plan_action"
+              sequence="10"
+              groups="ddfsc_quality.group_ddfsc_quality_manager"/>
+
+    <record id="qc_inspection_form_ddfsc" model="ir.ui.view">
+        <field name="name">qc.inspection.form.ddfsc</field>
+        <field name="model">qc.inspection</field>
+        <field name="inherit_id" ref="quality_control_oca.qc_inspection_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='object_id']" position="after">
+                <field name="ddfsc_lot_id" readonly="state != 'draft'"/>
+                <field name="ddfsc_checkpoint" readonly="1" invisible="not ddfsc_lot_id"/>
+                <button name="action_open_ddfsc_lot" type="object" string="Open Factory QC Lot"
+                        class="btn-secondary" invisible="not ddfsc_lot_id"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="stock_lot_form_qc_document_link" model="ir.ui.view">
+        <field name="name">stock.lot.form.qc.document.link</field>
+        <field name="model">stock.lot</field>
+        <field name="inherit_id" ref="ddfsc_manufacturing.stock_lot_form_ddfsc"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_open_qc_inspection" type="object" class="oe_stat_button" icon="fa-flask" invisible="not quality_plan_id">
+                    <div class="o_stat_info">
+                        <span class="o_stat_text">QC Inspection</span>
+                        <span class="o_stat_text text-muted">Open record</span>
+                    </div>
+                </button>
+                <button name="action_release_wheat_to_general_store" type="object" class="oe_stat_button" icon="fa-sign-out"
+                        invisible="quality_checkpoint != 'incoming_wheat' or ddfsc_quality_state not in ('pass', 'released') or ddfsc_wheat_receiving_qty &lt;= 0">
+                    <div class="o_stat_info">
+                        <span class="o_stat_text">Release to General Store</span>
+                    </div>
+                </button>
+            </xpath>
+            <xpath expr="//group[@name='main_group']/group[1]/field[@name='ref']" position="after">
+                <field name="ddfsc_quality_state" string="QC Release Status" widget="badge" readonly="1"
+                       decoration-danger="ddfsc_quality_state in ('hold', 'rejected')"
+                       decoration-warning="ddfsc_quality_state == 'pending'"
+                       decoration-success="ddfsc_quality_state in ('pass', 'released')"/>
+            </xpath>
+            <xpath expr="//group[field[@name='ddfsc_quality_state']]" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='quality_check_ids']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//button[@name='action_prepare_quality_checks']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>

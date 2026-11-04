@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_attendance_exception_search" model="ir.ui.view">
+        <field name="name">ddfsc.attendance.exception.search</field>
+        <field name="model">ddfsc.attendance.exception</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="employee_id"/><field name="issue_type"/><field name="punch_id"/>
+                <filter name="open" string="Open" domain="[('state', '=', 'open')]"/>
+                <filter name="critical" string="Blocking" domain="[('severity', '=', 'critical')]"/>
+                <separator/>
+                <filter name="group_employee" string="Employee" context="{'group_by': 'employee_id'}"/>
+                <filter name="group_issue" string="Issue Type" context="{'group_by': 'issue_type'}"/>
+            </search>
+        </field>
+    </record>
+    <record id="view_attendance_exception_list" model="ir.ui.view">
+        <field name="name">ddfsc.attendance.exception.list</field>
+        <field name="model">ddfsc.attendance.exception</field>
+        <field name="arch" type="xml">
+            <list create="0" delete="0" decoration-danger="severity == 'critical' and state == 'open'" decoration-warning="severity == 'warning' and state == 'open'" decoration-success="state == 'resolved'">
+                <header>
+                    <button name="action_generate_yesterday_schedule_exceptions" string="Review Yesterday's Schedule" type="object" class="btn-primary"/>
+                    <button name="action_refresh_missing_checkouts" string="Refresh Missing Check-outs" type="object"/>
+                </header>
+                <field name="detected_at"/><field name="issue_type"/><field name="employee_id"/><field name="attendance_id" optional="show"/><field name="punch_id" optional="show"/>
+                <field name="severity" widget="badge" decoration-danger="severity == 'critical'" decoration-warning="severity == 'warning'"/>
+                <field name="state" widget="badge" decoration-warning="state == 'open'" decoration-success="state == 'resolved'"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_attendance_exception_form" model="ir.ui.view">
+        <field name="name">ddfsc.attendance.exception.form</field>
+        <field name="model">ddfsc.attendance.exception</field>
+        <field name="arch" type="xml">
+            <form create="0" delete="0">
+                <header>
+                    <button name="action_open_correction" string="Request Time Correction" type="object" class="btn-primary" invisible="not attendance_id or state != 'open'"/>
+                    <button name="action_resolve" string="Mark Resolved" type="object" invisible="state != 'open'"/>
+                    <button name="action_ignore" string="Ignore" type="object" invisible="state != 'open'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="open,resolved,ignored"/>
+                </header>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name"/></h1></div>
+                    <group><group><field name="issue_type"/><field name="severity"/><field name="detected_at"/></group><group><field name="employee_id"/><field name="attendance_id"/><field name="punch_id"/></group></group>
+                    <group string="Issue"><field name="description" nolabel="1"/></group>
+                    <group string="Resolution" invisible="state == 'open'"><field name="resolved_by"/><field name="resolved_at"/><field name="resolution_note"/></group>
+                    <field name="company_id" invisible="1"/>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="action_attendance_exceptions" model="ir.actions.act_window">
+        <field name="name">Attendance Exceptions</field><field name="res_model">ddfsc.attendance.exception</field><field name="view_mode">list,form</field><field name="search_view_id" ref="view_attendance_exception_search"/><field name="context">{'search_default_open': 1}</field>
+    </record>
+</odoo>

@@ -8,26 +8,108 @@
                 <field name="lot_id"/>
                 <field name="product_id"/>
                 <field name="check_type"/>
+                <field name="specification"/>
                 <field name="measured_value"/>
-                <field name="apply_min"/>
-                <field name="standard_min"/>
-                <field name="apply_max"/>
-                <field name="standard_max"/>
-                <field name="result"/>
+                <field name="is_measured"/>
+                <field name="result" widget="badge" decoration-success="result == 'pass'" decoration-danger="result == 'fail'" decoration-warning="result == 'pending'"/>
                 <field name="production_id"/>
             </list>
         </field>
     </record>
 
+    <record id="ddfsc_quality_plan_view_list" model="ir.ui.view">
+        <field name="name">ddfsc.quality.plan.list</field>
+        <field name="model">ddfsc.quality.plan</field>
+        <field name="arch" type="xml">
+            <list><field name="sequence" widget="handle"/><field name="name"/><field name="checkpoint"/><field name="product_ids" widget="many2many_tags"/><field name="demo_specification"/><field name="active"/></list>
+        </field>
+    </record>
+    <record id="ddfsc_quality_plan_view_form" model="ir.ui.view">
+        <field name="name">ddfsc.quality.plan.form</field>
+        <field name="model">ddfsc.quality.plan</field>
+        <field name="arch" type="xml">
+            <form string="Quality Control Plan">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="checkpoint"/>
+                        <field name="product_ids" widget="many2many_tags"/>
+                        <field name="demo_specification" string="Demo values — factory approval required"/>
+                        <field name="active"/>
+                    </group>
+                    <field name="line_ids" string="Required Tests">
+                        <list editable="bottom">
+                            <field name="sequence" widget="handle"/>
+                            <field name="check_type" string="Test"/>
+                            <field name="limit_type"/>
+                            <field name="standard_min" string="Lowest Acceptable" invisible="limit_type == 'max'"/>
+                            <field name="standard_max" string="Highest Acceptable" invisible="limit_type == 'min'"/>
+                            <field name="note"/>
+                            <field name="specification" readonly="1"/>
+                        </list>
+                    </field>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="ddfsc_quality_plan_action" model="ir.actions.act_window">
+        <field name="name">QC Plans</field><field name="res_model">ddfsc.quality.plan</field><field name="view_mode">list,form</field>
+    </record>
+
+    <record id="ddfsc_quality_lot_view_list" model="ir.ui.view">
+        <field name="name">stock.lot.quality.dashboard.list</field>
+        <field name="model">stock.lot</field>
+        <field name="arch" type="xml">
+            <list string="Quality Control" create="0" delete="0"
+                  decoration-warning="ddfsc_quality_state == 'pending'"
+                  decoration-danger="ddfsc_quality_state in ('hold', 'rejected')"
+                  decoration-success="ddfsc_quality_state in ('pass', 'released')">
+                <field name="name" string="Lot / Batch"/>
+                <field name="product_id"/>
+                <field name="quality_plan_id" string="QC Plan"/>
+                <field name="ddfsc_quality_location"/>
+                <field name="ddfsc_quality_progress"/>
+                <field name="ddfsc_quality_state" widget="badge" string="QC Status"
+                       decoration-warning="ddfsc_quality_state == 'pending'"
+                       decoration-danger="ddfsc_quality_state in ('hold', 'rejected')"
+                       decoration-success="ddfsc_quality_state in ('pass', 'released')"/>
+                <field name="create_date" string="Created" optional="show"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="ddfsc_quality_lot_view_search" model="ir.ui.view">
+        <field name="name">stock.lot.quality.dashboard.search</field>
+        <field name="model">stock.lot</field>
+        <field name="arch" type="xml">
+            <search string="Quality Control">
+                <field name="name" string="Lot / Batch"/>
+                <field name="product_id"/>
+                <filter name="pending" string="Pending" domain="[('ddfsc_quality_state', '=', 'pending')]"/>
+                <filter name="passed" string="Passed" domain="[('ddfsc_quality_state', '=', 'pass')]"/>
+                <filter name="hold" string="On Hold" domain="[('ddfsc_quality_state', '=', 'hold')]"/>
+                <filter name="rejected" string="Rejected" domain="[('ddfsc_quality_state', '=', 'rejected')]"/>
+                <separator/>
+                <filter name="group_product" string="Product" context="{'group_by': 'product_id'}"/>
+                <filter name="group_status" string="QC Status" context="{'group_by': 'ddfsc_quality_state'}"/>
+                <filter name="group_plan" string="QC Plan" context="{'group_by': 'quality_plan_id'}"/>
+            </search>
+        </field>
+    </record>
+
     <record id="ddfsc_quality_check_action" model="ir.actions.act_window">
-        <field name="name">Quality Checks</field>
-        <field name="res_model">ddfsc.quality.check</field>
+        <field name="name">Quality Control</field>
+        <field name="res_model">stock.lot</field>
         <field name="view_mode">list,form</field>
+        <field name="view_id" ref="ddfsc_quality_lot_view_list"/>
+        <field name="search_view_id" ref="ddfsc_quality_lot_view_search"/>
+        <field name="domain">[('quality_check_ids', '!=', False)]</field>
     </record>
 
     <menuitem id="menu_ddfsc_quality_check"
-              name="Quality Checks"
+              name="Quality Control"
               parent="mrp.menu_mrp_manufacturing"
               action="ddfsc_quality_check_action"
               sequence="25"/>
+    <menuitem id="menu_ddfsc_quality_plan" name="QC Plans" parent="mrp.menu_mrp_configuration" action="ddfsc_quality_plan_action" sequence="26" groups="mrp.group_mrp_manager"/>
 </odoo>

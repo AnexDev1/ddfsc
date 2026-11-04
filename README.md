@@ -1,17 +1,33 @@
-# Local Odoo 19
+# DDFSC Odoo 19 Deployment
 
-Open http://localhost:8069 after starting the services.
+This repository root is the **custom-addon source**. Docker mounts it at
+`/mnt/extra-addons`; do not create another nested `custom_addons` directory.
+The deployable set includes DDFSC Manufacturing, Quality Control, HR &
+Attendance, Ethiopian Payroll, and their required OCA dependency modules.
+They are listed in `custom-modules.txt` and are versioned together in Git.
 
-Start: `docker compose up -d --build`
-Stop: `docker compose stop`
-Logs: `docker compose logs -f odoo`
+## Fresh computer setup
 
-The database creation master password is in `.env` as ODOO_MASTER_PASSWORD, and in config/odoo.conf as admin_passwd. Choose your own email and login password when creating a database.
+1. Clone this repository.
+2. Copy `.env.example` to `.env` and choose a strong PostgreSQL password.
+3. Copy `config/odoo.conf.example` to `config/odoo.conf` and choose a strong Odoo master password.
+4. Start the stack: `docker compose up -d --build`.
+5. Create the target database in Odoo, then install the complete approved module set:
 
-Custom modules are cloned from https://github.com/AnexDev1/ddfsc into custom_addons and mounted at /mnt/extra-addons. After creating a database, enable developer mode, go to Apps, and Update Apps List. Remove the Apps filter to see modules that are not standalone applications. Install the modules you need.
+   ```sh
+   docker compose exec -T odoo sh /mnt/extra-addons/scripts/install-custom-modules.sh ddfsc install
+   ```
 
-Update module source: `git -C custom_addons pull --ff-only`, then `docker compose restart odoo`. Upgrade installed modules in Odoo after changing their source.
+Replace `ddfsc` with the actual database name if it differs.
 
-PostgreSQL and Odoo files persist in Docker volumes. `docker compose stop` retains them.
+## Updating an existing installation
 
-The recovered archive configuration is adapted in config/odoo.conf. Original recovered files are saved in archive_reference. No database backup could be recovered from the damaged archive; ddfsc is a fresh database. All 34 custom modules are installed. Administrator login credentials are in .env as ODOO_ADMIN_LOGIN and ODOO_ADMIN_PASSWORD. Installation warnings are recorded in install-addons.log.
+```sh
+git pull --ff-only
+docker compose up -d --build
+docker compose exec -T odoo sh /mnt/extra-addons/scripts/install-custom-modules.sh ddfsc upgrade
+docker compose restart odoo
+```
+
+Open `http://localhost:8069` after starting the services. PostgreSQL and Odoo
+data persist in Docker volumes, so `docker compose stop` does not delete them.

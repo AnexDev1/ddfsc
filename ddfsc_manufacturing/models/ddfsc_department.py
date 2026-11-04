@@ -42,9 +42,11 @@ DEPARTMENTS = {
         'request_source': 'loc_store',
         'request_location': 'loc_mill',
         'component_location': 'loc_mill',
-        'finished_location': 'loc_flour',
-        'fg_source': 'loc_flour',
-        'fg_dest': FINISHED_GOODS_STORE,
+        # Milling output waits here, then is released into Flour Store for
+        # pasta, bread and biscuit ingredient requests.
+        'finished_location': 'loc_flour_finished',
+        'fg_source': 'loc_flour_finished',
+        'fg_dest': 'loc_flour',
         # Mill by-products wait here, then return to General Store.
         'byproduct_location': 'loc_byproduct',
         'byproduct_source': 'loc_byproduct',

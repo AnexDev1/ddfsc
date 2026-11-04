@@ -1,0 +1,10 @@
+[options]
+; Copy to config/odoo.conf and replace the master password before first use.
+admin_passwd = change-this-odoo-master-password
+addons_path = /usr/lib/python3/dist-packages/odoo/addons,/var/lib/odoo/addons/19.0,/mnt/extra-addons,/usr/lib/python3/dist-packages/addons
+data_dir = /var/lib/odoo
+db_host = db
+db_port = 5432
+db_user = odoo
+db_password = False
+proxy_mode = False
