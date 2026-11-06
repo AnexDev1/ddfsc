@@ -1,0 +1,1 @@
+<odoo><record id="seq_disciplinary_case" model="ir.sequence"><field name="name">Disciplinary Case</field><field name="code">ddfsc.disciplinary.case</field><field name="prefix">DISC/%(year)s/</field><field name="padding">5</field></record></odoo>

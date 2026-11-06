@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="allowance_policy_search" model="ir.ui.view">
+        <field name="name">ddfsc.allowance.policy.search</field>
+        <field name="model">ddfsc.allowance.policy</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/><field name="code"/><field name="component_type_id"/>
+                <filter name="active" string="Active" domain="[('active', '=', True)]"/>
+                <filter name="taxable" string="Taxable" domain="[('component_type_id.taxable', '=', True)]"/>
+                <filter name="pensionable" string="Pensionable" domain="[('component_type_id.pensionable', '=', True)]"/>
+                <group>
+                    <filter name="group_component" string="Payroll Treatment" context="{'group_by': 'component_type_id'}"/>
+                    <filter name="group_scope" string="Eligibility" context="{'group_by': 'eligibility_scope'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="allowance_policy_list" model="ir.ui.view">
+        <field name="name">ddfsc.allowance.policy.list</field>
+        <field name="model">ddfsc.allowance.policy</field>
+        <field name="arch" type="xml">
+            <list decoration-muted="not active">
+                <field name="name"/><field name="code"/><field name="component_type_id"/>
+                <field name="calculation_method"/><field name="fixed_amount" optional="show"/>
+                <field name="percentage" optional="show"/><field name="maximum_amount" optional="hide"/>
+                <field name="recurrence"/><field name="eligibility_scope"/><field name="date_from"/><field name="date_to"/>
+                <field name="active" optional="hide"/>
+            </list>
+        </field>
+    </record>
+    <record id="allowance_policy_form" model="ir.ui.view">
+        <field name="name">ddfsc.allowance.policy.form</field>
+        <field name="model">ddfsc.allowance.policy</field>
+        <field name="arch" type="xml">
+            <form string="Allowance Policy">
+                <sheet>
+                    <div class="oe_title"><h1><field name="name" placeholder="Example: Factory Transport Allowance"/></h1></div>
+                    <div class="alert alert-info" role="alert">
+                        Cash allowances are taxable by default. The selected payroll component controls taxable and pensionable treatment; use a pensionable component only when Finance confirms it is part of regular contractual salary.
+                    </div>
+                    <group>
+                        <group string="Policy and Payroll Treatment">
+                            <field name="code" placeholder="TRANSPORT_FACTORY"/>
+                            <field name="component_type_id"/>
+                            <field name="recurrence"/>
+                            <field name="active"/>
+                        </group>
+                        <group string="Effective Period">
+                            <field name="date_from"/>
+                            <field name="date_to"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                    <group string="Calculation">
+                        <group>
+                            <field name="calculation_method"/>
+                            <field name="fixed_amount" invisible="calculation_method != 'fixed'"/>
+                            <field name="percentage" invisible="calculation_method != 'percentage_basic'"/>
+                        </group>
+                        <group>
+                            <field name="maximum_amount"/>
+                        </group>
+                    </group>
+                    <group string="Eligibility">
+                        <field name="eligibility_scope"/>
+                        <field name="department_ids" widget="many2many_tags" invisible="eligibility_scope != 'department'"/>
+                        <field name="job_ids" widget="many2many_tags" invisible="eligibility_scope != 'job'"/>
+                        <field name="employee_ids" widget="many2many_tags" invisible="eligibility_scope != 'employee'"/>
+                    </group>
+                    <group string="Policy Notes"><field name="note" nolabel="1" placeholder="Approved policy reference, eligibility conditions, and Finance guidance..."/></group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="allowance_policy_action" model="ir.actions.act_window">
+        <field name="name">Allowance Policies</field>
+        <field name="res_model">ddfsc.allowance.policy</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="allowance_policy_search"/>
+    </record>
+
+    <record id="employee_allowance_search" model="ir.ui.view">
+        <field name="name">ddfsc.employee.allowance.search</field>
+        <field name="model">ddfsc.employee.allowance</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/><field name="employee_id"/><field name="policy_id"/>
+                <filter name="pending" string="Pending My Action" domain="[('state', 'in', ('submitted', 'manager_approved', 'hr_approved'))]"/>
+                <filter name="approved" string="Approved" domain="[('state', '=', 'approved')]"/>
+                <filter name="rejected" string="Rejected" domain="[('state', '=', 'rejected')]"/>
+                <filter name="taxable" string="Taxable" domain="[('component_type_id.taxable', '=', True)]"/>
+                <group>
+                    <filter name="group_employee" string="Employee" context="{'group_by': 'employee_id'}"/>
+                    <filter name="group_policy" string="Policy" context="{'group_by': 'policy_id'}"/>
+                    <filter name="group_state" string="Status" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="employee_allowance_list" model="ir.ui.view">
+        <field name="name">ddfsc.employee.allowance.list</field>
+        <field name="model">ddfsc.employee.allowance</field>
+        <field name="arch" type="xml">
+            <list decoration-success="state == 'approved'" decoration-warning="state in ('submitted', 'manager_approved', 'hr_approved')" decoration-danger="state == 'rejected'" decoration-muted="state == 'cancelled'">
+                <field name="name"/><field name="employee_id"/><field name="policy_id"/><field name="component_type_id" optional="show"/>
+                <field name="amount" sum="Total"/><field name="recurrence"/><field name="date_from"/><field name="date_to"/>
+                <field name="state" widget="badge" decoration-success="state == 'approved'" decoration-warning="state in ('submitted', 'manager_approved', 'hr_approved')" decoration-danger="state == 'rejected'" decoration-muted="state == 'cancelled'"/>
+            </list>
+        </field>
+    </record>
+    <record id="employee_allowance_form" model="ir.ui.view">
+        <field name="name">ddfsc.employee.allowance.form</field>
+        <field name="model">ddfsc.employee.allowance</field>
+        <field name="arch" type="xml">
+            <form string="Employee Allowance Request" delete="0">
+                <header>
+                    <button name="action_submit" type="object" string="Submit for Manager Review" class="btn-primary" invisible="state not in ('draft', 'rejected')"/>
+                    <button name="action_manager_approve" type="object" string="Manager Approve" class="btn-primary" invisible="state != 'submitted'"/>
+                    <button name="action_hr_approve" type="object" string="HR Approve" class="btn-primary" groups="hr.group_hr_manager" invisible="state != 'manager_approved'"/>
+                    <button name="action_finance_approve" type="object" string="Finance Approve &amp; Add to Payroll" class="btn-primary" groups="payroll.group_payroll_manager" invisible="state != 'hr_approved'"/>
+                    <button name="action_reject" type="object" string="Reject" invisible="state not in ('submitted', 'manager_approved', 'hr_approved')"/>
+                    <button name="action_reset_to_draft" type="object" string="Reset to Draft" invisible="state not in ('submitted', 'manager_approved', 'hr_approved', 'rejected')"/>
+                    <button name="action_cancel" type="object" string="Cancel" invisible="state == 'cancelled'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,submitted,manager_approved,hr_approved,approved,rejected,cancelled"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_payroll_component" type="object" class="oe_stat_button" icon="fa-money" invisible="not payroll_component_count">
+                            <field name="payroll_component_count" widget="statinfo" string="Payroll Component"/>
+                        </button>
+                    </div>
+                    <div class="oe_title"><h1><field name="name" readonly="1"/></h1></div>
+                    <div class="alert alert-info" role="alert" invisible="state not in ('draft', 'rejected')">
+                        The policy calculates the request amount when submitted. Only final Finance approval creates the approved payroll component.
+                    </div>
+                    <group>
+                        <group string="Employee and Policy">
+                            <field name="employee_id" readonly="state not in ('draft', 'rejected')"/>
+                            <field name="policy_id" readonly="state not in ('draft', 'rejected')"/>
+                            <field name="component_type_id" readonly="1"/>
+                            <field name="recurrence" readonly="1"/>
+                        </group>
+                        <group string="Effective Period">
+                            <field name="date_from" readonly="state not in ('draft', 'rejected')"/>
+                            <field name="date_to" readonly="state not in ('draft', 'rejected')"/>
+                            <field name="amount" readonly="state not in ('draft', 'rejected')"/>
+                            <field name="company_id" groups="base.group_multi_company" readonly="state not in ('draft', 'rejected')"/>
+                        </group>
+                    </group>
+                    <group string="Request"><field name="note" nolabel="1" readonly="state not in ('draft', 'rejected')" placeholder="Business justification, supporting policy reference, or special context..."/></group>
+                    <notebook>
+                        <page string="Approval Trail">
+                            <group>
+                                <group string="Manager Review"><field name="manager_approved_by_id" readonly="1"/><field name="manager_approved_at" readonly="1"/><field name="manager_note" readonly="state not in ('submitted', 'manager_approved')"/></group>
+                                <group string="HR Review"><field name="hr_approved_by_id" readonly="1"/><field name="hr_approved_at" readonly="1"/><field name="hr_note" readonly="state not in ('manager_approved', 'hr_approved')"/></group>
+                            </group>
+                            <group string="Finance Review"><field name="finance_approved_by_id" readonly="1"/><field name="finance_approved_at" readonly="1"/><field name="finance_note" readonly="state not in ('hr_approved', 'approved')"/></group>
+                            <group string="Rejection"><field name="rejection_reason" readonly="state not in ('submitted', 'manager_approved', 'hr_approved', 'rejected')" placeholder="Required when rejecting a request..."/></group>
+                        </page>
+                    </notebook>
+                    <field name="requested_by_id" readonly="1" invisible="1"/>
+                    <field name="submitted_at" readonly="1" invisible="1"/>
+                    <field name="payroll_component_id" readonly="1" invisible="1"/>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="employee_allowance_pivot" model="ir.ui.view">
+        <field name="name">ddfsc.employee.allowance.pivot</field>
+        <field name="model">ddfsc.employee.allowance</field>
+        <field name="arch" type="xml"><pivot string="Allowance Impact"><field name="policy_id" type="row"/><field name="employee_id" type="row"/><field name="amount" type="measure"/><field name="state" type="col"/></pivot></field>
+    </record>
+    <record id="employee_allowance_graph" model="ir.ui.view">
+        <field name="name">ddfsc.employee.allowance.graph</field>
+        <field name="model">ddfsc.employee.allowance</field>
+        <field name="arch" type="xml"><graph string="Allowance Impact" type="bar"><field name="policy_id"/><field name="amount" type="measure"/></graph></field>
+    </record>
+    <record id="employee_allowance_action" model="ir.actions.act_window">
+        <field name="name">Employee Allowances</field>
+        <field name="res_model">ddfsc.employee.allowance</field>
+        <field name="view_mode">list,form,pivot,graph</field>
+        <field name="search_view_id" ref="employee_allowance_search"/>
+        <field name="context">{'search_default_pending': 1}</field>
+        <field name="help" type="html"><p class="o_view_nocontent_smiling_face">Create the first allowance request.</p><p>Use an approved policy, complete the three reviews, then let Finance add the approved result to payroll.</p></field>
+    </record>
+</odoo>

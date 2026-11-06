@@ -11,7 +11,7 @@
     <record id="employee_component_form" model="ir.ui.view">
         <field name="name">ddfsc.employee.payroll.component.form</field><field name="model">ddfsc.employee.payroll.component</field>
         <field name="arch" type="xml"><form string="Employee Payroll Component">
-            <header><button name="action_approve" type="object" string="Approve" class="oe_highlight" invisible="state != 'draft'"/>
+            <header><button name="action_approve" type="object" string="Approve" class="oe_highlight" groups="payroll.group_payroll_manager" invisible="state != 'draft'"/>
                 <button name="action_reset_to_draft" type="object" string="Reset to Draft" invisible="state == 'draft'"/>
                 <button name="action_cancel" type="object" string="Cancel" invisible="state == 'cancelled'"/>
                 <field name="state" widget="statusbar" statusbar_visible="draft,approved,cancelled"/></header>

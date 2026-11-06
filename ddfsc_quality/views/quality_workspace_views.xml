@@ -207,6 +207,7 @@
                     </div>
                 </button>
                 <button name="action_release_wheat_to_general_store" type="object" class="oe_stat_button" icon="fa-sign-out"
+                        groups="stock.group_stock_manager"
                         invisible="quality_checkpoint != 'incoming_wheat' or ddfsc_quality_state not in ('pass', 'released') or ddfsc_wheat_receiving_qty &lt;= 0">
                     <div class="o_stat_info">
                         <span class="o_stat_text">Release to General Store</span>

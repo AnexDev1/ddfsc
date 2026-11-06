@@ -133,3 +133,30 @@ class TestDdfscQualityWorkflow(TransactionCase):
         result = picking.button_validate()
         self.assertIn(result, (True, None))
         self.assertEqual(picking.state, "done")
+
+    def test_passed_incoming_inspection_shows_stock_and_creates_release_transfer(self):
+        wheat = self.env["product.product"].create({"name": "Incoming QC Wheat", "is_storable": True, "tracking": "lot"})
+        plan = self.env["ddfsc.quality.plan"].create({
+            "name": "Incoming Wheat Release Test", "checkpoint": "incoming_wheat",
+            "product_ids": [(6, 0, wheat.ids)], "demo_specification": False,
+            "line_ids": [(0, 0, {"check_type": "moisture", "mandatory": True,
+                                   "result_type": "numeric", "apply_max": True, "standard_max": 13.5, "note": "%"})],
+        })
+        plan.action_approve()
+        lot = self.env["stock.lot"].create({"name": "INCOMING-RELEASE-TEST", "product_id": wheat.id})
+        receiving = self.env.ref("ddfsc_manufacturing.loc_wheat_dock")
+        self.env["stock.quant"]._update_available_quantity(wheat, receiving, 25.0, lot_id=lot)
+        inspection = lot.active_qc_inspection_id
+        inspection.line_ids.write({"measured_value": 12.0, "is_measured": True})
+        inspection.action_submit(); inspection.action_review()
+        self.assertEqual(inspection.quantity_available, 25.0)
+        self.assertEqual(inspection.wheat_receiving_quantity, 25.0)
+        lot.ddfsc_quality_state = "pending"
+        release = inspection.action_release_to_general_store()
+        self.assertEqual(lot.ddfsc_quality_state, "pass")
+        picking = self.env["stock.picking"].browse(release["res_id"])
+        self.assertEqual(picking.location_id, receiving)
+        self.assertEqual(picking.location_dest_id, self.env.ref("ddfsc_manufacturing.loc_store"))
+        picking.write({"state": "done"})
+        with self.assertRaises(UserError):
+            inspection.action_release_to_general_store()

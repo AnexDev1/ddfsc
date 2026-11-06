@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_ddfsc_weighbridge_ticket_search" model="ir.ui.view">
+        <field name="name">ddfsc.weighbridge.ticket.search</field>
+        <field name="model">ddfsc.weighbridge.ticket</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="vehicle_plate"/>
+                <field name="partner_id"/>
+                <field name="product_id"/>
+                <field name="picking_id"/>
+                <filter name="to_weigh" string="To Weigh" domain="[('state', 'in', ('draft', 'first_recorded'))]"/>
+                <filter name="weighed" string="Ready to Complete" domain="[('state', '=', 'weighed')]"/>
+                <filter name="completed" string="Completed" domain="[('state', '=', 'completed')]"/>
+                <filter name="incoming" string="Incoming" domain="[('operation_type', '=', 'incoming')]"/>
+                <filter name="outgoing" string="Outgoing" domain="[('operation_type', '=', 'outgoing')]"/>
+                <separator/>
+                <filter name="group_product" string="Product" context="{'group_by': 'product_id'}"/>
+                <filter name="group_partner" string="Supplier / Customer" context="{'group_by': 'partner_id'}"/>
+                <filter name="group_state" string="Status" context="{'group_by': 'state'}"/>
+                <filter name="group_day" string="Weighing Date" context="{'group_by': 'first_weight_at:day'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_ddfsc_weighbridge_ticket_list" model="ir.ui.view">
+        <field name="name">ddfsc.weighbridge.ticket.list</field>
+        <field name="model">ddfsc.weighbridge.ticket</field>
+        <field name="arch" type="xml">
+            <list decoration-success="state == 'completed'" decoration-warning="state in ('draft', 'first_recorded', 'weighed')" decoration-muted="state == 'cancelled'">
+                <field name="name"/>
+                <field name="first_weight_at" string="Date"/>
+                <field name="operation_type"/>
+                <field name="vehicle_plate"/>
+                <field name="partner_id"/>
+                <field name="product_id"/>
+                <field name="gross_weight"/>
+                <field name="tare_weight"/>
+                <field name="net_weight"/>
+                <field name="picking_id" optional="show"/>
+                <field name="state" widget="badge" decoration-success="state == 'completed'" decoration-warning="state in ('draft', 'first_recorded', 'weighed')" decoration-danger="state == 'cancelled'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_ddfsc_weighbridge_ticket_form" model="ir.ui.view">
+        <field name="name">ddfsc.weighbridge.ticket.form</field>
+        <field name="model">ddfsc.weighbridge.ticket</field>
+        <field name="arch" type="xml">
+            <form delete="0">
+                <header>
+                    <button name="action_record_first_weight" string="Record First Weight" type="object" class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_record_second_weight" string="Record Second Weight &amp; Calculate Net" type="object" class="btn-primary" invisible="state != 'first_recorded'"/>
+                    <button name="action_complete" string="Complete Ticket" type="object" class="btn-primary" invisible="state != 'weighed'"/>
+                    <button name="action_cancel" string="Cancel Ticket" type="object" invisible="state in ('completed', 'cancelled')"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,first_recorded,weighed,completed,cancelled"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_attachments" type="object" class="oe_stat_button" icon="fa-paperclip">
+                            <field name="attachment_count" widget="statinfo" string="Printed Slips"/>
+                        </button>
+                        <button name="action_open_picking" type="object" class="oe_stat_button" icon="fa-exchange" invisible="not picking_id">
+                            <div class="o_stat_info"><span class="o_stat_text">Open Stock Document</span></div>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                        <p class="text-muted">Manual Phase 1 ticket. Capture the weights from the printed scale slip; this record does not validate stock or bypass QC.</p>
+                    </div>
+                    <div class="alert alert-info" role="alert" invisible="state != 'weighed'">
+                        <strong>One final step:</strong> attach a photo or scan of the printed weighbridge slip in the chatter, then select <em>Complete Ticket</em>.
+                    </div>
+                    <group>
+                        <group string="Vehicle and Goods">
+                            <field name="operation_type" readonly="state != 'draft'"/>
+                            <field name="first_weight_kind" readonly="state != 'draft'"/>
+                            <field name="vehicle_plate" readonly="state != 'draft'" placeholder="Example: 3-12345 AA"/>
+                            <field name="driver_name" readonly="state != 'draft'"/>
+                            <field name="partner_id" readonly="state != 'draft'"/>
+                            <field name="product_id" readonly="state != 'draft'"/>
+                        </group>
+                        <group string="Linked Business Document">
+                            <field name="purchase_id" readonly="state != 'draft'" invisible="operation_type != 'incoming'"/>
+                            <field name="picking_id" readonly="state != 'draft'"/>
+                            <field name="document_reference" readonly="1" invisible="not document_reference"/>
+                            <field name="reference" readonly="state != 'draft'" placeholder="Printed ticket number, if available"/>
+                            <field name="company_id" groups="base.group_multi_company" readonly="state != 'draft'"/>
+                        </group>
+                    </group>
+                    <group string="Weight Capture (kilograms)">
+                        <group>
+                            <field name="gross_weight" readonly="(state == 'draft' and first_weight_kind != 'gross') or (state == 'first_recorded' and first_weight_kind != 'tare') or state in ('weighed', 'completed', 'cancelled')" help="Loaded vehicle weight. It may be the first or second weighing depending on the selected order."/>
+                            <field name="first_weight_at" readonly="1" invisible="not first_weight_at"/>
+                            <field name="first_weight_by_id" readonly="1" invisible="not first_weight_by_id"/>
+                        </group>
+                        <group>
+                            <field name="tare_weight" readonly="(state == 'draft' and first_weight_kind != 'tare') or (state == 'first_recorded' and first_weight_kind != 'gross') or state in ('weighed', 'completed', 'cancelled')" help="Empty vehicle weight. It may be the first or second weighing depending on the selected order."/>
+                            <field name="net_weight" readonly="1" class="fw-bold"/>
+                            <field name="second_weight_at" readonly="1" invisible="not second_weight_at"/>
+                            <field name="second_weight_by_id" readonly="1" invisible="not second_weight_by_id"/>
+                        </group>
+                    </group>
+                    <group string="Completion" invisible="state not in ('completed', 'cancelled')">
+                        <group>
+                            <field name="weigh_out_at" readonly="1"/>
+                            <field name="completed_by_id" readonly="1" invisible="state != 'completed'"/>
+                        </group>
+                        <group>
+                            <field name="cancellation_reason" readonly="state != 'cancelled'" invisible="state != 'cancelled'"/>
+                        </group>
+                    </group>
+                    <group string="Cancellation Reason" invisible="state in ('completed', 'cancelled')">
+                        <field name="cancellation_reason" placeholder="Required only when cancelling a wrong or duplicate ticket..."/>
+                    </group>
+                    <group string="Operator Notes"><field name="notes" nolabel="1" readonly="state in ('completed', 'cancelled')" placeholder="Any vehicle, supplier, paper-slip, or discrepancy notes..."/></group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_ddfsc_weighbridge_ticket" model="ir.actions.act_window">
+        <field name="name">Weighbridge Tickets</field>
+        <field name="res_model">ddfsc.weighbridge.ticket</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_ddfsc_weighbridge_ticket_search"/>
+        <field name="context">{'search_default_to_weigh': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Create the first weighbridge ticket.</p>
+            <p>Link it to the receipt or delivery, record gross and tare weights from the scale’s printed slip, then attach that slip before completing it.</p>
+        </field>
+    </record>
+</odoo>

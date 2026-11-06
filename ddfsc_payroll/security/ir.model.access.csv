@@ -6,4 +6,18 @@ access_employee_component_manager,Employee payroll component manager,model_ddfsc
 access_tax_band_manager,Income tax band manager,model_ddfsc_ethiopian_tax_band,payroll.group_payroll_manager,1,1,1,1
 access_pension_config_manager,Pension configuration manager,model_ddfsc_ethiopian_pension_config,payroll.group_payroll_manager,1,1,1,1
 access_overtime_pay_rate_manager,Overtime pay rate manager,model_ddfsc_overtime_pay_rate,payroll.group_payroll_manager,1,1,1,1
+access_allowance_policy_hr_user,Allowance policy HR user,model_ddfsc_allowance_policy,hr.group_hr_user,1,0,0,0
+access_allowance_policy_payroll_manager,Allowance policy payroll manager,model_ddfsc_allowance_policy,payroll.group_payroll_manager,1,1,1,1
+access_employee_allowance_hr_user,Employee allowance HR user,model_ddfsc_employee_allowance,hr.group_hr_user,1,1,1,0
+access_employee_allowance_hr_manager,Employee allowance HR manager,model_ddfsc_employee_allowance,hr.group_hr_manager,1,1,1,1
+access_employee_allowance_payroll_manager,Employee allowance payroll manager,model_ddfsc_employee_allowance,payroll.group_payroll_manager,1,1,1,1
+access_job_grade_hr_manager,Job grade HR manager,model_ddfsc_job_grade,hr.group_hr_manager,1,1,1,1
+access_salary_band_hr_manager,Salary band HR manager,model_ddfsc_salary_band,hr.group_hr_manager,1,1,1,1
+access_employee_change_hr_user,Employee change HR user,model_ddfsc_employee_change_request,hr.group_hr_user,1,1,1,0
+access_employee_change_hr_manager,Employee change HR manager,model_ddfsc_employee_change_request,hr.group_hr_manager,1,1,1,1
+access_comp_history_hr_manager,Compensation history HR manager,model_ddfsc_compensation_history,hr.group_hr_manager,1,1,1,0
+access_loan_type_manager,Loan type manager,model_ddfsc_loan_type,payroll.group_payroll_manager,1,1,1,1
+access_loan_hr,Loan HR,model_ddfsc_employee_loan,hr.group_hr_user,1,1,1,0
+access_loan_manager,Loan manager,model_ddfsc_employee_loan,payroll.group_payroll_manager,1,1,1,1
+access_loan_repayment_manager,Loan repayment manager,model_ddfsc_loan_repayment,payroll.group_payroll_manager,1,1,1,0
 

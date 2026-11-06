@@ -88,12 +88,26 @@ class StockLot(models.Model):
 
     def action_release_wheat_to_general_store(self):
         self.ensure_one()
+        if not (self.env.is_superuser() or self.env.user.has_group('stock.group_stock_manager')):
+            raise UserError(_('Only a Store Manager can release passed wheat from Wheat Receiving to General Store.'))
         if self.quality_checkpoint != 'incoming_wheat':
             raise UserError(_('This action is only available for incoming wheat lots.'))
         if self.ddfsc_quality_state not in ('pass', 'released'):
             raise UserError(_('The wheat lot must pass QC before it can move to General Store.'))
         source = self.env.ref('ddfsc_manufacturing.loc_wheat_dock')
         destination = self.env.ref('ddfsc_manufacturing.loc_store')
+        completed_release = self.env['stock.move.line'].search([
+            ('lot_id', '=', self.id),
+            ('location_id', '=', source.id),
+            ('location_dest_id', '=', destination.id),
+            ('picking_id.state', '=', 'done'),
+        ], limit=1)
+        if completed_release:
+            raise UserError(_(
+                'Lot %(lot)s was already released to General Store on transfer %(transfer)s. '
+                'A released lot cannot be released a second time.',
+                lot=self.name, transfer=completed_release.picking_id.display_name,
+            ))
         quantity = self.ddfsc_wheat_receiving_qty
         if quantity <= 0:
             raise UserError(_('This lot has no available quantity in Wheat Receiving.'))

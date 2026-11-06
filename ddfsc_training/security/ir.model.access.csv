@@ -1,0 +1,9 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+training_course_hr_manager,training course manager,model_ddfsc_training_course,hr.group_hr_manager,1,1,1,1
+training_course_hr_user,training course user,model_ddfsc_training_course,hr.group_hr_user,1,0,0,0
+training_request_hr_user,training request user,model_ddfsc_training_request,hr.group_hr_user,1,1,1,0
+training_request_hr_manager,training request manager,model_ddfsc_training_request,hr.group_hr_manager,1,1,1,1
+training_session_hr_user,training session user,model_ddfsc_training_session,hr.group_hr_user,1,0,0,0
+training_session_hr_manager,training session manager,model_ddfsc_training_session,hr.group_hr_manager,1,1,1,1
+training_attendee_hr_user,training attendee user,model_ddfsc_training_attendee,hr.group_hr_user,1,0,0,0
+training_attendee_hr_manager,training attendee manager,model_ddfsc_training_attendee,hr.group_hr_manager,1,1,1,1

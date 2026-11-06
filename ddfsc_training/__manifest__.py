@@ -1,0 +1,1 @@
+{"name":"DDFSC Training & Development","version":"19.0.1.0.0","category":"Human Resources","summary":"Training requests, sessions, completion and certificates","license":"LGPL-3","depends":["hr","mail"],"data":["security/ir.model.access.csv","views/training_views.xml"],"application":True,"installable":True}

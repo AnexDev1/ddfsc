@@ -81,6 +81,16 @@ class EmployeePayrollComponent(models.Model):
     )
     company_id = fields.Many2one("res.company", required=True, default=lambda self: self.env.company, index=True)
     note = fields.Text()
+    allowance_assignment_id = fields.Many2one(
+        "ddfsc.employee.allowance", string="Allowance Request", readonly=True,
+        copy=False, ondelete="restrict", index=True,
+        help="The approved allowance request that created this payroll component.",
+    )
+    loan_repayment_id = fields.Many2one(
+        "ddfsc.loan.repayment", string="Loan Repayment", readonly=True,
+        copy=False, ondelete="restrict", index=True,
+        help="The scheduled loan repayment recovered through this one-time deduction.",
+    )
 
     @api.constrains("amount")
     def _check_amount(self):
@@ -108,6 +118,8 @@ class EmployeePayrollComponent(models.Model):
                 raise ValidationError(self.env._("Employee and component must belong to the same company."))
 
     def action_approve(self):
+        if not (self.env.is_superuser() or self.env.user.has_group("payroll.group_payroll_manager")):
+            raise UserError(self.env._("Only a Payroll Manager can approve a payroll component."))
         self.filtered(lambda record: record.state == "draft").write({"state": "approved"})
 
     def action_reset_to_draft(self):

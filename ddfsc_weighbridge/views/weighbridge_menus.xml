@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_ddfsc_weighbridge_root" name="Weighbridge" sequence="45" groups="ddfsc_weighbridge.group_ddfsc_weighbridge_user"/>
+    <menuitem id="menu_ddfsc_weighbridge_tickets" name="Tickets" parent="menu_ddfsc_weighbridge_root" action="action_ddfsc_weighbridge_ticket" sequence="10" groups="ddfsc_weighbridge.group_ddfsc_weighbridge_user"/>
+</odoo>

@@ -1,0 +1,4 @@
+<odoo>
+    <record id="loan_company_rule" model="ir.rule"><field name="name">Loans company</field><field name="model_id" ref="model_ddfsc_employee_loan"/><field name="global" eval="True"/><field name="domain_force">[('company_id','in',company_ids)]</field></record>
+    <record id="loan_repayment_company_rule" model="ir.rule"><field name="name">Loan repayments company</field><field name="model_id" ref="model_ddfsc_loan_repayment"/><field name="global" eval="True"/><field name="domain_force">[('company_id','in',company_ids)]</field></record>
+</odoo>

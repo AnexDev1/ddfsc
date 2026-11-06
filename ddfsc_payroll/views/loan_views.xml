@@ -1,0 +1,26 @@
+<odoo>
+    <record id="loan_action" model="ir.actions.act_window"><field name="name">Employee Loans</field><field name="res_model">ddfsc.employee.loan</field><field name="view_mode">list,form</field></record>
+    <record id="loan_reporting_action" model="ir.actions.act_window"><field name="name">Loan Balances</field><field name="res_model">ddfsc.employee.loan</field><field name="view_mode">pivot,graph,list,form</field><field name="domain">[('state', 'in', ['approved', 'disbursed', 'closed'])]</field></record>
+    <record id="loan_pivot" model="ir.ui.view"><field name="name">ddfsc.employee.loan.pivot</field><field name="model">ddfsc.employee.loan</field><field name="arch" type="xml"><pivot string="Loan Balances"><field name="employee_id" type="row"/><field name="loan_type_id" type="col"/><field name="outstanding_balance" type="measure"/><field name="amount" type="measure"/></pivot></field></record>
+    <record id="loan_graph" model="ir.ui.view"><field name="name">ddfsc.employee.loan.graph</field><field name="model">ddfsc.employee.loan</field><field name="arch" type="xml"><graph string="Loan Balances" type="bar"><field name="employee_id"/><field name="outstanding_balance" type="measure"/></graph></field></record>
+    <record id="loan_list" model="ir.ui.view"><field name="name">ddfsc.employee.loan.list</field><field name="model">ddfsc.employee.loan</field><field name="arch" type="xml"><list><field name="name"/><field name="employee_id"/><field name="loan_type_id"/><field name="amount"/><field name="installment_amount"/><field name="outstanding_balance"/><field name="state" widget="badge"/></list></field></record>
+    <record id="loan_form" model="ir.ui.view"><field name="name">ddfsc.employee.loan.form</field><field name="model">ddfsc.employee.loan</field><field name="arch" type="xml"><form string="Employee Loan"><header>
+        <button name="action_submit" type="object" string="Submit" class="btn-primary" invisible="state != 'draft'"/>
+        <button name="action_manager_approve" type="object" string="Manager Approve" invisible="state != 'submitted'" groups="hr.group_hr_manager"/>
+        <button name="action_hr_approve" type="object" string="HR Approve" invisible="state != 'manager'" groups="hr.group_hr_manager"/>
+        <button name="action_finance_approve" type="object" string="Finance Approve" class="btn-primary" invisible="state != 'hr'" groups="payroll.group_payroll_manager"/>
+        <button name="action_disburse" type="object" string="Record Disbursement &amp; Schedule" class="btn-primary" invisible="state != 'approved'" groups="payroll.group_payroll_manager"/>
+        <button name="action_close_settled" type="object" string="Close Repaid Loan" invisible="state != 'disbursed'" groups="payroll.group_payroll_manager"/>
+        <button name="action_early_settle" type="object" string="Record Early Settlement" class="btn-secondary" invisible="state != 'disbursed'" groups="payroll.group_payroll_manager"/>
+        <button name="action_reject" type="object" string="Reject" invisible="state not in ('submitted', 'manager', 'hr')"/>
+        <button name="action_cancel" type="object" string="Cancel" invisible="state not in ('draft', 'submitted', 'manager', 'hr', 'approved')"/>
+        <field name="state" widget="statusbar" statusbar_visible="draft,submitted,manager,hr,approved,disbursed,closed"/>
+    </header><sheet><div class="oe_title"><h1><field name="name" readonly="1"/></h1></div>
+        <group><group string="Request"><field name="employee_id" readonly="state != 'draft'"/><field name="loan_type_id" readonly="state != 'draft'"/><field name="amount" readonly="state != 'draft'"/><field name="term_months" readonly="state != 'draft'"/><field name="requested_date" readonly="state != 'draft'"/></group>
+        <group string="Disbursement &amp; Recovery"><field name="disbursement_date" readonly="state != 'approved'" required="state == 'approved'"/><field name="disbursement_reference" readonly="state != 'approved'" required="state == 'approved'"/><field name="installment_amount" readonly="1"/><field name="outstanding_balance" readonly="1"/><field name="settlement_amount" readonly="state != 'disbursed'"/><field name="settlement_date" readonly="state != 'disbursed'"/><field name="settlement_reference" readonly="state != 'disbursed'"/></group></group>
+        <group><field name="purpose" readonly="state != 'draft'"/></group>
+        <notebook><page string="Repayment Schedule"><field name="repayment_ids" readonly="1"><list><field name="sequence"/><field name="due_date"/><field name="principal_due"/><field name="interest_due"/><field name="total_due"/><field name="component_id" optional="hide"/><field name="paid_payslip_id" optional="hide"/><field name="state" widget="badge"/></list></field></page></notebook>
+    </sheet><chatter/></form></field></record>
+    <menuitem id="loan_menu" name="Employee Loans" parent="payroll.payroll_menu_root" action="loan_action" sequence="22" groups="payroll.group_payroll_user"/>
+    <menuitem id="loan_reporting_menu" name="Loan Balances" parent="payroll.payroll_menu_root" action="loan_reporting_action" sequence="23" groups="payroll.group_payroll_manager"/>
+</odoo>

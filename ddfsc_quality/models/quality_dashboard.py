@@ -43,11 +43,11 @@ class DdfscQualityDashboard(models.Model):
             dashboard.open_ncr_ids = Nonconformance.search(open_ncr_domain, order="due_date asc nulls last, create_date desc", limit=8)
 
     @staticmethod
-    def _lot_action(name, domain):
+    def _inspection_action(name, domain):
         return {
             "type": "ir.actions.act_window",
             "name": name,
-            "res_model": "stock.lot",
+            "res_model": "ddfsc.qc.inspection",
             "view_mode": "list,pivot,graph,form",
             "domain": domain,
         }
@@ -63,16 +63,16 @@ class DdfscQualityDashboard(models.Model):
         }
 
     def action_open_awaiting_review(self):
-        return self._lot_action("QC Lots Awaiting Review", [("ddfsc_review_state", "=", "submitted")])
+        return self._inspection_action("QC Inspections Awaiting Review", [("state", "=", "submitted")])
 
     def action_open_data_entry(self):
-        return self._lot_action("QC Lots in Data Entry", [("ddfsc_review_state", "=", "draft"), ("ddfsc_quality_state", "=", "pending")])
+        return self._inspection_action("QC Inspections in Data Entry", [("state", "=", "draft")])
 
     def action_open_blocked_lots(self):
-        return self._lot_action("Blocked QC Lots", [("ddfsc_quality_state", "in", ("hold", "rejected"))])
+        return self._inspection_action("Failed QC Inspections", [("state", "=", "rejected"), ("result_state", "=", "fail")])
 
     def action_open_approved_lots(self):
-        return self._lot_action("Approved QC Lots", [("ddfsc_quality_state", "in", ("pass", "released"))])
+        return self._inspection_action("Approved QC Inspections", [("state", "=", "approved"), ("result_state", "=", "pass")])
 
     def action_open_ncrs(self):
         return self._ncr_action("Open Non-Conformances", [("state", "not in", ("closed", "canceled"))])
@@ -123,6 +123,7 @@ class DdfscQualityDashboard(models.Model):
         def lot_rows(records):
             return [{
                 "id": lot.id,
+                "inspection_id": lot.active_qc_inspection_id.id,
                 "name": lot.name,
                 "product": lot.product_id.display_name,
                 "checkpoint": checkpoint_labels.get(lot.quality_checkpoint, "Not assigned"),

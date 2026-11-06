@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <menuitem id="employee_component_menu" name="Employee Components" parent="payroll.payroll_menu_root" action="employee_component_action" sequence="25" groups="payroll.group_payroll_user"/>
+    <menuitem id="employee_allowance_menu" name="Employee Allowances" parent="payroll.payroll_menu_root" action="employee_allowance_action" sequence="24" groups="payroll.group_payroll_user"/>
     <menuitem id="component_type_menu" name="Component Types" parent="payroll.payroll_menu_configuration" action="component_type_action" sequence="30" groups="payroll.group_payroll_manager"/>
+    <menuitem id="allowance_policy_menu" name="Allowance Policies" parent="payroll.payroll_menu_configuration" action="allowance_policy_action" sequence="25" groups="payroll.group_payroll_manager"/>
 </odoo>

@@ -24,6 +24,9 @@
                 <header>
                     <button name="action_submit" type="object" string="Submit for QC Approval" class="btn-primary" invisible="state != 'draft'"/>
                     <button name="action_review" type="object" string="Approve / Reject Results" class="btn-primary" invisible="state != 'submitted'" groups="ddfsc_quality.group_ddfsc_quality_manager"/>
+                    <button name="action_release_to_general_store" type="object" string="Release to General Store" class="btn-primary" icon="fa-sign-out"
+                            groups="stock.group_stock_manager"
+                            invisible="state != 'approved' or result_state != 'pass' or checkpoint != 'incoming_wheat' or wheat_receiving_quantity &lt;= 0"/>
                     <button name="action_start_reinspection" type="object" string="Start Reinspection" invisible="state != 'rejected'"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,submitted,approved,rejected"/>
                 </header>
@@ -35,6 +38,7 @@
                             <field name="product_id" readonly="1"/>
                             <field name="plan_id" readonly="1"/>
                             <field name="checkpoint" readonly="1"/>
+                            <field name="uom_id" invisible="1"/>
                         </group>
                         <group>
                             <field name="receipt_id" readonly="1"/>
@@ -42,6 +46,10 @@
                             <field name="supplier_id" readonly="1"/>
                             <field name="result_state" widget="badge" readonly="1"/>
                         </group>
+                    </group>
+                    <group string="Stock at a Glance">
+                        <group><field name="quantity_available" readonly="1"/><field name="wheat_receiving_quantity" readonly="1" invisible="checkpoint != 'incoming_wheat'"/></group>
+                        <group><field name="stock_location_summary" readonly="1"/><field name="uom_id" string="Unit of Measure" readonly="1"/></group>
                     </group>
                     <div class="alert alert-info" role="alert" invisible="state != 'draft'">Enter only the measured laboratory result or observed result. Limits and permitted answers are copied from the approved Acceptance Plan.</div>
                     <field name="line_ids" readonly="state != 'draft'">

@@ -63,6 +63,24 @@ class HrPayslip(models.Model):
             taxable_income, self.date_to or self.date_from, self.company_id
         )
 
+    def get_effective_basic_salary(self, contract):
+        """Return the approved salary in force at the end of this payroll period.
+
+        A later contract wage must never rewrite an already historical payroll
+        period.  The compensation-history record is authoritative where one
+        exists; the contract wage remains the safe fallback for employees with
+        no approved revision history.
+        """
+        self.ensure_one()
+        effective_date = self.date_to or self.date_from or fields.Date.context_today(self)
+        history = self.env["ddfsc.compensation.history"].search([
+            ("employee_id", "=", contract.employee_id.id),
+            ("company_id", "=", self.company_id.id),
+            ("date_from", "<=", effective_date),
+            "|", ("date_to", "=", False), ("date_to", ">=", effective_date),
+        ], order="date_from desc, id desc", limit=1)
+        return history.basic_salary if history else contract.wage
+
     def get_ethiopian_pension(self, pension_salary):
         """Salary-rule helper for PAY-004; returns employee/employer amounts."""
         self.ensure_one()
@@ -76,10 +94,31 @@ class HrPayslip(models.Model):
             approved_hours, monthly_wage, self.date_to or self.date_from, self.company_id
         )
 
+    def action_payslip_done(self):
+        result = super().action_payslip_done()
+        Repayment = self.env["ddfsc.loan.repayment"]
+        for payslip in self:
+            repayments = payslip.input_line_ids.component_ids.mapped("loan_repayment_id").filtered(
+                lambda repayment: repayment.state == "scheduled"
+            )
+            if repayments:
+                repayments.write({
+                    "state": "paid", "paid_payslip_id": payslip.id,
+                    "paid_date": payslip.date_to or fields.Date.context_today(payslip),
+                })
+                closed_loans = repayments.mapped("loan_id").filtered(
+                    lambda loan: loan.state == "disbursed" and not loan.repayment_ids.filtered(
+                        lambda line: line.state != "paid"
+                    )
+                )
+                if closed_loans:
+                    closed_loans.action_close_settled()
+        return result
+
     @api.model
     def get_inputs(self, contracts, date_from, date_to):
         result = super().get_inputs(contracts, date_from, date_to)
-        if not contracts or not self.employee_id:
+        if not contracts or not self.employee_id or not self.employee_id.payroll_eligible:
             return result
         components = self.env["ddfsc.employee.payroll.component"].search([
             ("employee_id", "=", self.employee_id.id), ("company_id", "=", self.company_id.id),

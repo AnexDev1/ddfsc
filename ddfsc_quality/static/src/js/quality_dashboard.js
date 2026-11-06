@@ -20,14 +20,25 @@ export class DdfscQualityDashboard extends Component {
         this.state.loading = false;
     }
 
-    openLots(name, domain) {
+    openInspections(name, domain) {
         this.action.doAction({
             type: "ir.actions.act_window",
             name,
-            res_model: "stock.lot",
+            res_model: "ddfsc.qc.inspection",
             views: [[false, "list"], [false, "pivot"], [false, "graph"], [false, "form"]],
             domain,
         });
+    }
+
+    openByLotStatus(name, status) {
+        const domains = {
+            pending: [["state", "=", "draft"]],
+            pass: [["state", "=", "approved"], ["result_state", "=", "pass"]],
+            hold: [["state", "=", "rejected"], ["result_state", "=", "fail"]],
+            rejected: [["state", "=", "rejected"]],
+            released: [["lot_id.ddfsc_quality_state", "=", "released"]],
+        };
+        this.openInspections(name, domains[status] || []);
     }
 
     openNcrs(name, domain) {
@@ -40,13 +51,16 @@ export class DdfscQualityDashboard extends Component {
         });
     }
 
-    openLot(lotId) {
+    openInspection(inspectionId) {
+        if (!inspectionId) {
+            return;
+        }
         this.action.doAction({
             type: "ir.actions.act_window",
-            name: "QC Lot",
-            res_model: "stock.lot",
+            name: "QC Inspection",
+            res_model: "ddfsc.qc.inspection",
             views: [[false, "form"]],
-            res_id: lotId,
+            res_id: inspectionId,
         });
     }
 

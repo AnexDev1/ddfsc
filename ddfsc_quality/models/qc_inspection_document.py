@@ -28,6 +28,18 @@ class DdfscQcInspection(models.Model):
     ], default="draft", required=True, tracking=True, copy=False)
     line_ids = fields.One2many("ddfsc.qc.inspection.line", "inspection_id", string="Laboratory Results", copy=True)
     result_state = fields.Selection([("pending", "Pending"), ("pass", "Passed"), ("fail", "Failed")], compute="_compute_result_state", store=True)
+    quantity_available = fields.Float(
+        string="Quantity Available", compute="_compute_stock_summary",
+        digits="Product Unit of Measure", readonly=True,
+    )
+    wheat_receiving_quantity = fields.Float(
+        related="lot_id.ddfsc_wheat_receiving_qty", string="Available in Wheat Receiving",
+        digits="Product Unit of Measure", readonly=True,
+    )
+    stock_location_summary = fields.Char(
+        related="lot_id.ddfsc_quality_location", string="Current Stock Location", readonly=True,
+    )
+    uom_id = fields.Many2one(related="product_id.uom_id", readonly=True)
     nonconformance_ids = fields.One2many("ddfsc.quality.nonconformance", "inspection_id")
     nonconformance_count = fields.Integer(compute="_compute_nonconformance_count")
     reinspection_reason = fields.Text(copy=False)
@@ -46,6 +58,13 @@ class DdfscQcInspection(models.Model):
     def _compute_nonconformance_count(self):
         for inspection in self:
             inspection.nonconformance_count = len(inspection.nonconformance_ids)
+
+    @api.depends("lot_id.quant_ids.quantity", "lot_id.quant_ids.location_id")
+    def _compute_stock_summary(self):
+        for inspection in self:
+            inspection.quantity_available = sum(inspection.lot_id.quant_ids.filtered(
+                lambda quant: quant.location_id.usage == "internal" and quant.quantity > 0
+            ).mapped("quantity"))
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -120,6 +139,28 @@ class DdfscQcInspection(models.Model):
             if not approved:
                 inspection._ensure_nonconformance()
         return True
+
+    def action_release_to_general_store(self):
+        """Create the controlled Wheat Receiving → General Store transfer here.
+
+        The lot remains the traceability source, but a quality user should not
+        need to leave the approved inspection simply to begin the release.
+        Warehouse staff still validate the generated transfer as normal.
+        """
+        self.ensure_one()
+        if not (self.env.is_superuser() or self.env.user.has_group("stock.group_stock_manager")):
+            raise AccessError(_("Only a Store Manager can create the General Store release transfer."))
+        if self.state != "approved" or self.result_state != "pass":
+            raise UserError(_("Only an approved, passed inspection can release stock to General Store."))
+        if self.checkpoint != "incoming_wheat":
+            raise UserError(_("Only an incoming-wheat inspection can release stock to General Store."))
+        # Older receipts and inspections created before the standalone
+        # inspection workspace can retain a stale lot status.  A passed,
+        # approved active inspection is the governed source of truth, so heal
+        # that mirror before calling the stock-release safeguard.
+        if self.lot_id.active_qc_inspection_id == self and self.lot_id.ddfsc_quality_state not in ("pass", "released"):
+            self._sync_lot_disposition("pass")
+        return self.lot_id.action_release_wheat_to_general_store()
 
     def action_start_reinspection(self):
         self.ensure_one()

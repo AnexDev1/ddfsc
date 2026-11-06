@@ -1,0 +1,3 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_ddfsc_weighbridge_ticket_user,ddfsc.weighbridge.ticket.user,model_ddfsc_weighbridge_ticket,ddfsc_weighbridge.group_ddfsc_weighbridge_user,1,1,1,0
+access_ddfsc_weighbridge_ticket_manager,ddfsc.weighbridge.ticket.manager,model_ddfsc_weighbridge_ticket,ddfsc_weighbridge.group_ddfsc_weighbridge_manager,1,1,1,1

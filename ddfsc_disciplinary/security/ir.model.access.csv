@@ -1,0 +1,3 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+disciplinary_type_hr_manager,disciplinary type hr manager,model_ddfsc_disciplinary_type,hr.group_hr_manager,1,1,1,1
+disciplinary_case_hr_manager,disciplinary case hr manager,model_ddfsc_disciplinary_case,hr.group_hr_manager,1,1,1,0

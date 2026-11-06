@@ -1,0 +1,1 @@
+{"name":"DDFSC Disciplinary Management","version":"19.0.1.0.0","category":"Human Resources","summary":"Confidential disciplinary cases and actions","license":"LGPL-3","depends":["hr","mail"],"data":["security/ir.model.access.csv","data/sequence.xml","views/disciplinary_views.xml"],"application":True,"installable":True}

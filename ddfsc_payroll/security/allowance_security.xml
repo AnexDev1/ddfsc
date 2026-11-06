@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="allowance_policy_company_rule" model="ir.rule">
+        <field name="name">Allowance policies: company</field>
+        <field name="model_id" ref="model_ddfsc_allowance_policy"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="employee_allowance_company_rule" model="ir.rule">
+        <field name="name">Employee allowances: company</field>
+        <field name="model_id" ref="model_ddfsc_employee_allowance"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+    </record>
+</odoo>
