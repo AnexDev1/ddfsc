@@ -50,13 +50,17 @@ class StockLot(models.Model):
     def _compute_quality_plan(self):
         today = fields.Date.today()
         domain = [('active', '=', True)]
-        if 'approval_state' in self.env['ddfsc.quality.plan']._fields:
-            domain += [
-                ('approval_state', '=', 'approved'),
-                '|', ('effective_from', '=', False), ('effective_from', '<=', today),
-                '|', ('effective_to', '=', False), ('effective_to', '>=', today),
-            ]
-        plans = self.env['ddfsc.quality.plan'].search(domain, order='effective_from desc, id desc')
+        # Plan governance fields come from ddfsc_quality; older installs (or an
+        # upgrade still loading modules) may have only some of them.
+        plan_fields = self.env['ddfsc.quality.plan']._fields
+        if 'approval_state' in plan_fields:
+            domain.append(('approval_state', '=', 'approved'))
+        if 'effective_from' in plan_fields:
+            domain += ['|', ('effective_from', '=', False), ('effective_from', '<=', today)]
+        if 'effective_to' in plan_fields:
+            domain += ['|', ('effective_to', '=', False), ('effective_to', '>=', today)]
+        order = 'effective_from desc, id desc' if 'effective_from' in plan_fields else 'sequence, id'
+        plans = self.env['ddfsc.quality.plan'].search(domain, order=order)
         for lot in self:
             lot.quality_plan_id = plans.filtered(lambda plan: lot.product_id in plan.product_ids)[:1]
 

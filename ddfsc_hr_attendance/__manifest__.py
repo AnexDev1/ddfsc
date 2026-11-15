@@ -1,6 +1,6 @@
 {
     "name": "DDFSC HR & Biometric Attendance",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.1.0",
     "category": "Human Resources/Attendances",
     "summary": "Auditable biometric attendance foundation for DDFSC",
     "author": "DDFSC",

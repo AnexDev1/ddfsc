@@ -43,6 +43,7 @@
                 <attribute name="optional">show</attribute>
             </xpath>
             <xpath expr="//header" position="inside">
+                <field name="ddfsc_approval_state" invisible="1"/>
                 <field name="ddfsc_fg_request_state" invisible="1"/>
                 <button name="action_view_ddfsc_quality_lots" type="object" string="Open QC"
                         invisible="state != 'done' or ddfsc_quality_lot_count == 0"/>
@@ -54,7 +55,7 @@
                 <button name="action_view_finished_goods_transfer" type="object" string="View Finished Goods Transfer"
                         invisible="state != 'done' or not ddfsc_fg_request_state"/>
                 <button name="action_ddfsc_submit" type="object" string="Submit for Approval" class="btn-primary"
-                        invisible="ddfsc_approval_state not in ('draft', 'refused')"/>
+                        invisible="ddfsc_approval_state not in ('draft', 'refused') or state in ('draft', 'done', 'cancel')"/>
                 <button name="action_ddfsc_approve" type="object" string="Approve" class="btn-primary"
                         groups="ddfsc_manufacturing.group_ddfsc_operation_manager"
                         invisible="ddfsc_approval_state != 'submitted'"/>
@@ -86,10 +87,54 @@
                         </list>
                     </field>
                 </page>
+                <page string="Planned vs Actual" name="ddfsc_variance">
+                    <div class="alert alert-warning" role="alert" invisible="not ddfsc_variance_exceeded">
+                        Ingredient use is outside the <field name="ddfsc_variance_tolerance" class="oe_inline" readonly="1"/>% tolerance
+                        for this line. Write the reason in <b>Variance Explanation</b> before submitting for approval.
+                    </div>
+                    <group>
+                        <group string="Finished Output">
+                            <field name="ddfsc_planned_output_qty" readonly="1"/>
+                            <field name="ddfsc_actual_output_qty" readonly="1"/>
+                            <field name="ddfsc_output_variance_qty" readonly="1"/>
+                            <field name="ddfsc_output_variance_percent" readonly="1"/>
+                        </group>
+                        <group string="Explanation">
+                            <field name="ddfsc_variance_exceeded" invisible="1"/>
+                            <field name="ddfsc_variance_reason" nolabel="1" colspan="2"
+                                   placeholder="Why was more or less material used than the recipe? (e.g. low hectoliter weight wheat, die change, power cut restart)"
+                                   readonly="state in ('done', 'cancel') or ddfsc_approval_state in ('submitted', 'approved')"/>
+                        </group>
+                    </group>
+                    <field name="ddfsc_variance_line_ids" readonly="1">
+                        <list decoration-danger="variance_kind == 'loss'" decoration-success="variance_kind == 'gain'"
+                              decoration-warning="is_unplanned">
+                            <field name="product_id"/>
+                            <field name="planned_qty" optional="show"/>
+                            <field name="expected_qty"/>
+                            <field name="actual_qty"/>
+                            <field name="variance_qty"/>
+                            <field name="variance_percent" string="%"/>
+                            <field name="uom_id"/>
+                            <field name="variance_kind"/>
+                            <field name="variance_value" optional="show" sum="Total"/>
+                            <field name="currency_id" column_invisible="1"/>
+                            <field name="is_unplanned" optional="hide"/>
+                            <field name="move_id" optional="hide"/>
+                        </list>
+                    </field>
+                    <p class="text-muted small">
+                        <b>Standard for Actual Output</b> is the recipe quantity for what was really produced.
+                        Variance = Actual Used − Standard: red is over-use (loss), green is a saving (gain).
+                        Figures are frozen from the recipe when the order is confirmed, so later recipe edits never change history.
+                    </p>
+                </page>
                 <page string="Shift Report" name="ddfsc_shift">
                     <group>
                         <group string="Shift">
-                            <field name="ddfsc_shift_id"/>
+                            <field name="ddfsc_shift_id" options="{'no_create': True}"
+                                   readonly="state in ('done', 'cancel') or ddfsc_approval_state in ('submitted', 'approved')"/>
+                            <field name="ddfsc_production_date"/>
                             <field name="ddfsc_supervisor_id"/>
                             <field name="ddfsc_submitted_uid" invisible="not ddfsc_submitted_uid"/>
                             <field name="ddfsc_approved_uid" invisible="not ddfsc_approved_uid"/>
@@ -98,7 +143,7 @@
                             <field name="variation_qty"/>
                             <field name="yield_ratio"/>
                             <field name="flour_consumed_qtl" invisible="ddfsc_line_code == 'MILL'"/>
-                            <field name="yield_per_quintal" invisible="ddfsc_line_code not in ('PASTA', 'MAC', 'BISC-CN', 'BISC-OR')"/>
+                            <field name="yield_per_quintal" string="Output per Quintal of Flour" invisible="ddfsc_line_code == 'MILL'"/>
                         </group>
                         <group string="Milling" invisible="ddfsc_line_code != 'MILL'">
                             <field name="ddfsc_line_code" invisible="1"/>
@@ -109,7 +154,8 @@
                             <field name="wheat_consumed_qtl"/>
                             <field name="flour_produced_qtl"/>
                             <field name="byproduct_qtl"/>
-                            <field name="extraction_ratio"/>
+                            <field name="extraction_ratio" widget="percentage"/>
+                            <field name="mill_unaccounted_qtl"/>
                         </group>
                         <group string="Losses">
                             <field name="ddfsc_flour_request_qtl" invisible="ddfsc_line_code == 'MILL'"/>
@@ -118,10 +164,14 @@
                             <field name="ddfsc_maintenance_request_id" readonly="1"/>
                             <button name="action_log_downtime" type="object" string="Log maintenance"
                                     invisible="downtime_reason not in ('mixer', 'die', 'oven', 'packing')"/>
-                            <field name="scrap_qty" string="Saleable Breakage / By-product"
-                                   help="Measured production breakage that is safe and approved for sale. It is posted to this department's By-products Temp location when production is completed."/>
-                            <field name="sweeping_qty" string="Non-saleable Sweepings / Waste"
-                                   help="Floor sweepings or contaminated waste. This is sent to Scrap and is never made saleable automatically."/>
+                            <label for="scrap_qty" string="Saleable Breakage" invisible="ddfsc_line_code == 'MILL'"/>
+                            <div class="o_row" invisible="ddfsc_line_code == 'MILL'">
+                                <field name="scrap_qty" nolabel="1"
+                                       readonly="state in ('done', 'cancel')"
+                                       help="Measured production breakage that is safe and approved for sale. It is posted to this department's By-products Temp location when production is completed."/>
+                                <field name="ddfsc_breakage_uom" nolabel="1"/>
+                            </div>
+                            <field name="sweeping_qty" readonly="state in ('done', 'cancel')"/>
                             <field name="bread_scrap_low" invisible="ddfsc_line_code != 'BREAD'"/>
                             <field name="bread_scrap_high" invisible="ddfsc_line_code != 'BREAD'"/>
                         </group>
@@ -135,30 +185,109 @@
         <field name="name">mrp.production.list.shift.report</field>
         <field name="model">mrp.production</field>
         <field name="arch" type="xml">
-            <list>
-                <field name="name"/>
+            <list default_order="ddfsc_production_date desc, ddfsc_shift_id, ddfsc_line_id">
+                <field name="ddfsc_production_date"/>
                 <field name="ddfsc_shift_id"/>
                 <field name="ddfsc_line_id"/>
-                <field name="ddfsc_supervisor_id"/>
+                <field name="name"/>
+                <field name="ddfsc_supervisor_id" optional="show"/>
                 <field name="product_id"/>
-                <field name="product_qty" string="Target"/>
-                <field name="qty_produced" string="Actual"/>
-                <field name="variation_qty"/>
-                <field name="yield_ratio"/>
-                <field name="flour_consumed_qtl"/>
-                <field name="yield_per_quintal"/>
-                <field name="downtime_reason"/>
-                <field name="state"/>
+                <field name="product_qty" string="Target" sum="Target"/>
+                <field name="ddfsc_output_qty" string="Actual" sum="Actual"/>
+                <field name="ddfsc_shortfall_qty" string="Variation" sum="Variation"/>
+                <field name="product_uom_id" string="Unit" optional="show"/>
+                <field name="ddfsc_output_variance_percent" string="Output Variance %" optional="hide"/>
+                <field name="yield_ratio" widget="percentage" optional="show"/>
+                <field name="ddfsc_flour_used_qtl" sum="Flour"/>
+                <field name="yield_per_quintal" string="Output / qtl Flour" optional="show"/>
+                <field name="scrap_qty" string="Breakage" sum="Breakage" optional="show"/>
+                <field name="sweeping_qty" string="Sweepings (kg)" sum="Sweepings" optional="show"/>
+                <field name="downtime_hours" sum="Downtime" optional="show"/>
+                <field name="downtime_reason" optional="show"/>
+                <field name="ddfsc_variance_exceeded" string="Over Tolerance" optional="hide"/>
+                <field name="ddfsc_approval_state" string="Approval" widget="badge"
+                       decoration-success="ddfsc_approval_state == 'approved'"
+                       decoration-warning="ddfsc_approval_state == 'submitted'"
+                       decoration-danger="ddfsc_approval_state == 'refused'"/>
+                <field name="state" widget="badge" optional="show"/>
             </list>
+        </field>
+    </record>
+
+    <record id="mrp_production_pivot_shift_report" model="ir.ui.view">
+        <field name="name">mrp.production.pivot.shift.report</field>
+        <field name="model">mrp.production</field>
+        <field name="arch" type="xml">
+            <pivot string="Shift Output" sample="1">
+                <field name="ddfsc_production_date" interval="day" type="row"/>
+                <field name="ddfsc_shift_id" type="col"/>
+                <field name="ddfsc_output_qty" type="measure"/>
+                <field name="ddfsc_flour_used_qtl" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="mrp_production_graph_shift_report" model="ir.ui.view">
+        <field name="name">mrp.production.graph.shift.report</field>
+        <field name="model">mrp.production</field>
+        <field name="arch" type="xml">
+            <graph string="Shift Output" type="bar" sample="1">
+                <field name="ddfsc_production_date" interval="day"/>
+                <field name="ddfsc_shift_id"/>
+                <field name="ddfsc_output_qty" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="mrp_production_search_shift_report" model="ir.ui.view">
+        <field name="name">mrp.production.search.shift.report</field>
+        <field name="model">mrp.production</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="product_id"/>
+                <field name="ddfsc_line_id"/>
+                <field name="ddfsc_shift_id"/>
+                <field name="ddfsc_supervisor_id"/>
+                <filter name="today" string="Today"
+                        domain="[('ddfsc_production_date', '=', context_today().strftime('%Y-%m-%d'))]"/>
+                <filter name="yesterday" string="Yesterday"
+                        domain="[('ddfsc_production_date', '=', (context_today() - relativedelta(days=1)).strftime('%Y-%m-%d'))]"/>
+                <filter name="production_date" string="Production Day" date="ddfsc_production_date"/>
+                <separator/>
+                <filter name="done" string="Completed" domain="[('state', '=', 'done')]"/>
+                <filter name="running" string="Not Completed" domain="[('state', 'not in', ('done', 'cancel'))]"/>
+                <filter name="waiting_approval" string="Waiting Approval" domain="[('ddfsc_approval_state', '=', 'submitted')]"/>
+                <filter name="no_shift" string="No Shift Set" domain="[('ddfsc_shift_id', '=', False), ('state', '!=', 'cancel')]"/>
+                <separator/>
+                <filter name="downtime" string="Had Downtime" domain="[('downtime_hours', '>', 0)]"/>
+                <group>
+                    <filter name="group_day" string="Production Day" context="{'group_by': 'ddfsc_production_date:day'}"/>
+                    <filter name="group_shift" string="Shift" context="{'group_by': 'ddfsc_shift_id'}"/>
+                    <filter name="group_line" string="Production Line" context="{'group_by': 'ddfsc_line_id'}"/>
+                    <filter name="group_department" string="Department" context="{'group_by': 'ddfsc_department'}"/>
+                    <filter name="group_product" string="Product" context="{'group_by': 'product_id'}"/>
+                </group>
+            </search>
         </field>
     </record>
 
     <record id="action_ddfsc_shift_report" model="ir.actions.act_window">
         <field name="name">Shift Report</field>
         <field name="res_model">mrp.production</field>
-        <field name="view_mode">list,form</field>
-        <field name="view_id" ref="mrp_production_list_shift_report"/>
-        <field name="context">{'search_default_todo': 1}</field>
+        <field name="view_mode">list,pivot,graph,form</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('mrp_production_list_shift_report')}),
+            (0, 0, {'view_mode': 'pivot', 'view_id': ref('mrp_production_pivot_shift_report')}),
+            (0, 0, {'view_mode': 'graph', 'view_id': ref('mrp_production_graph_shift_report')})]"/>
+        <field name="search_view_id" ref="mrp_production_search_shift_report"/>
+        <field name="domain">[('state', '!=', 'cancel')]</field>
+        <field name="context">{'search_default_group_day': 1, 'search_default_group_shift': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No production recorded yet</p>
+            <p>Each manufacturing order is one line's run in one shift. Night shift orders that finish
+               after midnight are counted on the day the shift started.</p>
+        </field>
     </record>
 
     <menuitem id="menu_ddfsc_shift_report"
@@ -166,4 +295,137 @@
               parent="mrp.menu_mrp_reporting"
               action="action_ddfsc_shift_report"
               sequence="5"/>
+
+    <!-- This is a derived audit report: users must not create or alter rows here. -->
+    <record id="mrp_production_list_variance_report" model="ir.ui.view">
+        <field name="name">mrp.production.list.variance.report</field>
+        <field name="model">mrp.production</field>
+        <field name="arch" type="xml">
+            <list create="0" edit="0" delete="0">
+                <field name="name" string="Manufacturing Order"/>
+                <field name="ddfsc_department"/>
+                <field name="product_id" string="Finished Product"/>
+                <field name="ddfsc_planned_output_qty" string="Planned Output"/>
+                <field name="ddfsc_actual_output_qty" string="Actual Output"/>
+                <field name="ddfsc_output_variance_qty" string="Output Variance"/>
+                <field name="ddfsc_output_variance_percent" string="Output Variance %"/>
+                <field name="date_finished" string="Completed On"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_ddfsc_production_variance_report" model="ir.actions.act_window">
+        <field name="name">Planned vs Actual Production</field>
+        <field name="res_model">mrp.production</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="mrp_production_list_variance_report"/>
+        <field name="domain">[('state', '=', 'done')]</field>
+        <field name="context">{'create': False, 'edit': False, 'delete': False}</field>
+    </record>
+
+    <menuitem id="menu_ddfsc_production_variance_report"
+              name="Planned vs Actual"
+              parent="mrp.menu_mrp_reporting"
+              action="action_ddfsc_production_variance_report"
+              sequence="6"/>
+
+    <!-- Consumption variance register: where material is lost or saved -->
+    <record id="view_ddfsc_variance_line_list" model="ir.ui.view">
+        <field name="name">ddfsc.production.variance.line.list</field>
+        <field name="model">ddfsc.production.variance.line</field>
+        <field name="arch" type="xml">
+            <list create="0" edit="0" delete="0"
+                  decoration-danger="variance_kind == 'loss'" decoration-success="variance_kind == 'gain'">
+                <field name="production_date"/>
+                <field name="shift_id"/>
+                <field name="production_id"/>
+                <field name="department"/>
+                <field name="line_id"/>
+                <field name="finished_product_id" optional="show"/>
+                <field name="product_id"/>
+                <field name="expected_qty"/>
+                <field name="actual_qty"/>
+                <field name="variance_qty"/>
+                <field name="variance_percent" string="%"/>
+                <field name="uom_id"/>
+                <field name="variance_kind"/>
+                <field name="variance_value" sum="Total"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="variance_reason" optional="hide"/>
+                <field name="production_state" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_ddfsc_variance_line_pivot" model="ir.ui.view">
+        <field name="name">ddfsc.production.variance.line.pivot</field>
+        <field name="model">ddfsc.production.variance.line</field>
+        <field name="arch" type="xml">
+            <pivot string="Consumption Variance" sample="1">
+                <field name="department" type="row"/>
+                <field name="product_id" type="row"/>
+                <field name="production_date" interval="month" type="col"/>
+                <field name="expected_qty" type="measure"/>
+                <field name="actual_qty" type="measure"/>
+                <field name="variance_qty" type="measure"/>
+                <field name="variance_value" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_ddfsc_variance_line_graph" model="ir.ui.view">
+        <field name="name">ddfsc.production.variance.line.graph</field>
+        <field name="model">ddfsc.production.variance.line</field>
+        <field name="arch" type="xml">
+            <graph string="Consumption Variance" type="bar" sample="1">
+                <field name="department"/>
+                <field name="variance_value" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_ddfsc_variance_line_search" model="ir.ui.view">
+        <field name="name">ddfsc.production.variance.line.search</field>
+        <field name="model">ddfsc.production.variance.line</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="product_id"/>
+                <field name="production_id"/>
+                <field name="line_id"/>
+                <filter name="loss" string="Over-use (Loss)" domain="[('variance_kind', '=', 'loss')]"/>
+                <filter name="gain" string="Saving (Gain)" domain="[('variance_kind', '=', 'gain')]"/>
+                <filter name="unplanned" string="Not in Recipe" domain="[('is_unplanned', '=', True)]"/>
+                <separator/>
+                <filter name="done" string="Completed Orders" domain="[('production_state', '=', 'done')]"/>
+                <filter name="date" string="Production Day" date="production_date"/>
+                <group>
+                    <filter name="group_department" string="Department" context="{'group_by': 'department'}"/>
+                    <filter name="group_line" string="Production Line" context="{'group_by': 'line_id'}"/>
+                    <filter name="group_product" string="Material" context="{'group_by': 'product_id'}"/>
+                    <filter name="group_shift" string="Shift" context="{'group_by': 'shift_id'}"/>
+                    <filter name="group_date" string="Production Day" context="{'group_by': 'production_date:day'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_ddfsc_variance_lines" model="ir.actions.act_window">
+        <field name="name">Consumption Variance</field>
+        <field name="res_model">ddfsc.production.variance.line</field>
+        <field name="view_mode">list,pivot,graph</field>
+        <field name="search_view_id" ref="view_ddfsc_variance_line_search"/>
+        <field name="context">{'search_default_done': 1, 'search_default_group_department': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No completed production yet</p>
+            <p>Every completed order records each material's recipe standard against what was really used,
+               so losses and savings can be followed by department, line, shift and material.</p>
+        </field>
+    </record>
+
+    <menuitem id="menu_ddfsc_variance_lines"
+              name="Consumption Variance"
+              parent="mrp.menu_mrp_reporting"
+              action="action_ddfsc_variance_lines"
+              sequence="7"/>
 </odoo>

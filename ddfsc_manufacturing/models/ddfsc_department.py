@@ -7,6 +7,9 @@ DEPARTMENTS = {
     'pasta': {
         'label': 'Pasta',
         'line': 'PASTA',
+        # Every production line run by this department.  Macaroni (short cut)
+        # is a separate line with its own floor, but the same department.
+        'lines': ['PASTA', 'MAC'],
         # Components: flour silo → pasta floor.
         'request_source': 'loc_flour',
         'request_location': 'loc_pasta',
@@ -24,6 +27,7 @@ DEPARTMENTS = {
     'bread': {
         'label': 'Bread',
         'line': 'BREAD',
+        'lines': ['BREAD'],
         'request_source': 'loc_flour',
         'request_location': 'loc_bread',
         'component_location': 'loc_bread',
@@ -37,6 +41,7 @@ DEPARTMENTS = {
     'biscuit': {
         'label': 'Biscuit',
         'line': 'BISC-CN',
+        'lines': ['BISC-CN', 'BISC-OR'],
         'request_source': 'loc_flour',
         'request_location': 'loc_biscuit',
         'component_location': 'loc_biscuit',
@@ -50,6 +55,7 @@ DEPARTMENTS = {
     'flour': {
         'label': 'Flour',
         'line': 'MILL',
+        'lines': ['MILL'],
         'request_source': 'loc_store',
         'request_location': 'loc_mill',
         'component_location': 'loc_mill',
@@ -64,6 +70,14 @@ DEPARTMENTS = {
         'byproduct_dest': 'loc_store',
     },
 }
+
+
+def department_for_line(code):
+    """Department key that owns a production line code, or False."""
+    for key, values in DEPARTMENTS.items():
+        if code and code in values.get('lines', [values['line']]):
+            return key
+    return False
 
 
 def selection(model=None):

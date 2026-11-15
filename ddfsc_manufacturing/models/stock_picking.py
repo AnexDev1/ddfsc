@@ -58,7 +58,7 @@ class StockPicking(models.Model):
         inspection_action = self._ddfsc_quality_inspection_action(lots)
         if inspection_action:
             return inspection_action
-        action = self.env.ref('ddfsc_manufacturing.action_ddfsc_qc_lots').read()[0]
+        action = self.env['ir.actions.act_window']._for_xml_id('ddfsc_manufacturing.action_ddfsc_qc_lots')
         action['domain'] = [('id', 'in', lots.ids)]
         if len(lots) == 1:
             action.update(view_mode='form', views=[(False, 'form')], res_id=lots.id)
@@ -73,10 +73,10 @@ class StockPicking(models.Model):
         inspections = lots.mapped('active_qc_inspection_id').exists()
         if not inspections:
             return False
-        action = self.env.ref('ddfsc_quality.action_qc_inspection_document', raise_if_not_found=False)
-        if not action:
+        if not self.env.ref('ddfsc_quality.action_qc_inspection_document', raise_if_not_found=False):
             return False
-        values = action.read()[0]
+        # _for_xml_id reads the action safely for non-admin users (Odoo 19).
+        values = self.env['ir.actions.act_window']._for_xml_id('ddfsc_quality.action_qc_inspection_document')
         values['domain'] = [('id', 'in', inspections.ids)]
         if len(inspections) == 1:
             values.update(view_mode='form', views=[(False, 'form')], res_id=inspections.id)
@@ -169,6 +169,15 @@ class StockPicking(models.Model):
                     for xmlid in ('loc_wheat_dock', 'loc_flour_finished', 'loc_pasta_finished',
                                   'loc_macaroni_finished', 'loc_bread_finished', 'loc_biscuit_finished')
                 ]
+                if picking.location_id in controlled_sources and lot.ddfsc_quality_state not in ('pass', 'released') \
+                        and not lot.sudo().quality_plan_id:
+                    picking._ddfsc_quality_redirect(lot, _(
+                        'Lot %(lot)s cannot leave %(location)s: no approved QC plan covers %(product)s yet, '
+                        'so there is nothing for the laboratory to fill in. A Quality Manager must approve '
+                        'the QC plan for this product (Quality > DDFSC Standards > Acceptance Plans), or release this lot by exception.',
+                        lot=lot.name, location=picking.location_id.display_name,
+                        product=lot.product_id.display_name,
+                    ))
                 if picking.location_id in controlled_sources and lot.ddfsc_quality_state not in ('pass', 'released'):
                     picking._ddfsc_quality_redirect(lot, _(
                         'Lot %(lot)s cannot leave %(location)s while QC status is %(status)s. '
@@ -187,7 +196,9 @@ class StockPicking(models.Model):
                     'Release them from the lot form, or scrap them.'
                 ) % names)
         res = super().button_validate()
-        self.filtered(lambda picking: picking.state == 'done').mapped(
+        # Status follow-up by the system: store staff validate the transfer but
+        # do not edit production requests themselves.
+        self.sudo().filtered(lambda picking: picking.state == 'done').mapped(
             'ddfsc_store_request_id'
         )._ddfsc_mark_received()
         return res

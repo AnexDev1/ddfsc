@@ -26,7 +26,7 @@ class DdfscStoreRequest(models.Model):
     state = fields.Selection(
         [
             ('draft', 'Draft'),
-            ('store_manager', 'Store Manager'),
+            ('store_manager', 'Waiting Approval'),
             ('requested', 'Requested'),
             ('received', 'Received'),
             ('cancel', 'Cancelled'),
@@ -102,6 +102,18 @@ class DdfscStoreRequest(models.Model):
             dest = location(self.env, department, 'request_location')
             if not source:
                 source = self.env.ref('ddfsc_manufacturing.loc_store', raise_if_not_found=False)
+        # A request raised from a production order follows that order's own
+        # floor: a Macaroni order consumes on the Macaroni floor, not Pasta's.
+        production = self.env['mrp.production'].browse(
+            values.get('production_id')
+            or self.env.context.get('default_production_id')
+            or (self.production_id.id if 'production_id' in self._fields else False)
+        ).exists()
+        if production:
+            if request_type == 'component' and production.location_src_id:
+                dest = production.location_src_id
+            elif request_type == 'finished_goods' and production.location_dest_id:
+                source = production.location_dest_id
         if source and not values.get('location_id'):
             values['location_id'] = source.id
         if dest and not values.get('location_dest_id'):
@@ -199,7 +211,10 @@ class DdfscStoreRequest(models.Model):
 
     def _ddfsc_picking_type(self):
         self.ensure_one()
-        self.env['ddfsc.shift']._ensure_request_picking_types()
+        xmlids = ('picking_type_fg_receiving', 'picking_type_byproduct_return', 'picking_type_store_requisition')
+        if not all(self.env.ref('ddfsc_manufacturing.%s' % xmlid, raise_if_not_found=False) for xmlid in xmlids):
+            # Configuration repair only; approvers are not inventory administrators.
+            self.env['ddfsc.shift'].sudo()._ensure_request_picking_types()
         if self.request_type == 'finished_goods':
             picking_type = self.env.ref(
                 'ddfsc_manufacturing.picking_type_fg_receiving',
@@ -358,6 +373,8 @@ class DdfscStoreRequestLine(models.Model):
     def _ddfsc_source_for_product(self, product, request):
         """Component: flour silo / store. FG: temp finished. By-product: by-product temp."""
         if request.request_type == 'finished_goods':
+            if 'production_id' in request._fields and request.production_id.location_dest_id:
+                return request.production_id.location_dest_id
             source = location(self.env, request.ddfsc_department, 'fg_source')
             return source or request.location_id
         if request.request_type == 'byproduct_return':

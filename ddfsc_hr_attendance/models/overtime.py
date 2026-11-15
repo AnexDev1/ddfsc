@@ -1,5 +1,7 @@
 from datetime import datetime, time, timedelta
 
+import pytz
+
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError, ValidationError
 
@@ -112,13 +114,16 @@ class DdfscOvertimeRequest(models.Model):
         work_date = work_date or (fields.Date.context_today(self) - timedelta(days=1))
         if work_date >= fields.Date.context_today(self):
             return self.browse()
-        day_start = datetime.combine(work_date, time.min)
-        day_end = day_start + timedelta(days=1)
         Attendance = self.env["hr.attendance"]
         Leave = self.env["hr.leave"]
         candidates = self.browse()
         employees = self.env["hr.employee"].search([("active", "=", True)])
         for employee in employees:
+            # The work day is the employee's local day (Odoo stores UTC): a night
+            # shift checked in at 21:55 belongs to that evening's date.
+            timezone = pytz.timezone(employee._get_tz())
+            day_start = timezone.localize(datetime.combine(work_date, time.min)).astimezone(pytz.utc).replace(tzinfo=None)
+            day_end = day_start + timedelta(days=1)
             attendances = Attendance.search([
                 ("employee_id", "=", employee.id), ("check_in", ">=", day_start),
                 ("check_in", "<", day_end), ("check_out", "!=", False),

@@ -118,7 +118,7 @@ class Production(models.Model):
     ddfsc_fg_request_state = fields.Selection(
         [
             ('draft', 'Draft'),
-            ('store_manager', 'Store Manager'),
+            ('store_manager', 'Waiting Approval'),
             ('requested', 'Requested'),
             ('received', 'Received'),
             ('cancel', 'Cancelled'),
@@ -152,6 +152,14 @@ class Production(models.Model):
             blocked = self.ddfsc_quality_lot_ids.filtered(
                 lambda lot: lot.ddfsc_quality_state not in ('pass', 'released')
             )
+            unplanned = blocked.filtered(lambda lot: not lot.sudo().quality_plan_id)
+            if unplanned:
+                raise ValidationError(_(
+                    'No approved QC plan covers %(product)s, so lot(s) %(lots)s cannot be tested yet. '
+                    'Ask the Quality Manager to approve the QC plan (Quality > DDFSC Standards > Acceptance Plans) '
+                    'or to release the lot by exception.',
+                    product=self.product_id.display_name, lots=', '.join(unplanned.mapped('name')),
+                ))
             if blocked:
                 # Ensure the standalone QC document is ready before sending
                 # the operator to it from the warning dialog.
@@ -170,7 +178,7 @@ class Production(models.Model):
         if not department or not self.bom_id:
             raise ValidationError(_('Choose the production line, finished product and recipe first.'))
         existing = self.env['ddfsc.store.request'].search([('production_id', '=', self.id), ('request_type', '=', kind), ('state', '!=', 'cancel')])
-        action = self.env.ref('ddfsc_manufacturing.action_ddfsc_store_requests').read()[0]
+        action = self.env['ir.actions.act_window']._for_xml_id('ddfsc_manufacturing.action_ddfsc_store_requests')
         action['context'] = {'default_ddfsc_department': department, 'default_request_type': kind, 'default_production_id': self.id}
         if existing:
             action.update(domain=[('id', 'in', existing.ids)])

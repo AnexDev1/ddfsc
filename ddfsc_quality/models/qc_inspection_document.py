@@ -285,9 +285,12 @@ class StockLot(models.Model):
         return self._ensure_qc_inspection()
 
     def _ensure_qc_inspection(self):
-        for lot in self:
+        # Lots are created by production and receiving staff, who must not need
+        # QC rights: the inspection document is opened by the system and the
+        # laboratory fills it in under its own access rights.
+        for lot in self.sudo():
             if lot.quality_plan_id and not lot.active_qc_inspection_id:
-                self.env["ddfsc.qc.inspection"].create_for_lot(lot)
+                self.env["ddfsc.qc.inspection"].sudo().create_for_lot(lot)
         return True
 
     def action_open_qc_inspection(self):

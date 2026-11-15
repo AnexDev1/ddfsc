@@ -20,6 +20,7 @@ class TestStoreRequisition(TransactionCase):
         # Create a product
         self.product = self.Product.create({
             'name': 'Test Product',
+            'default_code': 'TEST-SR-001',
             'type': 'consu',
             'is_storable': True
         })

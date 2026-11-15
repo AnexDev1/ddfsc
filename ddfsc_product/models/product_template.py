@@ -4,6 +4,18 @@ from odoo.exceptions import ValidationError
 from odoo.tools import format_amount
 
 
+
+def next_service_code(env, prefix, taken=()):
+    """Next free automatic service code: SRV-0001, SRV-0002 ... (codes must be unique)."""
+    Product = env['product.product'].with_context(active_test=False).sudo()
+    existing = set(Product.search([('default_code', '=ilike', prefix + '%')]).mapped('default_code'))
+    existing |= set(taken)
+    existing = {code.upper() for code in existing if code}
+    number = 1
+    while '%s-%04d' % (prefix, number) in existing:
+        number += 1
+    return '%s-%04d' % (prefix, number)
+
 class ProductTemplate(models.Model):
     _inherit = 'product.template'
 
@@ -98,7 +110,9 @@ class ProductTemplate(models.Model):
             )
             if vals.get('type') == 'service' and not is_landed_cost:
                 if not vals.get('default_code'):
-                    vals['default_code'] = 'DISC' if 'discount' in (vals.get('name') or '').lower() else 'SRV'
+                    prefix = 'DISC' if 'discount' in (vals.get('name') or '').lower() else 'SRV'
+                    vals['default_code'] = next_service_code(
+                        self.env, prefix, [v.get('default_code') for v in vals_list])
             if self.env.context.get('create_product_product') is False:
                 continue
 

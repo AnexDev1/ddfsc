@@ -12,6 +12,7 @@ class TestDdfscQualityWorkflow(TransactionCase):
         super().setUpClass()
         cls.product = cls.env["product.product"].create({
             "name": "QC Workflow Test Product",
+            "default_code": "QC-WF-TEST",
             "is_storable": True,
             "tracking": "lot",
         })
@@ -135,7 +136,7 @@ class TestDdfscQualityWorkflow(TransactionCase):
         self.assertEqual(picking.state, "done")
 
     def test_passed_incoming_inspection_shows_stock_and_creates_release_transfer(self):
-        wheat = self.env["product.product"].create({"name": "Incoming QC Wheat", "is_storable": True, "tracking": "lot"})
+        wheat = self.env["product.product"].create({"name": "Incoming QC Wheat", "default_code": "QC-WHEAT-TEST", "is_storable": True, "tracking": "lot"})
         plan = self.env["ddfsc.quality.plan"].create({
             "name": "Incoming Wheat Release Test", "checkpoint": "incoming_wheat",
             "product_ids": [(6, 0, wheat.ids)], "demo_specification": False,

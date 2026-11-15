@@ -106,37 +106,74 @@ class DdfscAttendanceException(models.Model):
         return {"type": "ir.actions.client", "tag": "reload"}
 
     @api.model
-    def _scheduled_window(self, employee, review_date):
-        """Return the applicable schedule window for this employee/date in UTC."""
-        assignment = self.env["ddfsc.shift.assignment"].search([
+    def _schedule_assignment(self, employee, review_date):
+        return self.env["ddfsc.shift.assignment"].search([
             ("employee_id", "=", employee.id), ("active", "=", True),
             ("date_from", "<=", review_date), "|", ("date_to", "=", False),
             ("date_to", ">=", review_date),
         ], order="date_from desc", limit=1)
+
+    @api.model
+    def _schedule_blocks(self, employee, calendar, first_date, last_date):
+        """Scheduled shifts as continuous blocks (UTC naive start, end, local start date).
+
+        Odoo stores a night shift as two pieces, 22:00-24:00 and 00:00-06:00 on
+        the next day.  Pieces separated by a short gap (a meal break, midnight)
+        are one shift; the shift belongs to the day it starts.
+        """
+        timezone = pytz.timezone(calendar.tz or employee._get_tz())
+        start = timezone.localize(datetime.combine(first_date - timedelta(days=1), time.min))
+        stop = timezone.localize(datetime.combine(last_date + timedelta(days=2), time.min))
+        intervals = sorted(
+            (interval[0], interval[1]) for interval in calendar._work_intervals_batch(
+                start.astimezone(pytz.utc), stop.astimezone(pytz.utc),
+                resources=employee.resource_id, tz=timezone,
+            ).get(employee.resource_id.id, [])
+        )
+        blocks = []
+        for begin, finish in intervals:
+            if blocks and begin - blocks[-1][1] <= timedelta(hours=8):
+                blocks[-1][1] = max(blocks[-1][1], finish)
+            else:
+                blocks.append([begin, finish])
+        return [
+            (begin.astimezone(pytz.utc).replace(tzinfo=None),
+             finish.astimezone(pytz.utc).replace(tzinfo=None),
+             begin.astimezone(timezone).date())
+            for begin, finish in blocks
+        ]
+
+    @api.model
+    def _scheduled_window(self, employee, review_date):
+        """Return the shift that starts on ``review_date`` for this employee, in UTC."""
+        assignment = self._schedule_assignment(employee, review_date)
         calendar = assignment.calendar_id or employee.resource_calendar_id
         if not calendar:
             return False, False, assignment
-        timezone = pytz.timezone(calendar.tz or employee._get_tz())
-        local_midnight = timezone.localize(datetime.combine(review_date, time.min))
-        intervals = list(calendar._work_intervals_batch(
-            local_midnight.astimezone(pytz.utc),
-            (local_midnight + timedelta(days=2)).astimezone(pytz.utc),
-            resources=employee.resource_id, tz=timezone,
-        ).get(employee.resource_id.id, []))
-        starts_today = [i for i, interval in enumerate(intervals)
-                        if interval[0].astimezone(timezone).date() == review_date]
-        if not starts_today:
-            return False, False, assignment
-        selected = [intervals[starts_today[0]]]
-        for interval in intervals[starts_today[0] + 1:]:
-            if interval[0] - selected[-1][1] <= timedelta(hours=8):
-                selected.append(interval)
-            else:
-                break
-        return (
-            selected[0][0].astimezone(pytz.utc).replace(tzinfo=None),
-            selected[-1][1].astimezone(pytz.utc).replace(tzinfo=None), assignment,
-        )
+        for begin, finish, local_day in self._schedule_blocks(employee, calendar, review_date, review_date):
+            if local_day == review_date:
+                return begin, finish, assignment
+        return False, False, assignment
+
+    @api.model
+    def _scheduled_window_for_check_in(self, employee, check_in):
+        """The shift a check-in belongs to: the scheduled start nearest to it.
+
+        A night worker scanning in at 21:55 belongs to tonight's 22:00 shift,
+        not to the 00:00-06:00 tail of last night's shift.
+        """
+        timezone = pytz.timezone(employee._get_tz())
+        local_day = pytz.utc.localize(check_in).astimezone(timezone).date()
+        assignment = self._schedule_assignment(employee, local_day)
+        calendar = assignment.calendar_id or employee.resource_calendar_id
+        if not calendar:
+            return False, False, assignment, False
+        blocks = self._schedule_blocks(employee, calendar, local_day - timedelta(days=1), local_day)
+        candidates = [block for block in blocks if abs(block[0] - check_in) <= timedelta(hours=12)]
+        if not candidates:
+            return False, False, assignment, calendar
+        begin, finish, _day = min(candidates, key=lambda block: abs(block[0] - check_in))
+        return begin, finish, assignment, calendar
 
     @api.model
     def _set_schedule_exception(self, employee, review_date, issue_type, required, description):

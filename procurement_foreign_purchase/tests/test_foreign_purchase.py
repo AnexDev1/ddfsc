@@ -13,6 +13,7 @@ class TestForeignPurchase(TransactionCase):
         
         self.product = self.Product.create({
             'name': 'Test Purchase Product',
+            'default_code': 'TEST-FP-001',
             'type': 'consu'
         })
 
