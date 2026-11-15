@@ -10,3 +10,12 @@ access_qc_inspection_user,qc.inspection.user,model_ddfsc_qc_inspection,ddfsc_qua
 access_qc_inspection_manager,qc.inspection.manager,model_ddfsc_qc_inspection,ddfsc_quality.group_ddfsc_quality_manager,1,1,1,1
 access_qc_inspection_line_user,qc.inspection.line.user,model_ddfsc_qc_inspection_line,ddfsc_quality.group_ddfsc_quality_user,1,1,1,0
 access_qc_inspection_line_manager,qc.inspection.line.manager,model_ddfsc_qc_inspection_line,ddfsc_quality.group_ddfsc_quality_manager,1,1,1,1
+access_qc_log_template_user,qc.log.template.user,model_ddfsc_qc_log_template,ddfsc_quality.group_ddfsc_quality_user,1,0,0,0
+access_qc_log_template_manager,qc.log.template.manager,model_ddfsc_qc_log_template,ddfsc_quality.group_ddfsc_quality_manager,1,1,1,1
+access_qc_log_template_line_user,qc.log.template.line.user,model_ddfsc_qc_log_template_line,ddfsc_quality.group_ddfsc_quality_user,1,0,0,0
+access_qc_log_template_line_manager,qc.log.template.line.manager,model_ddfsc_qc_log_template_line,ddfsc_quality.group_ddfsc_quality_manager,1,1,1,1
+access_qc_log_user,qc.log.user,model_ddfsc_qc_log,ddfsc_quality.group_ddfsc_quality_user,1,1,1,0
+access_qc_log_manager,qc.log.manager,model_ddfsc_qc_log,ddfsc_quality.group_ddfsc_quality_manager,1,1,1,1
+access_qc_log_line_user,qc.log.line.user,model_ddfsc_qc_log_line,ddfsc_quality.group_ddfsc_quality_user,1,1,1,0
+access_qc_log_line_manager,qc.log.line.manager,model_ddfsc_qc_log_line,ddfsc_quality.group_ddfsc_quality_manager,1,1,1,1
+access_ddfsc_shift_qc_user,ddfsc.shift.qc.user,ddfsc_manufacturing.model_ddfsc_shift,ddfsc_quality.group_ddfsc_quality_user,1,0,0,0
