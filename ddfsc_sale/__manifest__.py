@@ -22,6 +22,7 @@ DDFSC Sales Customizations:
     'license': 'LGPL-3',
     'depends': ['sale', 'sale_stock', 'account', 'base_accounting_kit', 'ddfsc_product'],
     'data': [
+        'security/sales_security.xml',
         'security/ir.model.access.csv',
         'wizard/sale_order_reject_wizard_views.xml',
         'wizard/sale_report_wizard_views.xml',

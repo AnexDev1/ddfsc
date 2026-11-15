@@ -25,6 +25,8 @@ DDFSC Product & Inventory Customizations:
         'views/product_views.xml',
         'views/res_partner_views.xml',
         'views/stock_warehouse_views.xml',
+        'views/stock_move_line_views.xml',
+        'views/stock_picking_views.xml',
         'views/account_move_views.xml',
         'views/res_users_views.xml',
         'views/stock_location_transfer_views.xml',

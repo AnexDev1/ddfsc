@@ -38,9 +38,15 @@
                     </span>
                 </div>
             </xpath>
-            <xpath expr="//field[@name='categ_id']" position="after">
-                <field name="product_plan_id" invisible="1"/>
-                <field name="analytic_account_id" string="Analytic Account" options="{'no_create': True}" placeholder="Select Product Line dimension..."/>
+            <xpath expr="//page[@name='invoicing']//group[@name='properties']" position="inside">
+                <group string="Analytic Accounting">
+                    <field name="product_plan_id" invisible="1"/>
+                    <field name="analytic_account_id"
+                           string="Analytic Account"
+                           required="1"
+                           options="{'no_create': True}"
+                           placeholder="Select Product Line dimension..."/>
+                </group>
             </xpath>
         </field>
     </record>

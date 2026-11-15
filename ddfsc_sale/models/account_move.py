@@ -21,3 +21,15 @@ class AccountMove(models.Model):
         ('cash', 'Cash Sale'),
         ('credit', 'Credit Sale'),
     ], string='Sale Type', readonly=True, copy=False)
+
+
+class AccountMoveLine(models.Model):
+    _inherit = 'account.move.line'
+
+    applied_discount_percent = fields.Float(
+        string='Discount %',
+        digits=(16, 2),
+        readonly=True,
+        copy=False,
+        help='Informational discount absorbed into the invoice line price. It is not posted separately.',
+    )

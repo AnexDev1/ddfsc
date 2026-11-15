@@ -5,6 +5,13 @@ from odoo import fields, models
 class StockMoveLine(models.Model):
     _inherit = 'stock.move.line'
 
+    dest_lot_id = fields.Many2one(
+        'stock.lot',
+        string='Destination Lot',
+        check_company=True,
+        help='Lot assigned at the destination of an internal transfer.',
+    )
+
     image_128 = fields.Image(
         string='Image',
         related='product_id.image_128',

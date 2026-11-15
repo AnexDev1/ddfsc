@@ -27,23 +27,34 @@
                 <button name="action_submit_approval"
                         string="Submit for Approval"
                         type="object"
+                        groups="ddfsc_sale.group_sales_initiator"
                         class="btn-primary"
                         invisible="state not in ('draft', 'sent')"/>
                 <button name="action_approve_quotation"
                         string="Approve Quotation"
                         type="object"
+                        groups="ddfsc_sale.group_sales_approver"
                         class="btn-success"
                         invisible="state != 'to_approve' or not is_sales_approver"/>
                 <button name="action_approve_discount"
                         string="Approve Discount"
                         type="object"
+                        groups="ddfsc_sale.group_sales_approver"
                         class="btn-success"
                         invisible="state != 'to_approve_discount' or not is_sales_approver"/>
                 <button name="action_reject_wizard"
                         string="Reject"
                         type="object"
+                        groups="ddfsc_sale.group_sales_approver"
                         class="btn-danger"
                         invisible="state not in ('to_approve', 'to_approve_discount') or not is_sales_approver"/>
+            </xpath>
+
+            <xpath expr="//button[@id='create_invoice']" position="attributes">
+                <attribute name="groups">ddfsc_sale.group_sales_invoicer</attribute>
+            </xpath>
+            <xpath expr="//button[@id='create_invoice_percentage']" position="attributes">
+                <attribute name="groups">ddfsc_sale.group_sales_invoicer</attribute>
             </xpath>
 
             <!-- Rejection, Approval, Credit, and Discount Alert Banners -->
@@ -288,6 +299,14 @@
         <field name="sequence">40</field>
     </record>
 
+    <!-- Split the standard Sales menus by operational responsibility. -->
+    <record id="sale.menu_sale_quotations" model="ir.ui.menu">
+        <field name="group_ids" eval="[(6, 0, [ref('ddfsc_sale.group_sales_initiator'), ref('ddfsc_sale.group_sales_approver')])]"/>
+    </record>
+    <record id="sale.menu_sale_order" model="ir.ui.menu">
+        <field name="group_ids" eval="[(6, 0, [ref('ddfsc_sale.group_sales_initiator'), ref('ddfsc_sale.group_sales_approver'), ref('ddfsc_sale.group_sales_invoicer')])]"/>
+    </record>
+
     <!-- Action: Orders to Approve -->
     <record id="action_orders_to_approve" model="ir.actions.act_window">
         <field name="name">Orders to Approve</field>
@@ -309,21 +328,21 @@
               name="Orders to Approve"
               action="action_orders_to_approve"
               parent="sale.sale_order_menu"
-              groups="sales_team.group_sale_salesman"
+              groups="ddfsc_sale.group_sales_approver"
               sequence="5"/>
 
     <menuitem id="menu_sale_order_cash"
               name="Cash Sales"
               action="action_orders_cash"
               parent="sale.menu_sale_order"
-              groups="sales_team.group_sale_salesman"
+              groups="ddfsc_sale.group_sales_initiator,ddfsc_sale.group_sales_approver,ddfsc_sale.group_sales_invoicer"
               sequence="10"/>
 
     <menuitem id="menu_sale_order_credit"
               name="Credit Sales"
               action="action_orders_credit"
               parent="sale.menu_sale_order"
-              groups="sales_team.group_sale_salesman"
+              groups="ddfsc_sale.group_sales_initiator,ddfsc_sale.group_sales_approver,ddfsc_sale.group_sales_invoicer"
               sequence="20"/>
 
     <!-- Cancelled Orders under Orders dropdown -->
@@ -331,13 +350,14 @@
               name="Cancelled Orders"
               action="action_orders_cancelled"
               parent="sale.sale_order_menu"
-              groups="sales_team.group_sale_salesman"
+              groups="ddfsc_sale.group_sales_initiator,ddfsc_sale.group_sales_approver"
               sequence="50"/>
 
     <!-- Invoicing under Sales -->
     <menuitem id="sale.menu_sale_invoicing"
               name="Invoicing"
               parent="sale.sale_menu_root"
+              groups="ddfsc_sale.group_sales_invoicer"
               sequence="20"/>
 
     <!-- Under Orders to Invoice (sale.menu_sale_order_invoice) -->
@@ -345,14 +365,14 @@
               name="Cash to Invoice"
               action="action_orders_to_invoice_cash"
               parent="sale.menu_sale_order_invoice"
-              groups="sales_team.group_sale_salesman"
+              groups="ddfsc_sale.group_sales_invoicer"
               sequence="10"/>
 
     <menuitem id="menu_sale_order_invoice_credit"
               name="Credit to Invoice"
               action="action_orders_to_invoice_credit"
               parent="sale.menu_sale_order_invoice"
-              groups="sales_team.group_sale_salesman"
+              groups="ddfsc_sale.group_sales_invoicer"
               sequence="20"/>
 
     <!-- Under Orders to Upsell (sale.menu_sale_order_upselling) -->
@@ -360,13 +380,13 @@
               name="Cash to Upsell"
               action="action_orders_upselling_cash"
               parent="sale.menu_sale_order_upselling"
-              groups="sales_team.group_sale_salesman"
+              groups="ddfsc_sale.group_sales_invoicer"
               sequence="10"/>
 
     <menuitem id="menu_sale_order_upselling_credit"
               name="Credit to Upsell"
               action="action_orders_upselling_credit"
               parent="sale.menu_sale_order_upselling"
-              groups="sales_team.group_sale_salesman"
+              groups="ddfsc_sale.group_sales_invoicer"
               sequence="20"/>
 </odoo>

@@ -119,6 +119,8 @@ class ProductTemplate(models.Model):
             if not is_landed_cost:
                 if not vals.get('default_code') and not self.env.context.get('install_mode'):
                     raise ValidationError(_("Product Code is required for product registration!"))
+            if not vals.get('analytic_account_id') and not self.env.context.get('install_mode'):
+                raise ValidationError(_("Analytic Account is required for product registration!"))
         return super().create(vals_list)
 
     def write(self, vals):
@@ -127,4 +129,6 @@ class ProductTemplate(models.Model):
             if not is_landed_cost:
                 if 'default_code' in vals and not vals.get('default_code'):
                     raise ValidationError(_("Product Code cannot be empty!"))
+            if 'analytic_account_id' in vals and not vals.get('analytic_account_id'):
+                raise ValidationError(_("Analytic Account cannot be empty!"))
         return super().write(vals)

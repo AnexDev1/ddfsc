@@ -155,15 +155,10 @@ class SaleOrder(models.Model):
 
     def _compute_is_sales_approver(self):
         user = self.env.user
-        has_mgr = user.has_group('sales_team.group_sale_manager') or user.has_group('base.group_system')
-        has_ceo = False
-        try:
-            ceo_group = self.env.ref('procurement_local_purchase.group_local_purchase_ceo', raise_if_not_found=False)
-            if ceo_group and user.has_group('procurement_local_purchase.group_local_purchase_ceo'):
-                has_ceo = True
-        except Exception:
-            pass
-        can_approve = has_mgr or has_ceo
+        can_approve = (
+            user.has_group('ddfsc_sale.group_sales_approver')
+            or user.has_group('base.group_system')
+        )
         for order in self:
             order.is_sales_approver = can_approve
             order.is_sales_manager = can_approve
@@ -281,6 +276,12 @@ class SaleOrder(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
+        if not (
+            self.env.user.has_group('ddfsc_sale.group_sales_initiator')
+            or self.env.user.has_group('base.group_system')
+            or self.env.context.get('install_mode')
+        ):
+            raise UserError(_("Only users with the Sales: Initiator role can create quotations."))
         orders = super().create(vals_list)
         if not self.env.context.get('skip_automatic_withholding_sync'):
             orders._sync_automatic_withholding_tax()
@@ -338,25 +339,8 @@ class SaleOrder(models.Model):
     def _compute_tax_totals(self):
         AccountTax = self.env['account.tax']
         for order in self:
-            order_lines = order._get_priced_lines()
-            base_lines = [line._prepare_base_line_for_taxes_computation() for line in order_lines]
+            base_lines = order._get_net_price_tax_base_lines()
             base_lines += order._add_base_lines_for_early_payment_discount()
-
-            if order.apply_order_discount and order.order_discount_percent > 0 and base_lines:
-                AccountTax._add_tax_details_in_base_lines(base_lines, order.company_id)
-                AccountTax._round_base_lines_tax_details(base_lines, order.company_id)
-                discount_product = order._get_or_create_discount_product()
-                def grouping_function(base_line):
-                    return {'product_id': discount_product}
-                disc_base_lines = AccountTax._prepare_global_discount_lines(
-                    base_lines=base_lines,
-                    company=order.company_id,
-                    amount_type='percent',
-                    amount=order.order_discount_percent,
-                    computation_key=f'global_discount,{order.id}',
-                    grouping_function=grouping_function,
-                )
-                base_lines = base_lines + disc_base_lines
 
             AccountTax._add_tax_details_in_base_lines(base_lines, order.company_id)
             AccountTax._round_base_lines_tax_details(base_lines, order.company_id)
@@ -370,25 +354,8 @@ class SaleOrder(models.Model):
     def _compute_amounts(self):
         AccountTax = self.env['account.tax']
         for order in self:
-            order_lines = order._get_priced_lines()
-            base_lines = [line._prepare_base_line_for_taxes_computation() for line in order_lines]
+            base_lines = order._get_net_price_tax_base_lines()
             base_lines += order._add_base_lines_for_early_payment_discount()
-
-            if order.apply_order_discount and order.order_discount_percent > 0 and base_lines:
-                AccountTax._add_tax_details_in_base_lines(base_lines, order.company_id)
-                AccountTax._round_base_lines_tax_details(base_lines, order.company_id)
-                discount_product = order._get_or_create_discount_product()
-                def grouping_function(base_line):
-                    return {'product_id': discount_product}
-                disc_base_lines = AccountTax._prepare_global_discount_lines(
-                    base_lines=base_lines,
-                    company=order.company_id,
-                    amount_type='percent',
-                    amount=order.order_discount_percent,
-                    computation_key=f'global_discount,{order.id}',
-                    grouping_function=grouping_function,
-                )
-                base_lines = base_lines + disc_base_lines
 
             AccountTax._add_tax_details_in_base_lines(base_lines, order.company_id)
             AccountTax._round_base_lines_tax_details(base_lines, order.company_id)
@@ -400,6 +367,25 @@ class SaleOrder(models.Model):
             order.amount_untaxed = tax_totals['base_amount_currency']
             order.amount_tax = tax_totals['tax_amount_currency']
             order.amount_total = tax_totals['total_amount_currency']
+
+    def _get_net_price_tax_base_lines(self):
+        """Build sales tax bases exactly like the generated net-price invoice."""
+        self.ensure_one()
+        order_discount = self.order_discount_percent if self.apply_order_discount else 0.0
+        base_lines = []
+        for line in self._get_priced_lines():
+            line_discount = line.discount or 0.0
+            combined_discount = 100.0 * (
+                1.0 - (1.0 - line_discount / 100.0) * (1.0 - order_discount / 100.0)
+            )
+            net_price = self.currency_id.round(
+                line.price_unit * (1.0 - combined_discount / 100.0)
+            )
+            base_lines.append(line._prepare_base_line_for_taxes_computation(
+                price_unit=net_price,
+                discount=0.0,
+            ))
+        return base_lines
 
     @api.onchange('payment_term_id')
     def _onchange_payment_term_id_sale_type(self):
@@ -413,7 +399,13 @@ class SaleOrder(models.Model):
             self.sale_type = 'credit' if has_credit else 'cash'
 
     def action_submit_approval(self):
+        if not (
+            self.env.user.has_group('ddfsc_sale.group_sales_initiator')
+            or self.env.user.has_group('base.group_system')
+        ):
+            raise UserError(_("Only users with the Sales: Initiator role can submit quotations for approval."))
         for order in self:
+            order._check_customer_is_not_own_company()
             if not order.order_line:
                 raise UserError(_("You cannot submit an empty quotation for approval. Please add products first."))
             if order.order_discount_percent > 0:
@@ -439,8 +431,9 @@ class SaleOrder(models.Model):
 
     def action_approve_quotation(self):
         for order in self:
+            order._check_customer_is_not_own_company()
             if not order.is_sales_approver:
-                raise UserError(_("Only Sales Managers or General Managers can approve quotations."))
+                raise UserError(_("Only users with the Sales: Approver role can approve quotations."))
             if order.order_discount_percent > 0:
                 order._apply_global_discount()
             if order.sale_type == 'credit':
@@ -484,8 +477,9 @@ class SaleOrder(models.Model):
 
     def action_approve_discount(self):
         for order in self:
+            order._check_customer_is_not_own_company()
             if not order.is_sales_approver:
-                raise UserError(_("Only Sales Managers or General Managers can approve discounts."))
+                raise UserError(_("Only users with the Sales: Approver role can approve discounts."))
             if order.order_discount_percent > 0:
                 order._apply_global_discount()
             now = fields.Datetime.now()
@@ -509,7 +503,7 @@ class SaleOrder(models.Model):
     def action_reject_wizard(self):
         self.ensure_one()
         if not self.is_sales_approver:
-            raise UserError(_("Only Sales Managers or General Managers can reject sales orders."))
+            raise UserError(_("Only users with the Sales: Approver role can reject sales orders."))
         return {
             'name': _('Reject Sales Order'),
             'type': 'ir.actions.act_window',
@@ -534,6 +528,7 @@ class SaleOrder(models.Model):
 
     def action_confirm(self):
         for order in self:
+            order._check_customer_is_not_own_company()
             if order.order_discount_percent > 0:
                 order._apply_global_discount()
             if order.sale_type == 'credit' and order.partner_id and getattr(order.partner_id, 'credit_status', False) == 'blocked':
@@ -549,6 +544,15 @@ class SaleOrder(models.Model):
                 raise UserError(_("This order is awaiting Discount Approval by a Manager or General Manager."))
         return super().action_confirm()
 
+    def _check_customer_is_not_own_company(self):
+        for order in self:
+            if order.partner_id.commercial_partner_id == order.company_id.partner_id.commercial_partner_id:
+                raise UserError(_(
+                    "You cannot create a customer sale to your own company (%s). "
+                    "Select the actual customer. For stock movement between company warehouses, "
+                    "use an internal/location transfer instead."
+                ) % order.company_id.display_name)
+
     def _prepare_invoice(self):
         invoice_vals = super()._prepare_invoice()
         if hasattr(self, 'sale_type') and self.sale_type:
@@ -556,34 +560,15 @@ class SaleOrder(models.Model):
         if self.warehouse_id:
             invoice_vals['warehouse_id'] = self.warehouse_id.id
 
-        # Option B: Add the discount line to invoice lines so invoice balances
-        if self.apply_order_discount and self.order_discount_percent > 0:
-            discount_product = self._get_or_create_discount_product()
-            AccountTax = self.env['account.tax']
-            base_lines = [line._prepare_base_line_for_taxes_computation() for line in self._get_priced_lines()]
-            if base_lines:
-                AccountTax._add_tax_details_in_base_lines(base_lines, self.company_id)
-                AccountTax._round_base_lines_tax_details(base_lines, self.company_id)
-                def grouping_function(base_line):
-                    return {'product_id': discount_product}
-                global_discount_base_lines = AccountTax._prepare_global_discount_lines(
-                    base_lines=base_lines,
-                    company=self.company_id,
-                    amount_type='percent',
-                    amount=self.order_discount_percent,
-                    computation_key=f'global_discount,{self.id}',
-                    grouping_function=grouping_function,
-                )
-                for base_line in global_discount_base_lines:
-                    invoice_vals.setdefault('invoice_line_ids', []).append(fields.Command.create({
-                        'name': _("Order Discount (%(percent).2f%%)") % {'percent': self.order_discount_percent},
-                        'product_id': discount_product.id,
-                        'price_unit': base_line['price_unit'],
-                        'quantity': base_line['quantity'],
-                        'tax_ids': [fields.Command.set(base_line['tax_ids'].ids)],
-                        'sequence': 999,
-                    }))
         return invoice_vals
+
+    def _create_invoices(self, grouped=False, final=False, date=None):
+        if not (
+            self.env.user.has_group('ddfsc_sale.group_sales_invoicer')
+            or self.env.user.has_group('base.group_system')
+        ):
+            raise UserError(_("Only users with the Sales: Invoicer role can create sales invoices."))
+        return super()._create_invoices(grouped=grouped, final=final, date=date)
 
     @api.model
     def default_get(self, fields_list):
@@ -763,3 +748,24 @@ class SaleOrderLine(models.Model):
                 price = self.product_id.uom_id._compute_price(price, self.product_uom_id)
             return price
         return super()._get_display_price_ignore_combo()
+
+    def _prepare_invoice_line(self, **optional_values):
+        vals = super()._prepare_invoice_line(**optional_values)
+        order_discount = (
+            self.order_id.order_discount_percent
+            if self.order_id.apply_order_discount
+            else 0.0
+        )
+        if not self.display_type and not self.is_downpayment:
+            # Combine line and order discounts multiplicatively, then absorb
+            # the result into the invoice unit price. The percentage remains
+            # informational and is not posted as a separate discount.
+            line_discount = self.discount or 0.0
+            combined_discount = 100.0 * (
+                1.0 - (1.0 - line_discount / 100.0) * (1.0 - order_discount / 100.0)
+            )
+            if combined_discount > 0:
+                vals['price_unit'] = self.price_unit * (1.0 - combined_discount / 100.0)
+                vals['discount'] = 0.0
+                vals['applied_discount_percent'] = combined_discount
+        return vals

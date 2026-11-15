@@ -13,6 +13,12 @@
                 <field name="payment_note" placeholder="Txn ID, Bank Ref, Telebirr / CBE confirmation..."
                        invisible="move_type not in ('out_invoice', 'out_refund', 'out_receipt')"/>
             </xpath>
+            <xpath expr="//field[@name='invoice_line_ids']/list/field[@name='price_unit']" position="after">
+                <field name="applied_discount_percent"
+                       string="Discount %"
+                       optional="show"
+                       readonly="1"/>
+            </xpath>
         </field>
     </record>
 </odoo>
