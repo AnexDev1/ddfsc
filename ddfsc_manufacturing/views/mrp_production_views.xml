@@ -160,11 +160,12 @@
                         </group>
                         <group string="Losses">
                             <field name="ddfsc_flour_request_qtl" invisible="ddfsc_line_code == 'MILL'"/>
-                            <field name="downtime_hours"/>
-                            <field name="downtime_reason"/>
+                            <field name="ddfsc_batches" invisible="not ddfsc_batches"/>
+                            <field name="downtime_hours" string="Total Downtime (hours)"/>
+                            <field name="ddfsc_has_equipment_downtime" invisible="1"/>
                             <field name="ddfsc_maintenance_request_id" readonly="1"/>
                             <button name="action_log_downtime" type="object" string="Log maintenance"
-                                    invisible="downtime_reason not in ('mixer', 'die', 'oven', 'packing')"/>
+                                    invisible="not ddfsc_has_equipment_downtime"/>
                             <label for="scrap_qty" string="Saleable Breakage" invisible="ddfsc_line_code == 'MILL'"/>
                             <div class="o_row" invisible="ddfsc_line_code == 'MILL'">
                                 <field name="scrap_qty" nolabel="1"
@@ -182,6 +183,13 @@
                             <field name="bread_scrap_high" invisible="ddfsc_line_code != 'BREAD'"/>
                         </group>
                     </group>
+                    <field name="ddfsc_downtime_line_ids" readonly="state in ('done', 'cancel')">
+                        <list editable="bottom" string="Stoppages">
+                            <field name="reason"/>
+                            <field name="hours" sum="Total"/>
+                            <field name="note"/>
+                        </list>
+                    </field>
                 </page>
             </xpath>
         </field>

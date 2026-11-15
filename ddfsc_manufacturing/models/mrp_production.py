@@ -53,20 +53,6 @@ class MrpProduction(models.Model):
     conditioning_2_hours = fields.Float(string='2nd Conditioning (hours)', copy=False)
     moisture_initial = fields.Float(string='Initial Moisture %', copy=False)
     moisture_final = fields.Float(string='Final Moisture %', copy=False)
-    downtime_hours = fields.Float(string='Downtime (hours)', copy=False)
-    downtime_reason = fields.Selection(
-        [
-            ('power', 'Power cut'),
-            ('film', 'Short of film'),
-            ('mixer', 'Mixer'),
-            ('die', 'Die'),
-            ('oven', 'Oven'),
-            ('packing', 'Packing machine'),
-            ('other', 'Other'),
-        ],
-        string='Downtime Reason',
-        copy=False,
-    )
     scrap_qty = fields.Float(string='Saleable Breakage', copy=False)
     ddfsc_breakage_uom = fields.Char(string='Breakage Unit', compute='_compute_ddfsc_breakage_uom')
     ddfsc_maintenance_request_id = fields.Many2one(
@@ -1004,43 +990,6 @@ class MrpProduction(models.Model):
             })],
         })
         move._action_done()
-
-    def action_log_downtime(self):
-        """Open a corrective request for mixer, die, oven, or packing downtime."""
-        self.ensure_one()
-        if self.ddfsc_maintenance_request_id:
-            return self._maintenance_request_action(self.ddfsc_maintenance_request_id)
-        equipment_reasons = ('mixer', 'die', 'oven', 'packing')
-        if self.downtime_reason not in equipment_reasons:
-            raise UserError(_(
-                'A maintenance request is opened for mixer, die, oven, or packing downtime. '
-                'Power cuts and film shortages stay on the shift report.'
-            ))
-        if not self.ddfsc_line_id:
-            raise UserError(_('Choose the production line before logging this downtime.'))
-        equipment = self.env['maintenance.equipment'].search([
-            ('ddfsc_workcenter_id', '=', self.ddfsc_line_id.id),
-            ('ddfsc_downtime_code', '=', self.downtime_reason),
-        ], limit=1)
-        if not equipment:
-            raise UserError(_(
-                'No %(reason)s is registered on %(line)s.',
-                reason=dict(self._fields['downtime_reason'].selection).get(self.downtime_reason),
-                line=self.ddfsc_line_id.display_name,
-            ))
-        reason = dict(self._fields['downtime_reason'].selection).get(self.downtime_reason)
-        request = self.env['maintenance.request'].create({
-            'name': '%s downtime on %s' % (reason, self.name),
-            'equipment_id': equipment.id,
-            'maintenance_team_id': equipment.maintenance_team_id.id,
-            'maintenance_type': 'corrective',
-            'description': '<p>%s hours. Shift %s.</p>' % (
-                self.downtime_hours or 0,
-                self.ddfsc_shift_id.name or '',
-            ),
-        })
-        self.ddfsc_maintenance_request_id = request
-        return self._maintenance_request_action(request)
 
     def _maintenance_request_action(self, request):
         return {

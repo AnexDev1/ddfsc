@@ -15,3 +15,4 @@ from . import stock_picking
 from . import department_products
 from . import rework
 from . import voucher
+from . import downtime
