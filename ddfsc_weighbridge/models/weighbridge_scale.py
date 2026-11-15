@@ -79,14 +79,22 @@ class DdfscWeighbridgeScale(models.Model):
 class DdfscWeighbridgeTicket(models.Model):
     _inherit = "ddfsc.weighbridge.ticket"
 
-    scale_id = fields.Many2one(
-        "ddfsc.weighbridge.scale", string="Scale",
-        default=lambda self: self.env["ddfsc.weighbridge.scale"].search([], limit=1))
+    # No field default: existing tickets get the column while the scale table
+    # may not exist yet during the upgrade. New tickets get the scale in create().
+    scale_id = fields.Many2one("ddfsc.weighbridge.scale", string="Scale")
     scale_online = fields.Boolean(related="scale_id.is_online", string="Scale Online")
     first_weight_source = fields.Selection([("scale", "From Scale"), ("manual", "Typed")], readonly=True, copy=False)
     second_weight_source = fields.Selection([("scale", "From Scale"), ("manual", "Typed")], readonly=True, copy=False)
     first_dsd = fields.Char(string="First Weighing DSD No.", readonly=True, copy=False)
     second_dsd = fields.Char(string="Second Weighing DSD No.", readonly=True, copy=False)
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        scale = self.env["ddfsc.weighbridge.scale"].search([], limit=1)
+        for values in vals_list:
+            if scale and not values.get("scale_id"):
+                values["scale_id"] = scale.id
+        return super().create(vals_list)
 
     def _first_field(self):
         return "gross_weight" if self.first_weight_kind == "gross" else "tare_weight"
