@@ -13,3 +13,4 @@ from . import maintenance_equipment
 from . import stock_lot
 from . import stock_picking
 from . import department_products
+from . import rework
