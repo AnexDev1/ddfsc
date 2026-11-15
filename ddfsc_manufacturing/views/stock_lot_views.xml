@@ -10,6 +10,9 @@
                     <field name="ddfsc_quality_state" widget="badge"
                            decoration-danger="ddfsc_quality_state in ('hold', 'rejected')"
                            decoration-success="ddfsc_quality_state in ('pass', 'released')"/>
+                    <field name="ddfsc_is_wheat" invisible="1"/>
+                    <field name="ddfsc_wheat_type" invisible="not ddfsc_is_wheat"/>
+                    <field name="ddfsc_wheat_code" invisible="not ddfsc_is_wheat" placeholder="e.g. IRS, HBL, HML"/>
                     <field name="quality_plan_id" readonly="1"/>
                     <field name="quality_checkpoint" invisible="1"/>
                     <button name="action_prepare_quality_checks" type="object" string="Refresh Tests from QC Plan"

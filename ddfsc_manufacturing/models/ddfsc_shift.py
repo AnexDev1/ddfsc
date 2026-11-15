@@ -510,7 +510,7 @@ class DdfscShift(models.Model):
 
     @api.model
     def _sync_quality_control(self):
-        """Install editable demo QC plans and require lots at release checkpoints."""
+        """Require lots on QC-controlled products. Acceptance plans come from ddfsc_quality (factory standards)."""
         groups = {
             'incoming_wheat': ['product_wheat'],
             'flour_release': ['product_flour_g1', 'product_flour_g2', 'product_flour_scp', 'product_flour_lcp'],
@@ -527,27 +527,8 @@ class DdfscShift(models.Model):
                     if template.tracking != 'lot':
                         template.write({'tracking': 'lot'})
             products[checkpoint] = variants
-        definitions = {
-            'incoming_wheat': ('Incoming Wheat - DEMO limits', [('moisture', False, 0, True, 13.5, '%'), ('impurity', False, 0, True, 2.0, '%'), ('hlw', True, 76.0, False, 0, 'kg/hl'), ('gluten', True, 24.0, False, 0, '%')]),
-            'flour_release': ('Produced Flour - DEMO limits', [('moisture', False, 0, True, 14.0, '%'), ('gluten', True, 24.0, False, 0, '%')]),
-            'finished_goods': ('Finished Products - DEMO limits', [('organoleptic', True, 1.0, True, 1.0, 'Enter 1 when appearance, smell and taste pass'), ('weight', True, 0.98, True, 1.02, 'Actual / labelled weight ratio')]),
-        }
-        for sequence, (checkpoint, (name, lines)) in enumerate(definitions.items(), 1):
-            # Create the demo plan once.  After that the plan belongs to the QC
-            # team (versioned and approved in Quality); upgrades never touch it.
-            if self.env['ddfsc.quality.plan'].with_context(active_test=False).search_count(
-                    [('checkpoint', '=', checkpoint)]):
-                continue
-            self.env['ddfsc.quality.plan'].create({
-                'name': name, 'checkpoint': checkpoint, 'sequence': sequence * 10,
-                'product_ids': [Command.set(products[checkpoint].ids)], 'demo_specification': True,
-                'line_ids': [Command.create({
-                    'sequence': index * 10, 'check_type': check_type,
-                    'apply_min': use_min, 'standard_min': minimum, 'apply_max': use_max,
-                    'standard_max': maximum, 'note': note,
-                }) for index, (check_type, use_min, minimum, use_max, maximum, note) in enumerate(lines, 1)],
-            })
-        self._migrate_untracked_quality_stock()
+        tracked = self.env['product.product'].concat(*products.values())
+        self._migrate_untracked_quality_stock(tracked)
         quality_products = self.env['ddfsc.quality.plan'].search([]).mapped('product_ids')
         lots_without_tests = self.env['stock.lot'].search([
             ('product_id', 'in', quality_products.ids), ('quality_check_ids', '=', False),
@@ -556,9 +537,9 @@ class DdfscShift(models.Model):
         lots_without_tests.filtered('quality_plan_id').action_prepare_quality_checks()
 
     @api.model
-    def _migrate_untracked_quality_stock(self):
+    def _migrate_untracked_quality_stock(self, products=None):
         """Keep stock that predates mandatory tracking usable and auditable."""
-        products = self.env['ddfsc.quality.plan'].search([]).mapped('product_ids')
+        products = (products or self.env['product.product']) | self.env['ddfsc.quality.plan'].search([]).mapped('product_ids')
         quants = self.env['stock.quant'].search([
             ('product_id', 'in', products.ids), ('location_id.usage', '=', 'internal'),
             ('quantity', '!=', 0), ('lot_id', '=', False),

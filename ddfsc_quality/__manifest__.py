@@ -1,6 +1,6 @@
 {
     "name": "DDFSC Quality Management",
-    "version": "19.0.2.1.0",
+    "version": "19.0.2.2.0",
     "category": "Quality Control",
     "summary": "Standalone quality control workspace for DDFSC",
     "description": """
@@ -25,6 +25,7 @@ manager records an authorised exception.
         "views/quality_governance_views.xml",
         "views/nonconformance_views.xml",
         "reports/quality_certificate.xml",
+        "data/factory_standards.xml",
     ],
     "assets": {
         "web.assets_backend": [

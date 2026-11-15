@@ -59,6 +59,8 @@ class DdfscQualityPlan(models.Model):
                 ("active", "=", True),
                 ("checkpoint", "=", plan.checkpoint),
                 ("product_ids", "in", plan.product_ids.ids),
+                # One approved plan per wheat type may cover the same wheat product.
+                ("wheat_type", "=", plan.wheat_type),
                 "|", ("effective_to", "=", False), ("effective_to", ">=", effective_from),
             ]
             if plan.effective_to:
