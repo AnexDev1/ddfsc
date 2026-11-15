@@ -29,6 +29,7 @@ rules real users hit. Create one user per role (password of your choice) and set
 | `qc.assistant` | Assistant quality controller | **DDFSC Quality User** | *(empty)* |
 | `qc.head` | QC & Improvement Service head | **DDFSC Quality Manager** | *(empty)* |
 | `mechanic` | Maintenance | Maintenance: Equipment Manager + Inventory User | *(empty)* |
+| `weighbridge.device` (created) | Scale bridge program only — never log in with it | Weighbridge: Scale Device | *(empty)* |
 
 Rule to remember (they will ask): **a user with a Department sees only that department's lines,
 orders, requests and floors. A user without a Department (managers, QC, planning, store) sees all.**
@@ -240,9 +241,19 @@ by-product store.*
 
 **Step 1 — Wheat arrives (store.manager)**
 1. Weighbridge ▸ Tickets ▸ New: Operation *Incoming Receipt*, supplier, plate, driver, product Wheat,
-   purchase order (if any). *Record First Weight* (gross), later *Record Second Weight* (tare);
-   net = gross − tare. Attach the photo of the printed slip, then *Complete* (refused without the
-   slip). Cancelling needs a reason.
+   purchase order or receipt. The **Scale** field shows *Main Weighbridge (Master-K IDé 500)* and
+   whether it is **online**.
+   - **From the scale** (the bridge program runs on the weighbridge PC; for the demo run it with
+     `--simulate` on your laptop): *Capture First Weight from Scale* while the truck is on the
+     bridge (gross 38 760 kg), then *Capture Second Weight from Scale* when it comes back empty
+     (tare 15 240 kg) → net 23 520 kg. Each weighing stores its source (From Scale) and the
+     indicator's **DSD number**; *Complete Ticket* needs no slip photo.
+   - Refusals to show: weight still moving ("not stable yet"), empty platform, or no reading for
+     10 s ("start the scale bridge").
+   - **Typed** fallback (power cut, bridge down): type the weight, *Record Typed First/Second
+     Weight* — marked *Typed* in the ticket and the chatter, and the printed slip photo is required
+     before completion. Cancelling needs a reason.
+   - Set-up and wiring: `ddfsc_weighbridge/docs/SCALE_INTEGRATION.md`.
 2. Inventory ▸ Receipts (from the PO, or new): product Wheat, quantity in **quintals**, lot name
    (e.g. `IRS-RUS-0907`; created automatically if left empty). *Plant Document* tab: supplier
    invoice no., supplier delivery order no., truck/wagon no., driver, paper voucher no.;
@@ -279,8 +290,16 @@ by-product store.*
 - Record quantity produced and wheat consumed; conditioning 1st/2nd hours, initial/final moisture;
   bin scale start/end (counter difference × 2 = quintals, as on the extraction sheet) — the
   *scale vs recorded wheat* gap shows mismatches; screenings (impurity) kg; sweepings kg;
-  stoppages. Read the mass balance: wheat used, flour produced, by-product, **extraction %**,
-  **unaccounted loss/gain** (wheat − flour − by-product − sweepings − screenings).
+  stoppages, **silo loss %**. Read the mass balance: wheat used, flour produced, by-product,
+  **unaccounted loss/gain** (wheat − flour − by-product − sweepings − screenings), and the three
+  extraction rates of the milling manual (p. 215):
+  - **CER** (commercial) = total flour ÷ uncleaned wheat grossed up by the silo loss
+    (manual example: 75 ÷ 100.2 = **74.85 %**);
+  - **TER** (technical) = total flour ÷ conditioned wheat at B1 = uncleaned wheat − screenings +
+    water added in conditioning (water = cleaned wheat × (final − initial moisture) ÷
+    (100 − final moisture));
+  - **EP** (on products) = flour ÷ (flour + bran / by-products).
+  The Department Production Report prints the three rates for the period.
 - Submit for Approval → (opm) Approve → Mark as Done.
 - Talking point: their extraction sheet showed one batch at **103 %** (typing error) and #DIV/0!
   cells; here the figures come from the stock moves and the gap is visible immediately.

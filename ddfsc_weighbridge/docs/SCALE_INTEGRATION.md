@@ -47,6 +47,9 @@ touched, only the communication port.
 2. Copy the folder `ddfsc_weighbridge/tools/` to `C:\DDFSC\scale\`.
 3. In Odoo (admin): create a user **weighbridge.device**, groups: only *Weighbridge ▸ Scale Device*;
    log in as it once and create an **API key** (My Profile ▸ Account Security ▸ New API Key).
+   Odoo limits API keys of normal users to **90 days**: renew the key before it expires (or ask the
+   administrator to raise the limit for this account), otherwise the bridge stops with
+   "Odoo refused the login".
 4. Copy `scale_bridge.ini.example` to `scale_bridge.ini`, set `url` (Odoo server address on the
    LAN), `api_key`, the COM `port` and the serial settings.
 5. Find the port: `python scale_bridge.py --list-ports`.
