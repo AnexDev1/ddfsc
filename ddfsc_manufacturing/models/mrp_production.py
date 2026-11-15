@@ -208,9 +208,12 @@ class MrpProduction(models.Model):
         self.ensure_one()
         tolerance = self.ddfsc_line_id.ddfsc_variance_tolerance
         lines = self.sudo().ddfsc_variance_line_ids
+        # Reworked scrap is planned reuse recorded on the order, not over-use.
         return lines.filtered(
-            lambda line: (line.is_unplanned and line.actual_qty)
-            or (not line.is_unplanned and abs(line.variance_percent) > tolerance + 1e-9)
+            lambda line: not line.is_rework and (
+                (line.is_unplanned and line.actual_qty)
+                or (not line.is_unplanned and abs(line.variance_percent) > tolerance + 1e-9)
+            )
         )
 
     @api.depends('state', 'ddfsc_approval_state')
@@ -852,6 +855,7 @@ class MrpProduction(models.Model):
                     'actual_qty': move.quantity if move.state != 'cancel' else 0.0,
                     'expected_qty': expected,
                     'is_unplanned': not bool(move.bom_line_id),
+                    'is_rework': move in production._ddfsc_rework_moves(),
                     'unit_cost': move.product_id.uom_id._compute_price(
                         move.product_id.standard_price, move.product_uom),
                 }
@@ -1084,6 +1088,7 @@ class DdfscProductionVarianceLine(models.Model):
         string='Result', compute='_compute_variance', store=True,
     )
     is_unplanned = fields.Boolean(string='Not in Recipe', readonly=True)
+    is_rework = fields.Boolean(string='Reworked Scrap', readonly=True)
     department = fields.Selection(related='production_id.ddfsc_department', store=True, string='Department')
     line_id = fields.Many2one(related='production_id.ddfsc_line_id', store=True, string='Production Line')
     shift_id = fields.Many2one(related='production_id.ddfsc_shift_id', store=True, string='Shift')
@@ -1098,10 +1103,13 @@ class DdfscProductionVarianceLine(models.Model):
         'Each consumption move can appear only once in the production variance register.',
     )
 
-    @api.depends('planned_qty', 'expected_qty', 'actual_qty', 'unit_cost', 'is_unplanned', 'uom_id')
+    @api.depends('planned_qty', 'expected_qty', 'actual_qty', 'unit_cost', 'is_unplanned', 'is_rework', 'uom_id')
     def _compute_variance(self):
         for line in self:
             standard = line.expected_qty if line.expected_qty or line.is_unplanned else line.planned_qty
+            if line.is_rework:
+                # The standard for rework is what the order says was reused.
+                standard = line.actual_qty
             line.variance_qty = line.actual_qty - standard
             line.variance_percent = (line.variance_qty / standard) * 100 if standard else 0.0
             line.variance_value = line.variance_qty * line.unit_cost
