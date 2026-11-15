@@ -141,3 +141,12 @@ class TestFactoryExtras(TransactionCase):
             ('equipment_id', '=', oven.id), ('maintenance_type', '=', 'preventive')])
         self.assertEqual(set(plans.mapped('ddfsc_pm_type')), {'inspection', 'lubrication', 'service'})
         self.assertTrue(self.env['maintenance.equipment'].search([('serial_no', '=', 'BISC-CN-COOLING')]))
+
+    def test_extraction_rates_follow_the_milling_manual(self):
+        from odoo.addons.ddfsc_manufacturing.models.mill import mill_extraction
+        # Manual p. 215: 100 t wheat, 0.2 % silo loss, 2.5 t screenings, 4 t water, 75 t flour, 24 t bran.
+        values = mill_extraction(100.0, 75.0, 24.0, 2.5, 0.2, 10.0, 1375 / 101.5)
+        self.assertAlmostEqual(values['cer'], 74.85, places=2)
+        self.assertAlmostEqual(values['water'], 4.0, places=6)
+        self.assertAlmostEqual(values['ter'], 75 / 101.5 * 100, places=6)
+        self.assertAlmostEqual(values['ep'], 75 / 99 * 100, places=6)

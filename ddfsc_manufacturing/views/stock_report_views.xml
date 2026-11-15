@@ -170,7 +170,9 @@
                             <tr t-if="d['wheat_qtl']"><td>Wheat milled (qtl)</td><td class="text-end" t-out="'{:,.2f}'.format(d['wheat_qtl'])"/></tr>
                             <tr t-if="d['wheat_qtl']"><td>Flour produced (qtl)</td><td class="text-end" t-out="'{:,.2f}'.format(d['flour_out_qtl'])"/></tr>
                             <tr t-if="d['wheat_qtl']"><td>By-product (qtl)</td><td class="text-end" t-out="'{:,.2f}'.format(d['byproduct_qtl'])"/></tr>
-                            <tr t-if="d['wheat_qtl']"><td>Extraction</td><td class="text-end" t-out="'{:.1%}'.format(d['flour_out_qtl'] / d['wheat_qtl'])"/></tr>
+                            <tr t-if="d['extraction']"><td>Commercial extraction rate (CER)</td><td class="text-end" t-out="'{:.2f} %'.format(d['extraction']['cer'])"/></tr>
+                            <tr t-if="d['extraction']"><td>Technical extraction rate (TER)</td><td class="text-end" t-out="'{:.2f} %'.format(d['extraction']['ter'])"/></tr>
+                            <tr t-if="d['extraction']"><td>Extraction on products (EP)</td><td class="text-end" t-out="'{:.2f} %'.format(d['extraction']['ep'])"/></tr>
                             <tr><td>Flour used (qtl)</td><td class="text-end" t-out="'{:,.2f}'.format(d['flour_qtl'])"/></tr>
                             <tr t-if="d['batches']"><td>Batches</td><td class="text-end" t-out="'{:,.1f}'.format(d['batches'])"/></tr>
                             <tr><td>Output per quintal of flour</td><td class="text-end" t-out="'{:,.2f}'.format(d['output_per_qtl'])"/></tr>

@@ -50,8 +50,10 @@
         <field name="arch" type="xml">
             <form delete="0">
                 <header>
-                    <button name="action_record_first_weight" string="Record First Weight" type="object" class="btn-primary" invisible="state != 'draft'"/>
-                    <button name="action_record_second_weight" string="Record Second Weight &amp; Calculate Net" type="object" class="btn-primary" invisible="state != 'first_recorded'"/>
+                    <button name="action_capture_first_weight" string="Capture First Weight from Scale" type="object" class="btn-primary" icon="fa-balance-scale" invisible="state != 'draft' or not scale_id"/>
+                    <button name="action_capture_second_weight" string="Capture Second Weight from Scale" type="object" class="btn-primary" icon="fa-balance-scale" invisible="state != 'first_recorded' or not scale_id"/>
+                    <button name="action_record_first_weight" string="Record Typed First Weight" type="object" invisible="state != 'draft'"/>
+                    <button name="action_record_second_weight" string="Record Typed Second Weight &amp; Calculate Net" type="object" invisible="state != 'first_recorded'"/>
                     <button name="action_complete" string="Complete Ticket" type="object" class="btn-primary" invisible="state != 'weighed'"/>
                     <button name="action_cancel" string="Cancel Ticket" type="object" invisible="state in ('completed', 'cancelled')"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,first_recorded,weighed,completed,cancelled"/>
@@ -87,6 +89,21 @@
                             <field name="document_reference" readonly="1" invisible="not document_reference"/>
                             <field name="reference" readonly="state != 'draft'" placeholder="Printed ticket number, if available"/>
                             <field name="company_id" groups="base.group_multi_company" readonly="state != 'draft'"/>
+                        </group>
+                    </group>
+                    <div class="alert alert-warning" role="alert" invisible="not scale_id or scale_online or state not in ('draft', 'first_recorded')">
+                        The scale is not sending readings. Start the scale bridge on the weighbridge PC, or type the weight and attach the printed slip.
+                    </div>
+                    <group string="Scale">
+                        <group>
+                            <field name="scale_id" readonly="state not in ('draft', 'first_recorded')"/>
+                            <field name="scale_online" widget="boolean_toggle" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="first_weight_source" invisible="not first_weight_source"/>
+                            <field name="first_dsd" invisible="not first_dsd"/>
+                            <field name="second_weight_source" invisible="not second_weight_source"/>
+                            <field name="second_dsd" invisible="not second_dsd"/>
                         </group>
                     </group>
                     <group string="Weight Capture (kilograms)">

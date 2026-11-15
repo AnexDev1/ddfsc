@@ -163,6 +163,12 @@
                             <field name="mill_scale_wheat_qtl" invisible="ddfsc_line_code != 'MILL'"/>
                             <field name="mill_scale_gap_qtl" invisible="ddfsc_line_code != 'MILL'"/>
                             <field name="mill_impurity_kg" invisible="ddfsc_line_code != 'MILL'" readonly="state in ('done', 'cancel')"/>
+                            <field name="mill_silo_loss_pct" invisible="ddfsc_line_code != 'MILL'" readonly="state in ('done', 'cancel')"/>
+                            <field name="mill_moisture_added_qtl" invisible="ddfsc_line_code != 'MILL'"/>
+                            <field name="mill_conditioned_wheat_qtl" invisible="ddfsc_line_code != 'MILL'"/>
+                            <field name="mill_cer" invisible="ddfsc_line_code != 'MILL'"/>
+                            <field name="mill_ter" invisible="ddfsc_line_code != 'MILL'"/>
+                            <field name="mill_ep" invisible="ddfsc_line_code != 'MILL'"/>
                         </group>
                         <group string="Packing Bags Used" invisible="ddfsc_line_code != 'MILL'">
                             <field name="mill_bags_10" readonly="state in ('done', 'cancel')"/>

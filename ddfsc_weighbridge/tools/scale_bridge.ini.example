@@ -1,0 +1,37 @@
+# Copy to scale_bridge.ini on the weighbridge PC and fill in.
+[odoo]
+url = http://192.168.1.10:8069
+database = ddfsc
+# Technical user with only the "Scale Device (bridge program only)" weighbridge group.
+login = weighbridge.device
+# Odoo API key of that user (user menu > My Profile > Account Security > New API Key).
+api_key =
+scale_code = WB1
+
+[indicator]
+# serial: COM1 / COM2 (RS-232, through a USB-RS232 adapter if the PC has no COM port)
+#         or the indicator's USB port, which appears as a COM port on the PC.
+# tcp:    only if the indicator has the Ethernet option card installed.
+connection = serial
+port = COM3
+baudrate = 9600
+bytesize = 8
+parity = N
+stopbits = 1
+tcp_host = 192.168.1.50
+tcp_port = 4001
+frame_end = \r\n
+# Leave empty: the weight is the last number in each frame. Tune after running --sniff.
+weight_regex =
+# Text that marks a moving weight in the frame (e.g. US, M). Empty: stable = same value 3 times.
+motion_marker =
+stable_repeats = 3
+dsd_regex = DSD\s*[:#]?\s*(\d+)
+# Only if the indicator answers on request instead of sending continuously.
+poll_command =
+poll_interval = 1.0
+scale_factor = 1
+
+[bridge]
+heartbeat_seconds = 2
+log_file = C:\DDFSC\scale_bridge.log

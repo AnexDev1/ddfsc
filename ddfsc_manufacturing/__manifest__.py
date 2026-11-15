@@ -1,6 +1,6 @@
 {
     'name': 'DDFSC Manufacturing',
-    'version': '19.0.3.8.0',
+    'version': '19.0.3.9.0',
     'category': 'Manufacturing',
     'summary': 'Production, shift reports, quality, and transfer requests',
     'description': """

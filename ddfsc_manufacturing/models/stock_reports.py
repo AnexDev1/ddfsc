@@ -217,4 +217,21 @@ class DdfscProductionReportWizard(models.TransientModel):
             'wheat_qtl': sum(done.mapped('wheat_consumed_qtl')),
             'flour_out_qtl': sum(done.mapped('flour_produced_qtl')),
             'byproduct_qtl': sum(done.mapped('byproduct_qtl')),
+            'extraction': self._mill_extraction(done),
         }
+
+    def _mill_extraction(self, orders):
+        from .mill import mill_extraction
+        mill = orders.filtered(lambda order: order.ddfsc_line_id.code == 'MILL')
+        if not mill:
+            return {}
+        wheat = sum(mill.mapped('wheat_consumed_qtl'))
+        values = mill_extraction(
+            wheat, sum(mill.mapped('flour_produced_qtl')), sum(mill.mapped('byproduct_qtl')),
+            sum(mill.mapped('mill_impurity_kg')) / 100.0)
+        # Silo loss and conditioning water differ per batch: use the batch figures.
+        values['cer'] = sum(mill.mapped('flour_produced_qtl')) / sum(
+            order.wheat_consumed_qtl * (1 + order.mill_silo_loss_pct / 100.0) for order in mill) * 100.0 if wheat else 0.0
+        conditioned = sum(mill.mapped('mill_conditioned_wheat_qtl'))
+        values['ter'] = sum(mill.mapped('flour_produced_qtl')) / conditioned * 100.0 if conditioned else 0.0
+        return values
