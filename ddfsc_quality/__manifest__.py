@@ -1,6 +1,6 @@
 {
     "name": "DDFSC Quality Management",
-    "version": "19.0.2.2.0",
+    "version": "19.0.2.3.0",
     "category": "Quality Control",
     "summary": "Standalone quality control workspace for DDFSC",
     "description": """

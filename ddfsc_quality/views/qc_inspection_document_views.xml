@@ -40,6 +40,9 @@
                             <field name="checkpoint" readonly="1"/>
                             <field name="wheat_type" invisible="checkpoint != 'incoming_wheat'"/>
                             <field name="wheat_code" invisible="checkpoint != 'incoming_wheat' or not wheat_code"/>
+                            <field name="die_number" readonly="state != 'draft'" invisible="checkpoint != 'finished_goods'"/>
+                            <field name="packing_machine" readonly="state != 'draft'" invisible="checkpoint != 'finished_goods'"/>
+                            <field name="silo_number" readonly="state != 'draft'"/>
                             <field name="uom_id" invisible="1"/>
                         </group>
                         <group>
@@ -59,7 +62,13 @@
                             <field name="sequence" widget="handle" readonly="1"/>
                             <field name="name" string="Test" readonly="1"/>
                             <field name="specification" readonly="1"/>
-                            <field name="measured_value" invisible="result_type == 'qualitative'"/>
+                            <field name="sample_count" string="Samples" readonly="1" optional="show"/>
+                            <field name="sample_rule" column_invisible="1"/>
+                            <field name="sample_values" invisible="result_type == 'qualitative'" placeholder="e.g. 502, 498, 501"/>
+                            <field name="sample_taken" string="Taken" readonly="1" optional="hide"/>
+                            <field name="sample_min" readonly="1" optional="hide"/>
+                            <field name="sample_max" readonly="1" optional="hide"/>
+                            <field name="measured_value" string="Result / Average" invisible="result_type == 'qualitative'"/>
                             <field name="measured_text" string="Observed Result" invisible="result_type != 'qualitative'"/>
                             <field name="is_measured"/>
                             <field name="result" widget="badge" readonly="1"/>
