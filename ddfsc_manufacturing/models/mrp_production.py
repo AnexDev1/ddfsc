@@ -80,6 +80,12 @@ class MrpProduction(models.Model):
         help='Floor sweepings or contaminated material, weighed in kg. Recorded as a loss on '
              'the shift report; it never removes finished goods from stock.',
     )
+    disposed_qty = fields.Float(
+        string='Disposed Dough / Product (kg)',
+        copy=False,
+        help='Dough or product thrown away because it could not be baked, packed or reworked. '
+             'Weighed in kg and reported as a loss; it never removes finished goods from stock.',
+    )
     ddfsc_loss_posted = fields.Boolean(copy=False)
     ddfsc_variance_reason = fields.Text(
         string='Variance Explanation',
@@ -636,13 +642,18 @@ class MrpProduction(models.Model):
             for move in self.move_finished_ids
             if move.state != 'cancel' and move.product_id != self.product_id
         )
-        return json.dumps({
+        figures = {
             'producing': round(self.qty_producing, 4),
             'raw': raw,
             'byproducts': finished,
             'breakage': round(self.scrap_qty or 0.0, 4),
             'sweepings': round(self.sweeping_qty or 0.0, 4),
-        }, sort_keys=True)
+        }
+        # Only present when used, so approvals recorded before this figure
+        # existed keep the same fingerprint.
+        if self.disposed_qty:
+            figures['disposed'] = round(self.disposed_qty, 4)
+        return json.dumps(figures, sort_keys=True)
 
     def _ddfsc_fingerprint_changes(self):
         """Human-readable list of figures changed since approval."""
@@ -666,7 +677,8 @@ class MrpProduction(models.Model):
                     changes.append('%s %s %s → %s' % (
                         Product.browse(product_id).display_name, label,
                         old.get(product_id, 0), new.get(product_id, 0)))
-        for key, label in (('breakage', _('Breakage')), ('sweepings', _('Sweepings'))):
+        for key, label in (('breakage', _('Breakage')), ('sweepings', _('Sweepings')),
+                           ('disposed', _('Disposed dough'))):
             if before.get(key) != after.get(key):
                 changes.append('%s %s → %s' % (label, before.get(key), after.get(key)))
         return changes
@@ -898,6 +910,9 @@ class MrpProduction(models.Model):
             if production.sweeping_qty:
                 production.message_post(body=_(
                     'Sweepings / waste recorded: %(qty)s kg (not saleable).', qty=production.sweeping_qty))
+            if production.disposed_qty:
+                production.message_post(body=_(
+                    'Disposed dough / product recorded: %(qty)s kg (loss).', qty=production.disposed_qty))
             production.ddfsc_loss_posted = True
 
     def _ddfsc_post_scrap(self, quantity, lot, label):

@@ -622,12 +622,14 @@ class DdfscShift(models.Model):
             'fg_receiving': ('loc_flour', 'loc_finished'),
             'byproduct_return': ('loc_byproduct', 'loc_store'),
             'qc_release': ('loc_wheat_dock', 'loc_store'),
+            'material_return': ('loc_biscuit', 'loc_store'),
         }
         for xmlid, name, prefix, doc_type, sequence in (
             ('picking_type_store_requisition', 'Store Transfer Request', 'MTR', 'store_requisition', 35),
             ('picking_type_fg_receiving', 'FG Transfer Request', 'FGR', 'fg_receiving', 36),
             ('picking_type_byproduct_return', 'By-product Return', 'BPR', 'byproduct_return', 37),
             ('picking_type_qc_release', 'QC Release to General Store', 'QCR', 'qc_release', 38),
+            ('picking_type_material_return', 'Material Return to Store', 'MRN', 'material_return', 39),
         ):
             picking_type = self.env.ref('ddfsc_manufacturing.%s' % xmlid, raise_if_not_found=False)
             vals = {

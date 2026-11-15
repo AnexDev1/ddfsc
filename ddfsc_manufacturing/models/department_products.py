@@ -73,7 +73,7 @@ class StoreRequest(models.Model):
             if request.production_id:
                 products = request.production_id.product_id
                 boms = request.production_id.bom_id
-            if request.request_type == 'component':
+            if request.request_type in ('component', 'material_return'):
                 products = boms.bom_line_ids.product_id
             elif request.request_type == 'byproduct_return':
                 products = byproducts(self.env, request.ddfsc_department)

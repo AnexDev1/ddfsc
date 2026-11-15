@@ -172,6 +172,8 @@
                                 <field name="ddfsc_breakage_uom" nolabel="1"/>
                             </div>
                             <field name="sweeping_qty" readonly="state in ('done', 'cancel')"/>
+                            <field name="disposed_qty" readonly="state in ('done', 'cancel')"
+                                   invisible="ddfsc_line_code == 'MILL'"/>
                             <field name="bread_scrap_low" invisible="ddfsc_line_code != 'BREAD'"/>
                             <field name="bread_scrap_high" invisible="ddfsc_line_code != 'BREAD'"/>
                         </group>
@@ -202,6 +204,7 @@
                 <field name="yield_per_quintal" string="Output / qtl Flour" optional="show"/>
                 <field name="scrap_qty" string="Breakage" sum="Breakage" optional="show"/>
                 <field name="sweeping_qty" string="Sweepings (kg)" sum="Sweepings" optional="show"/>
+                <field name="disposed_qty" string="Disposed (kg)" sum="Disposed" optional="show"/>
                 <field name="downtime_hours" sum="Downtime" optional="show"/>
                 <field name="downtime_reason" optional="show"/>
                 <field name="ddfsc_variance_exceeded" string="Over Tolerance" optional="hide"/>

@@ -17,6 +17,7 @@ class StockPickingType(models.Model):
             ('byproduct_return', 'By-product to Store'),
             ('fg_receiving', 'Finished Goods Receiving'),
             ('qc_release', 'QC Release'),
+            ('material_return', 'Material Return to Store'),
         ],
         string='Plant Form',
     )

@@ -21,4 +21,11 @@
         <field name="padding">5</field>
         <field name="company_id" eval="False"/>
     </record>
+    <record id="seq_ddfsc_material_return" model="ir.sequence">
+        <field name="name">Material Return to Store</field>
+        <field name="code">ddfsc.material.return</field>
+        <field name="prefix">MRN/%(year)s/</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False"/>
+    </record>
 </odoo>

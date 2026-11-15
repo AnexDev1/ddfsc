@@ -17,6 +17,7 @@ class DdfscStoreRequest(models.Model):
             ('component', 'Store Transfer'),
             ('finished_goods', 'Finished Goods Transfer'),
             ('byproduct_return', 'By-product Return'),
+            ('material_return', 'Material Return to Store'),
         ],
         string='Request Type',
         default='component',
@@ -74,6 +75,10 @@ class DdfscStoreRequest(models.Model):
         domain="[('usage', '=', 'internal')]",
         help='Default source location for new product lines.',
     )
+    return_reason = fields.Char(
+        string='Return Reason', tracking=True,
+        help='Why the material goes back to the store, e.g. production stopped or material left at month end.',
+    )
     line_ids = fields.One2many('ddfsc.store.request.line', 'request_id', string='Product Details')
     picking_id = fields.Many2one('stock.picking', string='Transfer', copy=False, readonly=True)
     company_id = fields.Many2one(
@@ -97,6 +102,12 @@ class DdfscStoreRequest(models.Model):
                 source = self.env.ref('ddfsc_manufacturing.loc_byproduct', raise_if_not_found=False)
             if not dest:
                 dest = self.env.ref('ddfsc_manufacturing.loc_store', raise_if_not_found=False)
+        elif request_type == 'material_return':
+            # Unused material leaves the floor; the store follows the products
+            # (see _ddfsc_return_destination) and is settled at submission.
+            source = location(self.env, department, 'component_location')
+            dest = location(self.env, department, 'request_source') or self.env.ref(
+                'ddfsc_manufacturing.loc_store', raise_if_not_found=False)
         else:
             source = location(self.env, department, 'request_source')
             dest = location(self.env, department, 'request_location')
@@ -114,6 +125,8 @@ class DdfscStoreRequest(models.Model):
                 dest = production.location_src_id
             elif request_type == 'finished_goods' and production.location_dest_id:
                 source = production.location_dest_id
+            elif request_type == 'material_return' and production.location_src_id:
+                source = production.location_src_id
         if source and not values.get('location_id'):
             values['location_id'] = source.id
         if dest and not values.get('location_dest_id'):
@@ -153,12 +166,16 @@ class DdfscStoreRequest(models.Model):
     def create(self, vals_list):
         prepared = []
         for vals in vals_list:
+            if not vals.get('request_type') and self.env.context.get('default_request_type'):
+                vals = dict(vals, request_type=self.env.context['default_request_type'])
             vals = self._ddfsc_apply_locations(vals)
             if vals.get('name', 'New') == 'New':
                 if vals.get('request_type') == 'finished_goods':
                     vals['name'] = self.env['ir.sequence'].next_by_code('ddfsc.fg.request') or 'New'
                 elif vals.get('request_type') == 'byproduct_return':
                     vals['name'] = self.env['ir.sequence'].next_by_code('ddfsc.byproduct.request') or 'New'
+                elif vals.get('request_type') == 'material_return':
+                    vals['name'] = self.env['ir.sequence'].next_by_code('ddfsc.material.return') or 'New'
                 else:
                     vals['name'] = self.env['ir.sequence'].next_by_code('ddfsc.store.request') or 'New'
             prepared.append(vals)
@@ -177,6 +194,8 @@ class DdfscStoreRequest(models.Model):
                     raise UserError(_('Set a source location on every product line.'))
                 if line.product_uom_qty <= 0:
                     raise UserError(_('Request quantity must be greater than zero for %s.', line.product_id.display_name))
+            if request.request_type == 'material_return':
+                request._ddfsc_settle_return_destination()
             request.write({'state': 'store_manager'})
         return True
 
@@ -206,12 +225,38 @@ class DdfscStoreRequest(models.Model):
             request.write({'state': 'draft', 'picking_id': False})
         return True
 
+    def _ddfsc_return_destination(self, product):
+        """Flour goes back to the store it was issued from; everything else to General Store."""
+        self.ensure_one()
+        store = self.env.ref('ddfsc_manufacturing.loc_store', raise_if_not_found=False)
+        if product.ddfsc_is_flour:
+            return location(self.env, self.ddfsc_department, 'request_source') or store
+        return store
+
+    def _ddfsc_settle_return_destination(self):
+        store = self.env.ref('ddfsc_manufacturing.loc_store', raise_if_not_found=False)
+        for request in self:
+            if not (request.return_reason or '').strip():
+                raise UserError(_('Write the reason for returning the material before submitting.'))
+            stores = self.env['stock.location']
+            for line in request.line_ids:
+                stores |= request._ddfsc_return_destination(line.product_id)
+            if len(stores) > 1:
+                raise UserError(_(
+                    'Flour goes back to %(flour)s and other materials to %(store)s. '
+                    'Make one return for each store.',
+                    flour=(stores - store).display_name, store=store.display_name,
+                ))
+            if stores and request.location_dest_id != stores:
+                request.location_dest_id = stores
+
     def _ddfsc_mark_received(self):
         self.filtered(lambda request: request.state == 'requested').write({'state': 'received'})
 
     def _ddfsc_picking_type(self):
         self.ensure_one()
-        xmlids = ('picking_type_fg_receiving', 'picking_type_byproduct_return', 'picking_type_store_requisition')
+        xmlids = ('picking_type_fg_receiving', 'picking_type_byproduct_return', 'picking_type_store_requisition',
+                  'picking_type_material_return')
         if not all(self.env.ref('ddfsc_manufacturing.%s' % xmlid, raise_if_not_found=False) for xmlid in xmlids):
             # Configuration repair only; approvers are not inventory administrators.
             self.env['ddfsc.shift'].sudo()._ensure_request_picking_types()
@@ -223,6 +268,11 @@ class DdfscStoreRequest(models.Model):
         elif self.request_type == 'byproduct_return':
             picking_type = self.env.ref(
                 'ddfsc_manufacturing.picking_type_byproduct_return',
+                raise_if_not_found=False,
+            )
+        elif self.request_type == 'material_return':
+            picking_type = self.env.ref(
+                'ddfsc_manufacturing.picking_type_material_return',
                 raise_if_not_found=False,
             )
         else:
@@ -382,6 +432,8 @@ class DdfscStoreRequestLine(models.Model):
             return source or request.location_id or self.env.ref(
                 'ddfsc_manufacturing.loc_byproduct', raise_if_not_found=False,
             )
+        if request.request_type == 'material_return':
+            return request.location_id or location(self.env, request.ddfsc_department, 'component_location')
         store = self.env.ref('ddfsc_manufacturing.loc_store', raise_if_not_found=False)
         if not product:
             return request.location_id or store
