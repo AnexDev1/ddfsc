@@ -453,7 +453,7 @@ class StockPicking(models.Model):
 
     def button_validate(self):
         res = super().button_validate()
-        AnalyticLine = self.env['account.analytic.line']
+        AnalyticLine = self.env['account.analytic.line'].sudo()  # budget commitment is posted by the system
         plan_fnames = AnalyticLine._get_plan_fnames()
 
         for picking in self:
@@ -496,12 +496,15 @@ class StockPicking(models.Model):
                     'company_id': requisition.company_id.id,
                 }
                 
-                # In Odoo 17+, plan columns are JSON fields (analytic_distribution style).
-                # They expect a dict like {str(account_id): percentage}, NOT a raw integer.
-                if hasattr(req_line.cost_center_id, 'plan_id') and req_line.cost_center_id.plan_id:
-                    plan_column = req_line.cost_center_id.plan_id._column_name()
-                    if plan_column and plan_column != 'account_id':
-                        vals[plan_column] = {str(req_line.cost_center_id.id): 100}
+                # On account.analytic.line each analytic plan is its own Many2one
+                # column (account_id for the root plan, x_plan<N>_id for others).
+                # Only analytic_distribution on journal items is a JSON percentage map.
+                cost_center = req_line.cost_center_id
+                if cost_center.plan_id:
+                    plan_column = cost_center.plan_id._column_name()
+                    if plan_column and plan_column != 'account_id' and plan_column in AnalyticLine._fields:
+                        vals[plan_column] = cost_center.id
+                        vals.pop('account_id', None)
 
                 AnalyticLine.create(vals)
 

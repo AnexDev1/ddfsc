@@ -59,6 +59,8 @@ class DdfscQualityPlan(models.Model):
                 ("active", "=", True),
                 ("checkpoint", "=", plan.checkpoint),
                 ("product_ids", "in", plan.product_ids.ids),
+                # One approved plan per wheat type may cover the same wheat product.
+                ("wheat_type", "=", plan.wheat_type),
                 "|", ("effective_to", "=", False), ("effective_to", ">=", effective_from),
             ]
             if plan.effective_to:
@@ -78,7 +80,28 @@ class DdfscQualityPlan(models.Model):
                 "approved_date": fields.Datetime.now(),
                 "effective_from": effective_from,
             })
+        self._refresh_lot_plans()
         return True
+
+    def _refresh_lot_plans(self):
+        """Re-link existing lots when the governing plan changes.
+
+        ``stock.lot.quality_plan_id`` is stored and only recomputes when a lot's
+        product changes.  Without this, lots produced while plans were still in
+        draft would never get a plan or an inspection, and the stock gate would
+        hold them with nothing for QC to fill in.
+        """
+        products = self.mapped("product_ids")
+        if not products:
+            return
+        lots = self.env["stock.lot"].sudo().search([("product_id", "in", products.ids)])
+        lots._compute_quality_plan()
+        waiting = lots.filtered(
+            lambda lot: lot.quality_plan_id and not lot.active_qc_inspection_id
+            and lot.ddfsc_quality_state in ("pending", False)
+            and any(quant.quantity > 0 and quant.location_id.usage == "internal" for quant in lot.quant_ids)
+        )
+        waiting._ensure_qc_inspection()
 
     def action_new_version(self):
         self.ensure_one()
@@ -107,6 +130,7 @@ class DdfscQualityPlan(models.Model):
                 "approval_state": "retired", "active": False,
                 "effective_to": end_date,
             })
+        self._refresh_lot_plans()
         return True
 
 

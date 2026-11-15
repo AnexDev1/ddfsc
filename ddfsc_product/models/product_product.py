@@ -3,6 +3,9 @@ from odoo import api, fields, models, _
 from odoo.exceptions import ValidationError
 
 
+from .product_template import next_service_code
+
+
 class ProductProduct(models.Model):
     _inherit = 'product.product'
 
@@ -63,7 +66,9 @@ class ProductProduct(models.Model):
             prod_type = vals.get('type') or (tmpl and tmpl.type)
             if prod_type == 'service' and not is_landed_cost:
                 if not vals.get('default_code') and not (tmpl and tmpl.default_code):
-                    vals['default_code'] = 'DISC' if 'discount' in (vals.get('name') or (tmpl and tmpl.name) or '').lower() else 'SRV'
+                    prefix = 'DISC' if 'discount' in (vals.get('name') or (tmpl and tmpl.name) or '').lower() else 'SRV'
+                    vals['default_code'] = next_service_code(
+                        self.env, prefix, [v.get('default_code') for v in vals_list])
             code = vals.get('default_code') or (tmpl and tmpl.default_code)
             if not is_landed_cost:
                 if not code and not self.env.context.get('install_mode'):

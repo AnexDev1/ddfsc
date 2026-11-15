@@ -14,3 +14,7 @@ access_ddfsc_store_request_manager,ddfsc.store.request.manager,model_ddfsc_store
 access_ddfsc_store_request_line_user,ddfsc.store.request.line.user,model_ddfsc_store_request_line,mrp.group_mrp_user,1,1,1,0
 access_ddfsc_store_request_line_manager,ddfsc.store.request.line.manager,model_ddfsc_store_request_line,mrp.group_mrp_manager,1,1,1,1
 access_stock_quant_mrp_read,stock.quant.mrp.read,stock.model_stock_quant,mrp.group_mrp_user,1,0,0,0
+access_ddfsc_production_variance_line_user,ddfsc.production.variance.line.user,model_ddfsc_production_variance_line,mrp.group_mrp_user,1,0,0,0
+access_ddfsc_production_variance_line_manager,ddfsc.production.variance.line.manager,model_ddfsc_production_variance_line,mrp.group_mrp_manager,1,1,1,1
+access_ddfsc_store_request_stock_read,ddfsc.store.request.stock.read,model_ddfsc_store_request,stock.group_stock_user,1,0,0,0
+access_ddfsc_store_request_line_stock_read,ddfsc.store.request.line.stock.read,model_ddfsc_store_request_line,stock.group_stock_user,1,0,0,0

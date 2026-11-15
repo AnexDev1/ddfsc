@@ -51,7 +51,6 @@ class HrAttendance(models.Model):
 
     @api.depends("employee_id", "check_in", "check_out", "date")
     def _compute_schedule_metrics(self):
-        Assignment = self.env["ddfsc.shift.assignment"]
         for attendance in self:
             attendance.shift_assignment_id = False
             attendance.scheduled_start = False
@@ -62,45 +61,21 @@ class HrAttendance(models.Model):
             attendance.attendance_exception = "no_schedule"
             if not attendance.employee_id or not attendance.check_in or not attendance.date:
                 continue
-            assignment = Assignment.search(
-                [("employee_id", "=", attendance.employee_id.id),
-                 ("active", "=", True), ("date_from", "<=", attendance.date),
-                 "|", ("date_to", "=", False), ("date_to", ">=", attendance.date)],
-                order="date_from desc", limit=1,
-            )
-            calendar = assignment.calendar_id or attendance.employee_id.resource_calendar_id
+            scheduled_start, scheduled_end, assignment, calendar = self.env[
+                "ddfsc.attendance.exception"
+            ]._scheduled_window_for_check_in(attendance.employee_id, attendance.check_in)
             if not calendar:
                 continue
             attendance.shift_assignment_id = assignment
-            timezone = pytz.timezone(calendar.tz or attendance.employee_id._get_tz())
-            local_midnight = timezone.localize(datetime.combine(attendance.date, time.min))
-            range_start = local_midnight.astimezone(pytz.utc)
-            range_end = (local_midnight + timedelta(days=2)).astimezone(pytz.utc)
-            intervals = list(
-                calendar._work_intervals_batch(
-                    range_start, range_end, resources=attendance.employee_id.resource_id,
-                    tz=timezone,
-                ).get(attendance.employee_id.resource_id.id, [])
-            )
-            starts_today = [
-                index for index, interval in enumerate(intervals)
-                if interval[0].astimezone(timezone).date() == attendance.date
-            ]
-            if not starts_today:
+            if not scheduled_start:
                 continue
-            selected = [intervals[starts_today[0]]]
-            for interval in intervals[starts_today[0] + 1:]:
-                if interval[0] - selected[-1][1] <= timedelta(hours=8):
-                    selected.append(interval)
-                else:
-                    break
-            scheduled_start = selected[0][0].astimezone(pytz.utc).replace(tzinfo=None)
-            scheduled_end = selected[-1][1].astimezone(pytz.utc).replace(tzinfo=None)
             attendance.scheduled_start = scheduled_start
             attendance.scheduled_end = scheduled_end
-            attendance.scheduled_hours = sum(
-                (stop - start).total_seconds() / 3600 for start, stop, _meta in selected
-            )
+            # Worked hours inside the shift block (meal breaks excluded by the calendar).
+            attendance.scheduled_hours = round(calendar.get_work_hours_count(
+                pytz.utc.localize(scheduled_start), pytz.utc.localize(scheduled_end),
+                compute_leaves=False,
+            ), 2)
             late_grace = assignment.late_grace_minutes if assignment else 0
             early_grace = assignment.early_departure_grace_minutes if assignment else 0
             attendance.late_minutes = max(

@@ -1,5 +1,19 @@
-from odoo import api, fields, models
+from datetime import datetime, time, timedelta
+
+import pytz
+
+from odoo import _, api, fields, models
+from odoo.exceptions import ValidationError
 from odoo.fields import Command
+
+# Dire Dawa runs on East Africa Time.  Used when the company has no timezone.
+FACTORY_TZ = 'Africa/Addis_Ababa'
+
+
+def factory_tz(env, company=None):
+    """One timezone for every shift calculation, whatever the user's own setting."""
+    company = company or env.company
+    return pytz.timezone(company.partner_id.tz or FACTORY_TZ)
 
 
 class DdfscShift(models.Model):
@@ -10,9 +24,84 @@ class DdfscShift(models.Model):
     name = fields.Char(required=True)
     code = fields.Char(required=True)
     sequence = fields.Integer(default=10)
-    hour_from = fields.Float(string='Start Hour')
-    hour_to = fields.Float(string='End Hour')
+    hour_from = fields.Float(string='Start Hour', help='Factory time, 24-hour clock (06:00 = 6.0).')
+    hour_to = fields.Float(string='End Hour', help='A shift that ends after midnight (22:00-06:00) belongs to the day it starts.')
+    duration = fields.Float(string='Hours', compute='_compute_duration')
+    crosses_midnight = fields.Boolean(compute='_compute_duration')
     active = fields.Boolean(default=True)
+
+    _code_unique = models.Constraint('unique(code)', 'Each shift needs its own code.')
+
+    @api.depends('hour_from', 'hour_to')
+    def _compute_duration(self):
+        for shift in self:
+            shift.crosses_midnight = shift.hour_to <= shift.hour_from
+            shift.duration = (shift.hour_to - shift.hour_from) % 24 or 24.0
+
+    @api.depends('name', 'hour_from', 'hour_to')
+    def _compute_display_name(self):
+        for shift in self:
+            shift.display_name = '%s (%s-%s)' % (
+                shift.name, self._format_hour(shift.hour_from), self._format_hour(shift.hour_to))
+
+    @staticmethod
+    def _format_hour(value):
+        value = value % 24
+        return '%02d:%02d' % (int(value), round((value - int(value)) * 60) % 60)
+
+    @api.constrains('hour_from', 'hour_to', 'active')
+    def _check_hours(self):
+        for shift in self:
+            if not (0 <= shift.hour_from < 24 and 0 <= shift.hour_to <= 24):
+                raise ValidationError(_('Shift hours must be between 00:00 and 24:00.'))
+            if shift.hour_from == shift.hour_to % 24 and shift.duration != 24:
+                raise ValidationError(_('A shift cannot start and end at the same time.'))
+        # Shifts may not overlap: a moment of the day belongs to exactly one shift.
+        active = self.search([('active', '=', True)])
+        minutes = {}
+        for shift in active:
+            start = int(round(shift.hour_from * 60))
+            for offset in range(int(round(shift.duration * 60))):
+                minute = (start + offset) % 1440
+                if minute in minutes:
+                    raise ValidationError(_(
+                        '%(a)s and %(b)s overlap. Each moment of the day must belong to one shift.',
+                        a=minutes[minute].display_name, b=shift.display_name))
+                minutes[minute] = shift
+
+    def _contains_hour(self, hour):
+        self.ensure_one()
+        if self.crosses_midnight:
+            return hour >= self.hour_from or hour < self.hour_to
+        return self.hour_from <= hour < self.hour_to
+
+    @api.model
+    def _shift_at(self, moment=None, company=None):
+        """Return (shift, production_day) for a UTC moment, in factory time."""
+        moment = moment or fields.Datetime.now()
+        local = pytz.utc.localize(moment).astimezone(factory_tz(self.env, company))
+        hour = local.hour + local.minute / 60.0
+        for shift in self.search([]):
+            if shift._contains_hour(hour):
+                day = local.date()
+                if shift.crosses_midnight and hour < shift.hour_to:
+                    day -= timedelta(days=1)
+                return shift, day
+        return self.browse(), local.date()
+
+    def _start_on(self, production_day, company=None):
+        """UTC start of this shift on a production day."""
+        self.ensure_one()
+        tz = factory_tz(self.env, company)
+        hours = int(self.hour_from)
+        minutes = int(round((self.hour_from - hours) * 60))
+        local = tz.localize(datetime.combine(production_day, time(hours % 24, minutes % 60)))
+        return local.astimezone(pytz.utc).replace(tzinfo=None)
+
+    def _window_on(self, production_day, company=None):
+        self.ensure_one()
+        start = self._start_on(production_day, company)
+        return start, start + timedelta(hours=self.duration)
 
     @api.model
     def _load_starter_bom(self):
@@ -81,24 +170,25 @@ class DdfscShift(models.Model):
         return location
 
     def _sync_bom(self, code, product_xmlid, qty, uom_xmlid, lines, byproducts=None):
-        """Create or update a BoM without clearing lines (keeps MO move links stable)."""
+        """Create a starter recipe once.  Never overwrite it afterwards.
+
+        Recipes belong to the factory once installed: production managers tune
+        quantities in the Bill of Materials screen and a module upgrade must not
+        silently put the starter figures back.  Archived recipes stay archived.
+        """
         product = self.env.ref(product_xmlid)
-        vals = {
+        bom = self.env['mrp.bom'].with_context(active_test=False).search([('code', '=', code)], limit=1)
+        if bom:
+            return bom
+        return self.env['mrp.bom'].create({
             'product_tmpl_id': product.id,
             'product_qty': qty,
             'product_uom_id': self.env.ref(uom_xmlid).id,
             'code': code,
             'type': 'normal',
-        }
-        bom = self.env['mrp.bom'].search([('code', '=', code)], limit=1)
-        if not bom:
-            vals['bom_line_ids'] = [Command.create(line) for line in lines]
-            vals['byproduct_ids'] = [Command.create(line) for line in (byproducts or [])]
-            return self.env['mrp.bom'].create(vals)
-        bom.write(vals)
-        self._sync_bom_lines(bom, 'bom_line_ids', lines)
-        self._sync_bom_lines(bom, 'byproduct_ids', byproducts or [])
-        return bom
+            'bom_line_ids': [Command.create(line) for line in lines],
+            'byproduct_ids': [Command.create(line) for line in (byproducts or [])],
+        })
 
     def _sync_bom_lines(self, bom, field_name, lines):
         existing = {line.product_id.id: line for line in bom[field_name]}
@@ -258,9 +348,9 @@ class DdfscShift(models.Model):
         self._ensure_product('product_flour_lcp', 'Long Cut Pasta Flour', quintal)
         self._ensure_product('product_rf', 'By-product RF', quintal)
         self._ensure_product('product_rc', 'By-product RC', quintal)
-        self._ensure_product('product_pasta_breakage', 'Pasta Breakage (Saleable)', unit)
-        self._ensure_product('product_bread_breakage', 'Bread Breakage (Saleable)', unit)
-        self._ensure_product('product_biscuit_breakage', 'Biscuit Breakage (Saleable)', unit)
+        self._ensure_product('product_pasta_breakage', 'Pasta Breakage (Saleable)', kg)
+        self._ensure_product('product_bread_breakage', 'Bread Breakage (Saleable)', kg)
+        self._ensure_product('product_biscuit_breakage', 'Biscuit Breakage (Saleable)', kg)
         self.env.ref('ddfsc_manufacturing.product_flour_scp').ddfsc_is_flour = True
         self.env.ref('ddfsc_manufacturing.product_flour_lcp').ddfsc_is_flour = True
         byproducts = {
@@ -277,6 +367,14 @@ class DdfscShift(models.Model):
                 'sale_ok': True,
                 'purchase_ok': False,
             })
+        # Breakage is weighed, not counted.  Switch the unit to kg only while
+        # the product has never moved, so existing stock is never re-valued.
+        kg_uom = self.env.ref('uom.product_uom_kgm')
+        for xmlid in ('product_pasta_breakage', 'product_bread_breakage', 'product_biscuit_breakage'):
+            template = self.env.ref('ddfsc_manufacturing.%s' % xmlid)
+            if template.uom_id != kg_uom and not self.env['stock.move'].search_count(
+                    [('product_id', 'in', template.product_variant_ids.ids)], limit=1):
+                template.write({'uom_id': kg_uom.id})
         self._ensure_product('product_defense', 'Defense Biscuit 160x4', unit)
         self._ensure_product('product_carton_160', 'Carton 160x4', unit)
         self._ensure_product('product_defense_film', 'Defense Film', kg)
@@ -412,7 +510,7 @@ class DdfscShift(models.Model):
 
     @api.model
     def _sync_quality_control(self):
-        """Install editable demo QC plans and require lots at release checkpoints."""
+        """Require lots on QC-controlled products. Acceptance plans come from ddfsc_quality (factory standards)."""
         groups = {
             'incoming_wheat': ['product_wheat'],
             'flour_release': ['product_flour_g1', 'product_flour_g2', 'product_flour_scp', 'product_flour_lcp'],
@@ -429,53 +527,19 @@ class DdfscShift(models.Model):
                     if template.tracking != 'lot':
                         template.write({'tracking': 'lot'})
             products[checkpoint] = variants
-        definitions = {
-            'incoming_wheat': ('Incoming Wheat - DEMO limits', [('moisture', False, 0, True, 13.5, '%'), ('impurity', False, 0, True, 2.0, '%'), ('hlw', True, 76.0, False, 0, 'kg/hl'), ('gluten', True, 24.0, False, 0, '%')]),
-            'flour_release': ('Produced Flour - DEMO limits', [('moisture', False, 0, True, 14.0, '%'), ('gluten', True, 24.0, False, 0, '%')]),
-            'finished_goods': ('Finished Products - DEMO limits', [('organoleptic', True, 1.0, True, 1.0, 'Enter 1 when appearance, smell and taste pass'), ('weight', True, 0.98, True, 1.02, 'Actual / labelled weight ratio')]),
-        }
-        for sequence, (checkpoint, (name, lines)) in enumerate(definitions.items(), 1):
-            plan = self.env['ddfsc.quality.plan'].search([('checkpoint', '=', checkpoint)], limit=1)
-            vals = {'name': name, 'checkpoint': checkpoint, 'sequence': sequence * 10,
-                    'product_ids': [Command.set(products[checkpoint].ids)], 'demo_specification': True}
-            if plan:
-                plan.write(vals)
-            else:
-                plan = self.env['ddfsc.quality.plan'].create(vals)
-            existing = {line.check_type: line for line in plan.line_ids}
-            for index, (check_type, use_min, minimum, use_max, maximum, note) in enumerate(lines, 1):
-                line_vals = {'sequence': index * 10, 'check_type': check_type,
-                    'apply_min': use_min, 'standard_min': minimum, 'apply_max': use_max,
-                    'standard_max': maximum, 'note': note}
-                if check_type in existing:
-                    existing[check_type].write(line_vals)
-                else:
-                    plan.line_ids = [Command.create(line_vals)]
-            # Prepared checks keep their measurements, while specifications follow the plan.
-            for check in self.env['ddfsc.quality.check'].search([
-                ('plan_line_id.plan_id', '=', plan.id),
-            ]):
-                line = check.plan_line_id
-                check.write({
-                    'check_type': line.check_type,
-                    'apply_min': line.apply_min,
-                    'standard_min': line.standard_min,
-                    'apply_max': line.apply_max,
-                    'standard_max': line.standard_max,
-                    'note': line.note,
-                })
-        self._migrate_untracked_quality_stock()
+        tracked = self.env['product.product'].concat(*products.values())
+        self._migrate_untracked_quality_stock(tracked)
         quality_products = self.env['ddfsc.quality.plan'].search([]).mapped('product_ids')
         lots_without_tests = self.env['stock.lot'].search([
             ('product_id', 'in', quality_products.ids), ('quality_check_ids', '=', False),
             ('name', 'not like', 'LEGACY-OPENING-'),
         ])
-        lots_without_tests.action_prepare_quality_checks()
+        lots_without_tests.filtered('quality_plan_id').action_prepare_quality_checks()
 
     @api.model
-    def _migrate_untracked_quality_stock(self):
+    def _migrate_untracked_quality_stock(self, products=None):
         """Keep stock that predates mandatory tracking usable and auditable."""
-        products = self.env['ddfsc.quality.plan'].search([]).mapped('product_ids')
+        products = (products or self.env['product.product']) | self.env['ddfsc.quality.plan'].search([]).mapped('product_ids')
         quants = self.env['stock.quant'].search([
             ('product_id', 'in', products.ids), ('location_id.usage', '=', 'internal'),
             ('quantity', '!=', 0), ('lot_id', '=', False),
@@ -511,17 +575,40 @@ class DdfscShift(models.Model):
         self._retire_manufacturing_transfer_menus()
 
     def _sync_warehouse_defaults(self):
-        """Keep standard receipts and deliveries aligned with the plant stores."""
-        store = self.env.ref('ddfsc_manufacturing.loc_wheat_dock')
+        """Route receipts by product instead of sending everything to one place.
+
+        Wheat lands in Wheat Receiving for the incoming QC (then QC Release to
+        General Store); every other purchased material lands in General Store.
+        Receipts target the warehouse stock and putaway rules pick the store,
+        so one Receipts operation serves both.
+        """
+        dock = self.env.ref('ddfsc_manufacturing.loc_wheat_dock')
+        store = self.env.ref('ddfsc_manufacturing.loc_store')
         finished_goods = self.env.ref('ddfsc_manufacturing.loc_finished')
+        wheat = self.env.ref('ddfsc_manufacturing.product_wheat').product_variant_id
+        Putaway = self.env['stock.putaway.rule'].with_context(active_test=False)
         warehouses = self.env['stock.warehouse'].search([
             ('company_id', '=', self.env.company.id),
         ])
         for warehouse in warehouses:
-            if warehouse.in_type_id:
-                warehouse.in_type_id.default_location_dest_id = store
+            stock = warehouse.lot_stock_id
+            if warehouse.in_type_id and warehouse.in_type_id.default_location_dest_id in (dock, store):
+                warehouse.in_type_id.default_location_dest_id = stock
             if warehouse.out_type_id:
                 warehouse.out_type_id.default_location_src_id = finished_goods
+            if dock.location_id == stock and not Putaway.search_count([
+                    ('location_in_id', '=', stock.id), ('product_id', '=', wheat.id)]):
+                Putaway.create({'location_in_id': stock.id, 'location_out_id': dock.id,
+                                'product_id': wheat.id, 'category_id': False,
+                                'company_id': warehouse.company_id.id, 'sequence': 1})
+            # A rule with no product and no category matches every product;
+            # Odoo always prefers the product-specific wheat rule above it.
+            if store.location_id == stock and not Putaway.search_count([
+                    ('location_in_id', '=', stock.id), ('product_id', '=', False),
+                    ('category_id', '=', False)]):
+                Putaway.create({'location_in_id': stock.id, 'location_out_id': store.id,
+                                'product_id': False, 'category_id': False,
+                                'company_id': warehouse.company_id.id, 'sequence': 50})
 
     def _ensure_request_picking_types(self):
         """Store / FG request pickings need their own operation types to show on Overview."""
@@ -535,12 +622,14 @@ class DdfscShift(models.Model):
             'fg_receiving': ('loc_flour', 'loc_finished'),
             'byproduct_return': ('loc_byproduct', 'loc_store'),
             'qc_release': ('loc_wheat_dock', 'loc_store'),
+            'material_return': ('loc_biscuit', 'loc_store'),
         }
         for xmlid, name, prefix, doc_type, sequence in (
             ('picking_type_store_requisition', 'Store Transfer Request', 'MTR', 'store_requisition', 35),
             ('picking_type_fg_receiving', 'FG Transfer Request', 'FGR', 'fg_receiving', 36),
             ('picking_type_byproduct_return', 'By-product Return', 'BPR', 'byproduct_return', 37),
             ('picking_type_qc_release', 'QC Release to General Store', 'QCR', 'qc_release', 38),
+            ('picking_type_material_return', 'Material Return to Store', 'MRN', 'material_return', 39),
         ):
             picking_type = self.env.ref('ddfsc_manufacturing.%s' % xmlid, raise_if_not_found=False)
             vals = {
@@ -634,6 +723,7 @@ class DdfscShift(models.Model):
     def _line_request(self, code, name, flour_qtl):
         line = self.env['mrp.workcenter'].search([('code', '=', code)], limit=1)
         if not line:
-            line = self.env['mrp.workcenter'].create({'name': name, 'code': code})
-        line.ddfsc_flour_request_qtl = flour_qtl
+            line = self.env['mrp.workcenter'].create({
+                'name': name, 'code': code, 'ddfsc_flour_request_qtl': flour_qtl,
+            })
         return line

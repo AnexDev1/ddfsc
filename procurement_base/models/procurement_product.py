@@ -377,5 +377,7 @@ class StockPicking(models.Model):
             if picking.state == 'done':
                 products = picking.move_ids.mapped('product_id.product_tmpl_id')
                 if products:
-                    products._compute_amc_values()
+                    # AMC is a system statistic: refresh it even when the
+                    # validating store keeper cannot edit products.
+                    products.sudo()._compute_amc_values()
         return res

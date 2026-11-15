@@ -11,6 +11,7 @@ class TestLocalPurchase(TransactionCase):
         
         self.product = self.Product.create({
             'name': 'Test Purchase Product',
+            'default_code': 'TEST-LP-001',
             'type': 'consu'
         })
 

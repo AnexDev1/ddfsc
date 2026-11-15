@@ -48,3 +48,28 @@ class TestSaleableByproducts(TransactionCase):
 
         self.assertEqual(production.ddfsc_fg_request_id, request)
         self.assertEqual(production.ddfsc_fg_request_state, 'draft')
+
+    def test_consumption_variance_keeps_bom_plan_when_actual_changes(self):
+        flour = self.env.ref('ddfsc_manufacturing.product_flour_lcp').product_variant_id
+        mill = self.env.ref('ddfsc_manufacturing.wc_mill')
+        bom = self.env['mrp.bom'].search([('code', '=', 'MILL-LCP')], limit=1)
+        production = self.env['mrp.production'].create({
+            'product_id': flour.id,
+            'product_uom_id': flour.uom_id.id,
+            'product_qty': 1.0,
+            'bom_id': bom.id,
+            'ddfsc_line_id': mill.id,
+        })
+
+        production.action_confirm()
+        wheat_move = production.move_raw_ids.filtered(
+            lambda move: move.product_id == self.env.ref('ddfsc_manufacturing.product_wheat').product_variant_id
+        )
+        wheat_move.quantity = 1.40
+        production._ddfsc_sync_variance_lines()
+        variance = production.ddfsc_variance_line_ids.filtered(lambda line: line.move_id == wheat_move)
+
+        self.assertEqual(production.ddfsc_planned_output_qty, 1.0)
+        self.assertEqual(variance.planned_qty, 1.25)
+        self.assertEqual(variance.actual_qty, 1.40)
+        self.assertAlmostEqual(variance.variance_qty, 0.15, places=2)

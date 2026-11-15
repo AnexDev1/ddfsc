@@ -21,7 +21,7 @@
         <field name="name">ddfsc.quality.plan.list</field>
         <field name="model">ddfsc.quality.plan</field>
         <field name="arch" type="xml">
-            <list><field name="sequence" widget="handle"/><field name="name"/><field name="checkpoint"/><field name="product_ids" widget="many2many_tags"/><field name="demo_specification"/><field name="active"/></list>
+            <list><field name="sequence" widget="handle"/><field name="name"/><field name="checkpoint"/><field name="product_ids" widget="many2many_tags"/><field name="wheat_type" optional="show"/><field name="demo_specification"/><field name="active"/></list>
         </field>
     </record>
     <record id="ddfsc_quality_plan_view_form" model="ir.ui.view">
@@ -34,6 +34,7 @@
                         <field name="name"/>
                         <field name="checkpoint"/>
                         <field name="product_ids" widget="many2many_tags"/>
+                        <field name="wheat_type" invisible="checkpoint != 'incoming_wheat'"/>
                         <field name="demo_specification" string="Demo values — factory approval required"/>
                         <field name="active"/>
                     </group>

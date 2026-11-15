@@ -13,6 +13,8 @@ class DdfscQcInspection(models.Model):
     product_id = fields.Many2one(related="lot_id.product_id", store=True, readonly=True)
     plan_id = fields.Many2one("ddfsc.quality.plan", required=True, ondelete="restrict", readonly=True)
     checkpoint = fields.Selection(related="plan_id.checkpoint", store=True, readonly=True)
+    wheat_type = fields.Selection(related="lot_id.ddfsc_wheat_type", readonly=True)
+    wheat_code = fields.Char(related="lot_id.ddfsc_wheat_code", readonly=True)
     production_id = fields.Many2one("mrp.production", string="Manufacturing Order", readonly=True)
     receipt_id = fields.Many2one("stock.picking", string="Source Receipt", readonly=True)
     supplier_id = fields.Many2one("res.partner", string="Supplier", readonly=True)
@@ -284,10 +286,32 @@ class StockLot(models.Model):
     def action_prepare_quality_checks(self):
         return self._ensure_qc_inspection()
 
+    def _ddfsc_after_wheat_type_change(self):
+        """Swap an untouched inspection for one on the new wheat type's plan.
+
+        Once results are entered or submitted, the wheat type is part of the
+        record: changing it then needs a reinspection, not a silent swap.
+        """
+        for lot in self.sudo():
+            inspection = lot.active_qc_inspection_id
+            if not inspection or inspection.plan_id == lot.quality_plan_id:
+                continue
+            if inspection.state != "draft" or any(inspection.line_ids.mapped("is_measured")):
+                raise UserError(_(
+                    "Inspection %s already has results for the previous wheat type. "
+                    "Start a reinspection instead of changing the wheat type.") % inspection.name)
+            inspection.write({"state": "superseded"})
+            inspection.message_post(body=_("Superseded: the lot's wheat type changed, so a different acceptance plan applies."))
+            lot.active_qc_inspection_id = False
+        return super()._ddfsc_after_wheat_type_change()
+
     def _ensure_qc_inspection(self):
-        for lot in self:
+        # Lots are created by production and receiving staff, who must not need
+        # QC rights: the inspection document is opened by the system and the
+        # laboratory fills it in under its own access rights.
+        for lot in self.sudo():
             if lot.quality_plan_id and not lot.active_qc_inspection_id:
-                self.env["ddfsc.qc.inspection"].create_for_lot(lot)
+                self.env["ddfsc.qc.inspection"].sudo().create_for_lot(lot)
         return True
 
     def action_open_qc_inspection(self):

@@ -1,6 +1,8 @@
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
+from .ddfsc_quality_check import WHEAT_TYPES
+
 class StockLot(models.Model):
     _inherit = 'stock.lot'
     ddfsc_quality_state = fields.Selection([('pending', 'Pending'), ('pass', 'Passed'), ('hold', 'On Hold'), ('released', 'Released by Exception'), ('rejected', 'Rejected')], string='Quality Status', default='pending', tracking=True, copy=False)
@@ -13,6 +15,15 @@ class StockLot(models.Model):
     ddfsc_wheat_use = fields.Selection([('pasta', 'Pasta'), ('macaroni', 'Macaroni'), ('bread', 'Bread'), ('biscuit', 'Biscuit')], string='Intended Use', tracking=True)
     ddfsc_gm_approved = fields.Boolean(string='General Manager Approved', copy=False, tracking=True)
     ddfsc_hectoliter = fields.Float(string='Hectoliter Weight', tracking=True)
+    ddfsc_is_wheat = fields.Boolean(compute='_compute_ddfsc_is_wheat')
+    ddfsc_wheat_type = fields.Selection(
+        WHEAT_TYPES, string='Wheat Type', tracking=True,
+        help='Selects the receiving standard (OF/QC/015) used for this wheat lot.',
+    )
+    ddfsc_wheat_code = fields.Char(
+        string='Wheat Code', tracking=True,
+        help='Code used on the plant forms, for example IRS, HBL, HML, HP or IHM.',
+    )
     ddfsc_wheat_receiving_qty = fields.Float(
         string='Quantity in Wheat Receiving', compute='_compute_ddfsc_wheat_receiving_qty',
         digits='Product Unit of Measure',
@@ -47,18 +58,43 @@ class StockLot(models.Model):
             ]).mapped('quantity')) if receiving else 0.0
 
     @api.depends('product_id')
+    def _compute_ddfsc_is_wheat(self):
+        wheat = self.env.ref('ddfsc_manufacturing.product_wheat', raise_if_not_found=False)
+        for lot in self:
+            lot.ddfsc_is_wheat = bool(wheat) and lot.product_id.product_tmpl_id == wheat
+
+    def write(self, vals):
+        result = super().write(vals)
+        if 'ddfsc_wheat_type' in vals:
+            self._ddfsc_after_wheat_type_change()
+        return result
+
+    def _ddfsc_after_wheat_type_change(self):
+        """The wheat type picks the plan, so open the tests of the new plan."""
+        self.filtered('quality_plan_id').action_prepare_quality_checks()
+
+    @api.depends('product_id', 'ddfsc_wheat_type')
     def _compute_quality_plan(self):
         today = fields.Date.today()
         domain = [('active', '=', True)]
-        if 'approval_state' in self.env['ddfsc.quality.plan']._fields:
-            domain += [
-                ('approval_state', '=', 'approved'),
-                '|', ('effective_from', '=', False), ('effective_from', '<=', today),
-                '|', ('effective_to', '=', False), ('effective_to', '>=', today),
-            ]
-        plans = self.env['ddfsc.quality.plan'].search(domain, order='effective_from desc, id desc')
+        # Plan governance fields come from ddfsc_quality; older installs (or an
+        # upgrade still loading modules) may have only some of them.
+        plan_fields = self.env['ddfsc.quality.plan']._fields
+        if 'approval_state' in plan_fields:
+            domain.append(('approval_state', '=', 'approved'))
+        if 'effective_from' in plan_fields:
+            domain += ['|', ('effective_from', '=', False), ('effective_from', '<=', today)]
+        if 'effective_to' in plan_fields:
+            domain += ['|', ('effective_to', '=', False), ('effective_to', '>=', today)]
+        order = 'effective_from desc, id desc' if 'effective_from' in plan_fields else 'sequence, id'
+        plans = self.env['ddfsc.quality.plan'].search(domain, order=order)
         for lot in self:
-            lot.quality_plan_id = plans.filtered(lambda plan: lot.product_id in plan.product_ids)[:1]
+            candidates = plans.filtered(
+                lambda plan: lot.product_id in plan.product_ids
+                and (not plan.wheat_type or plan.wheat_type == lot.ddfsc_wheat_type)
+            )
+            # A plan written for this wheat type wins over a general one.
+            lot.quality_plan_id = (candidates.filtered('wheat_type') or candidates)[:1]
 
     def action_prepare_quality_checks(self):
         for lot in self:

@@ -38,6 +38,8 @@
                             <field name="product_id" readonly="1"/>
                             <field name="plan_id" readonly="1"/>
                             <field name="checkpoint" readonly="1"/>
+                            <field name="wheat_type" invisible="checkpoint != 'incoming_wheat'"/>
+                            <field name="wheat_code" invisible="checkpoint != 'incoming_wheat' or not wheat_code"/>
                             <field name="uom_id" invisible="1"/>
                         </group>
                         <group>

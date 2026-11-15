@@ -1,7 +1,15 @@
 from odoo import _, api, fields, models
 from odoo.exceptions import ValidationError
 
-CHECK_TYPES = [('moisture', 'Moisture %'), ('gluten', 'Wet gluten %'), ('granulation', 'Granulation %'), ('hlw', 'Hectoliter weight kg/hl'), ('impurity', 'Impurity %'), ('germination', 'Germination %'), ('paddness', 'Paddness'), ('weight', 'Packing weight'), ('organoleptic', 'Organoleptic score'), ('conditioning', 'Conditioning'), ('magnetic', 'Magnetic separator'), ('dryer_moisture', 'Dryer moisture %'), ('cooking', 'Pasta cooking score'), ('chlorine', 'Chlorine residue'), ('wheat_receiving', 'Wheat at receiving'), ('wheat_transfer', 'Wheat at transfer'), ('wheat_warehouse', 'Wheat at warehouse'), ('other', 'Other')]
+CHECK_TYPES = [('moisture', 'Moisture %'), ('gluten', 'Wet gluten %'), ('granulation', 'Granulation %'), ('hlw', 'Hectoliter weight kg/hl'), ('impurity', 'Impurity %'), ('germination', 'Germination %'), ('paddness', 'Paddness'), ('weight', 'Packing weight'), ('organoleptic', 'Organoleptic score'), ('conditioning', 'Conditioning'), ('magnetic', 'Magnetic separator'), ('dryer_moisture', 'Dryer moisture %'), ('cooking', 'Pasta cooking score'), ('chlorine', 'Chlorine residue'), ('wheat_receiving', 'Wheat at receiving'), ('wheat_transfer', 'Wheat at transfer'), ('wheat_warehouse', 'Wheat at warehouse'), ('ash', 'Ash %'), ('protein', 'Protein %'), ('hardness', 'Hardness (hard kernels) %'), ('dry_weight', 'Dry weight per piece (g)'), ('other', 'Other')]
+
+# Wheat standards on OF/QC/015 differ by wheat category, not by product: all
+# wheat is one stock product, so the category lives on the lot and the plan.
+WHEAT_TYPES = [
+    ('imported_hard', 'Imported Hard Wheat'),
+    ('local_white_hard', 'Local White Hard Wheat'),
+    ('local_red_mixed', 'Local Red Mixed Wheat'),
+]
 
 class DdfscQualityPlan(models.Model):
     _name = 'ddfsc.quality.plan'
@@ -12,6 +20,10 @@ class DdfscQualityPlan(models.Model):
     active = fields.Boolean(default=True)
     checkpoint = fields.Selection([('incoming_wheat', 'Incoming Wheat'), ('flour_release', 'Flour Release'), ('finished_goods', 'Finished Goods Release')], required=True)
     product_ids = fields.Many2many('product.product', string='Products', required=True)
+    wheat_type = fields.Selection(
+        WHEAT_TYPES, string='Wheat Type',
+        help='Only lots of this wheat type use this plan. Leave empty for a plan that applies to every lot of the products.',
+    )
     line_ids = fields.One2many('ddfsc.quality.plan.line', 'plan_id', string='Required Tests')
     demo_specification = fields.Boolean(string='Demo Specification', default=True, help='Example limits requiring factory quality-team approval before production use.')
 

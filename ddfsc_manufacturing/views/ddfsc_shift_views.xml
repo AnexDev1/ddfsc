@@ -4,12 +4,15 @@
         <field name="name">ddfsc.shift.list</field>
         <field name="model">ddfsc.shift</field>
         <field name="arch" type="xml">
-            <list>
+            <list editable="bottom">
                 <field name="sequence" widget="handle"/>
                 <field name="name"/>
                 <field name="code"/>
                 <field name="hour_from" widget="float_time"/>
                 <field name="hour_to" widget="float_time"/>
+                <field name="duration" widget="float_time"/>
+                <field name="crosses_midnight" string="Ends Next Day"/>
+                <field name="active" column_invisible="1"/>
             </list>
         </field>
     </record>
@@ -17,7 +20,11 @@
     <record id="ddfsc_shift_action" model="ir.actions.act_window">
         <field name="name">Shifts</field>
         <field name="res_model">ddfsc.shift</field>
-        <field name="view_mode">list,form</field>
+        <field name="view_mode">list</field>
+        <field name="help" type="html">
+            <p>The factory runs three 8-hour shifts. Times are factory time (East Africa Time).
+               A shift ending after midnight belongs to the day it starts.</p>
+        </field>
     </record>
 
     <menuitem id="menu_ddfsc_shift"

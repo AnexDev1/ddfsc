@@ -25,4 +25,16 @@
             </xpath>
         </field>
     </record>
+
+    <record id="mrp_workcenter_view_ddfsc" model="ir.ui.view">
+        <field name="name">mrp.workcenter.form.ddfsc</field>
+        <field name="model">mrp.workcenter</field>
+        <field name="inherit_id" ref="mrp.mrp_workcenter_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='code']" position="after">
+                <field name="ddfsc_flour_request_qtl"/>
+                <field name="ddfsc_variance_tolerance"/>
+            </xpath>
+        </field>
+    </record>
 </odoo>
