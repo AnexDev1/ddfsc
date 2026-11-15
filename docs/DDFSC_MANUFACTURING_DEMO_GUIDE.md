@@ -92,7 +92,7 @@ New Zebib → Biscuit Store, …).
 | Document | Created by | Approved by | Executed by |
 |---|---|---|---|
 | Store / FG / by-product / material-return request | Department operator | Operation Manager ("Approve and Create Transfer") | Store keeper validates the transfer |
-| Production order figures | Department operator ("Submit for Approval") | Operation Manager ("Approve") | Operator "Mark as Done" |
+| Production order figures | Department operator ("Submit for Approval") | Operation Manager ("Approve") | Operator "Produce All" (closes the order) |
 | QC inspection | Assistant QC ("Submit for QC Approval") | QC head ("Approve / Reject Results") | — |
 | Release by exception | — | QC Manager only (reason required) | — |
 | QC plan | QC Manager | QC Manager ("Approve Plan") | — |
@@ -172,7 +172,7 @@ Buttons (top bar), in the order you meet them:
    Posts saleable breakage to the department By-products Temp and records losses in the chatter.
 5. **Approve / Refuse** (Operation Manager). Refuse needs a note; the operator fixes and resubmits
    (*Reset to Draft* appears after a refusal).
-6. **Mark as Done** — only when approved. If any figure changed after approval (a component quantity,
+6. **Produce All** (Odoo's name for closing the order) — only when approved. If any figure changed after approval (a component quantity,
    breakage, sweepings, disposed, quantity produced) the approval is **withdrawn** and listed in the
    chatter; the manager approves again.
 7. **Open QC** — the QC inspection of the produced lot.
@@ -181,6 +181,17 @@ Buttons (top bar), in the order you meet them:
 9. **View Finished Goods Transfer**, stat buttons *Transfers* and *QC lots*.
 
 Workflow badge: Draft → Confirmed → Waiting Approval → Approved → Done (Needs Changes after refusal).
+
+**When are sweepings, breakage and the other shift figures entered?** At the **end of the shift**,
+exactly like the paper shift report — not before production. The order is created and confirmed
+at the start of the shift (that is the plan and the ingredient request); the line then runs; at
+shift end the supervisor weighs the sweepings, the saleable breakage and any disposed dough, notes
+the stoppages, and enters them together with the quantity produced and the actual consumption.
+Only then: *Submit for Approval* → manager *Approve* → **Produce All**. "Produce All" is not "start
+producing": it is the **last click that closes the order** (stock moves are posted, the lot goes to
+QC), which is why the shift fields lock after it. Clicking it before approval is refused
+("Approve these documents before continuing"). If a figure changes after approval, the approval is
+withdrawn and the manager approves again.
 
 **Shift Report tab** — everything the shift supervisor writes on paper:
 - *Flour requested per line* (standard request size), **Batches** (biscuit: flour used ÷ 1.5 qtl).
@@ -300,7 +311,7 @@ by-product store.*
     (100 − final moisture));
   - **EP** (on products) = flour ÷ (flour + bran / by-products).
   The Department Production Report prints the three rates for the period.
-- Submit for Approval → (opm) Approve → Mark as Done.
+- Submit for Approval → (opm) Approve → Produce All.
 - Talking point: their extraction sheet showed one batch at **103 %** (typing error) and #DIV/0!
   cells; here the figures come from the stock moves and the gap is visible immediately.
 
@@ -336,7 +347,7 @@ of 500 g (assumes 0 % loss — open item to confirm).
 3. Produce; Shift Report: breakage (kg, saleable), sweepings, disposed product, **reworked scrap**
    (pasta rework powder) — entering e.g. 15 kg adds *Pasta Breakage* as a component requested from
    the store; stoppages (die, packing machine → Log maintenance).
-4. Submit → approve → Mark done. Breakage goes to *Pasta By-products Temp*.
+4. Submit (breakage goes to *Pasta By-products Temp* now) → approve → Produce All.
 5. QC (OF/QC/009 + 010): weight 495–505 g per pack, **4 samples, every one within limits**
    (fresh install; in `ddfsc` the approved plans have 1 sample — show *Create New Version*, set
    Samples 4 / Every sample, approve, retire old); moisture at packing ≤ 12 (long cut, die 96057)
@@ -369,7 +380,7 @@ Products: **New Zebib 78×4** (30 cartons per qtl of flour recipe; 312 pcs × 11
 3. **Variance**: change sugar actual to 15.5 kg/qtl → submit refused with the list of materials
    outside 2 % → write the explanation → submit. Talking point: July actuals vs recipe — sugar
    −16 %, shortening +18 %, citric −56 %, film −21 % (see Part 9 / item 14).
-4. Approve → Done → breakage posted to *Biscuit By-products Temp* → By-product transfer → By-product
+4. Submit (breakage posted to *Biscuit By-products Temp*) → approve → Produce All → By-product transfer → By-product
    Store; unused sugar/film at month end → **Return Materials to Store** (reason "month-end
    balance") → General Store.
 5. QC (OF/QC/001): New Zebib dry weight 10.0–10.5 g/piece (5 samples, average) and moisture ≤ 8 %;
