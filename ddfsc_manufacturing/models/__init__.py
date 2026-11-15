@@ -20,3 +20,4 @@ from . import mill
 from . import store_structure
 from . import stock_reports
 from . import maintenance_request
+from . import loss_correction

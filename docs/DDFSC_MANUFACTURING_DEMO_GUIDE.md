@@ -193,6 +193,12 @@ QC), which is why the shift fields lock after it. Clicking it before approval is
 ("Approve these documents before continuing"). If a figure changes after approval, the approval is
 withdrawn and the manager approves again.
 
+**Correcting sweepings after the order is closed.** If the sweepings or disposed dough are weighed
+late or were wrong, the Operation Manager opens the closed order and clicks **Correct Losses**,
+enters the new kg and a reason. It is allowed only until QC decides on the produced lot or the
+output is sent to finished goods; the old → new values and the reason go to the chatter.
+Saleable breakage cannot be corrected this way — it is stock already posted to the by-products area.
+
 **Shift Report tab** — everything the shift supervisor writes on paper:
 - *Flour requested per line* (standard request size), **Batches** (biscuit: flour used ÷ 1.5 qtl).
 - **Stoppages table**: one line per stop — reason, hours, details. Reasons: Power cut, Fuel shortage,

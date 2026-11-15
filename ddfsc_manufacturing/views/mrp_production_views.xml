@@ -52,6 +52,10 @@
                         invisible="state != 'done' or ddfsc_line_code != 'MILL' or ddfsc_fg_request_state"/>
                 <button name="action_request_finished_goods" type="object" string="Send to Finished Goods" class="btn-primary"
                         invisible="state != 'done' or ddfsc_line_code == 'MILL' or ddfsc_fg_request_state"/>
+                <field name="ddfsc_can_correct_losses" invisible="1"/>
+                <button name="action_ddfsc_correct_losses" type="object" string="Correct Losses"
+                        groups="ddfsc_manufacturing.group_ddfsc_operation_manager"
+                        invisible="not ddfsc_can_correct_losses"/>
                 <button name="action_view_finished_goods_transfer" type="object" string="View Finished Goods Transfer"
                         invisible="state != 'done' or not ddfsc_fg_request_state"/>
                 <button name="action_ddfsc_submit" type="object" string="Submit for Approval" class="btn-primary"
