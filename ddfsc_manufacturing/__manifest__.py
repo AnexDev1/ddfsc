@@ -1,6 +1,6 @@
 {
     'name': 'DDFSC Manufacturing',
-    'version': '19.0.3.5.0',
+    'version': '19.0.3.6.0',
     'category': 'Manufacturing',
     'summary': 'Production, shift reports, quality, and transfer requests',
     'description': """
@@ -32,6 +32,7 @@ when the picking is validated.
         'views/plant_flow_views.xml',
         'views/department_views.xml',
         'views/product_views.xml',
+        'report/plant_vouchers.xml',
     ],
     'installable': True,
     'application': False,
