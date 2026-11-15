@@ -5,3 +5,4 @@ from . import test_material_return
 from . import test_rework
 from . import test_vouchers
 from . import test_downtime
+from . import test_factory_extras

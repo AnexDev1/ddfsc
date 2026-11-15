@@ -19,3 +19,9 @@ access_ddfsc_production_variance_line_manager,ddfsc.production.variance.line.man
 access_ddfsc_store_request_stock_read,ddfsc.store.request.stock.read,model_ddfsc_store_request,stock.group_stock_user,1,0,0,0
 access_ddfsc_store_request_line_stock_read,ddfsc.store.request.line.stock.read,model_ddfsc_store_request_line,stock.group_stock_user,1,0,0,0
 access_ddfsc_production_downtime_user,ddfsc.production.downtime.user,model_ddfsc_production_downtime,mrp.group_mrp_user,1,1,1,1
+access_ddfsc_stock_card_stock,ddfsc.stock.card.stock,model_ddfsc_stock_card,stock.group_stock_user,1,0,0,0
+access_ddfsc_stock_card_mrp,ddfsc.stock.card.mrp,model_ddfsc_stock_card,mrp.group_mrp_user,1,0,0,0
+access_ddfsc_critical_wizard_stock,ddfsc.critical.wizard.stock,model_ddfsc_critical_items_wizard,stock.group_stock_user,1,1,1,1
+access_ddfsc_critical_line_stock,ddfsc.critical.line.stock,model_ddfsc_critical_items_line,stock.group_stock_user,1,1,1,1
+access_ddfsc_production_report_wizard,ddfsc.production.report.wizard,model_ddfsc_production_report_wizard,mrp.group_mrp_user,1,1,1,1
+access_ddfsc_maintenance_spare_user,ddfsc.maintenance.spare.user,model_ddfsc_maintenance_spare,base.group_user,1,1,1,1

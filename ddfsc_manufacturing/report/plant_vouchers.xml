@@ -67,7 +67,7 @@
                         <td style="border: 1px solid #000; padding: 2px;" t-out="line['code']"/>
                         <td style="border: 1px solid #000; padding: 2px;" t-out="line['description']"/>
                         <td style="border: 1px solid #000; padding: 2px; text-align: center;" t-out="line['uom']"/>
-                        <td t-if="v.get('bags')" style="border: 1px solid #000;"/>
+                        <td t-if="v.get('bags')" style="border: 1px solid #000; padding: 2px; text-align: right;" t-out="line.get('bags')"/>
                         <td style="border: 1px solid #000; padding: 2px; text-align: right;" t-out="'%.3f' % line['quantity']"/>
                         <td t-if="v.get('price')" style="border: 1px solid #000; padding: 2px; text-align: right;" t-out="'{:,.2f}'.format(line['price'])"/>
                         <td t-if="v.get('price')" style="border: 1px solid #000; padding: 2px; text-align: right;" t-out="'{:,.2f}'.format(line['total'])"/>

@@ -512,6 +512,8 @@ class DdfscShift(models.Model):
                 line.ddfsc_batch_qtl = 1.5
         self._sync_operations()
         self._sync_quality_control()
+        self._sync_mill_packing()
+        self._sync_store_structure()
 
     @api.model
     def _sync_quality_control(self):

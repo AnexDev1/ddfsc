@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Stock card / bin card -->
+    <record id="ddfsc_stock_card_list" model="ir.ui.view">
+        <field name="name">ddfsc.stock.card.list</field>
+        <field name="model">ddfsc.stock.card</field>
+        <field name="arch" type="xml">
+            <list create="0" edit="0" delete="0" decoration-success="received" decoration-danger="issued">
+                <field name="date"/>
+                <field name="location_id"/>
+                <field name="product_id"/>
+                <field name="reference"/>
+                <field name="counterpart_id"/>
+                <field name="lot_id" optional="hide"/>
+                <field name="received" sum="Received"/>
+                <field name="issued" sum="Issued"/>
+                <field name="balance"/>
+                <field name="uom_id"/>
+            </list>
+        </field>
+    </record>
+    <record id="ddfsc_stock_card_pivot" model="ir.ui.view">
+        <field name="name">ddfsc.stock.card.pivot</field>
+        <field name="model">ddfsc.stock.card</field>
+        <field name="arch" type="xml">
+            <pivot string="Stock Movements">
+                <field name="product_id" type="row"/>
+                <field name="date" interval="month" type="col"/>
+                <field name="received" type="measure"/>
+                <field name="issued" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+    <record id="ddfsc_stock_card_search" model="ir.ui.view">
+        <field name="name">ddfsc.stock.card.search</field>
+        <field name="model">ddfsc.stock.card</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="product_id"/>
+                <field name="location_id"/>
+                <field name="reference"/>
+                <field name="lot_id"/>
+                <filter name="this_month" string="This Month"
+                        domain="[('date', '&gt;=', (context_today() - relativedelta(day=1)).strftime('%Y-%m-%d'))]"/>
+                <filter name="received_only" string="Received" domain="[('received', '&gt;', 0)]"/>
+                <filter name="issued_only" string="Issued" domain="[('issued', '&gt;', 0)]"/>
+                <group>
+                    <filter name="group_location" string="Store / Floor" context="{'group_by': 'location_id'}"/>
+                    <filter name="group_product" string="Item" context="{'group_by': 'product_id'}"/>
+                    <filter name="group_day" string="Day" context="{'group_by': 'date:day'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="action_ddfsc_stock_card" model="ir.actions.act_window">
+        <field name="name">Stock Card (Bin Card)</field>
+        <field name="res_model">ddfsc.stock.card</field>
+        <field name="view_mode">list,pivot</field>
+        <field name="context">{'search_default_group_location': 1, 'search_default_group_product': 1}</field>
+        <field name="help" type="html">
+            <p>Every movement in and out of a store or production floor, with the voucher number and the running balance.</p>
+            <p>Filter on a production floor to see its balance and reconcile store issues against consumption.</p>
+        </field>
+    </record>
+
+    <!-- Weekly critical items -->
+    <record id="ddfsc_critical_items_wizard_form" model="ir.ui.view">
+        <field name="name">ddfsc.critical.items.wizard.form</field>
+        <field name="model">ddfsc.critical.items.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Weekly Report of Critical Items">
+                <group>
+                    <field name="date"/>
+                    <field name="product_ids" widget="many2many_tags"
+                           placeholder="Every ingredient and packing material the recipes use"/>
+                </group>
+                <footer>
+                    <button name="action_compute" type="object" string="Show Report" class="btn-primary"/>
+                    <button special="cancel" string="Cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+    <record id="ddfsc_critical_items_line_list" model="ir.ui.view">
+        <field name="name">ddfsc.critical.items.line.list</field>
+        <field name="model">ddfsc.critical.items.line</field>
+        <field name="arch" type="xml">
+            <list create="0" edit="0" delete="0" decoration-danger="below_limit">
+                <field name="product_id"/>
+                <field name="uom_id"/>
+                <field name="store_qty"/>
+                <field name="floor_qty"/>
+                <field name="total_qty"/>
+                <field name="monthly_consumption"/>
+                <field name="months_cover" digits="[16, 1]"/>
+                <field name="hold_limit"/>
+                <field name="on_order"/>
+                <field name="below_limit"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_ddfsc_critical_items" model="ir.actions.act_window">
+        <field name="name">Weekly Critical Items</field>
+        <field name="res_model">ddfsc.critical.items.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <!-- Department production report -->
+    <record id="ddfsc_production_report_wizard_form" model="ir.ui.view">
+        <field name="name">ddfsc.production.report.wizard.form</field>
+        <field name="model">ddfsc.production.report.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Department Production Report">
+                <group>
+                    <field name="department"/>
+                    <field name="date_from"/>
+                    <field name="date_to"/>
+                </group>
+                <p class="text-muted">One day gives the daily report; a whole month gives the monthly report.</p>
+                <footer>
+                    <button name="action_print" type="object" string="Print" class="btn-primary"/>
+                    <button special="cancel" string="Cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+    <record id="action_ddfsc_production_report" model="ir.actions.act_window">
+        <field name="name">Department Production Report</field>
+        <field name="res_model">ddfsc.production.report.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <template id="report_department_production">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-set="d" t-value="o._report_data()"/>
+                <t t-call="web.basic_layout">
+                    <div class="page" style="font-size: 11px; font-family: Arial, sans-serif;">
+                        <h3 style="margin: 0;">Dire Dawa Food Complex Share Company</h3>
+                        <h4 style="margin: 2px 0 8px;">
+                            <span t-out="d['department']"/> Production Report — <span t-out="d['period']"/>
+                        </h4>
+
+                        <h5>A. Raw and packing materials used</h5>
+                        <table class="table table-sm table-bordered">
+                            <thead><tr><th>Material</th><th>Unit</th><th class="text-end">Used</th></tr></thead>
+                            <tbody>
+                                <tr t-foreach="d['materials']" t-as="m">
+                                    <td t-out="m['product']"/><td t-out="m['uom']"/>
+                                    <td class="text-end" t-out="'{:,.3f}'.format(m['qty'])"/>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h5>B. Finished products</h5>
+                        <table class="table table-sm table-bordered">
+                            <thead><tr><th>Product</th><th>Unit</th><th class="text-end">Produced</th></tr></thead>
+                            <tbody>
+                                <tr t-foreach="d['outputs']" t-as="m">
+                                    <td t-out="m['product']"/><td t-out="m['uom']"/>
+                                    <td class="text-end" t-out="'{:,.2f}'.format(m['qty'])"/>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h5>C. Losses, rework and performance</h5>
+                        <table class="table table-sm table-bordered" style="width: 70%;">
+                            <tr t-if="d['wheat_qtl']"><td>Wheat milled (qtl)</td><td class="text-end" t-out="'{:,.2f}'.format(d['wheat_qtl'])"/></tr>
+                            <tr t-if="d['wheat_qtl']"><td>Flour produced (qtl)</td><td class="text-end" t-out="'{:,.2f}'.format(d['flour_out_qtl'])"/></tr>
+                            <tr t-if="d['wheat_qtl']"><td>By-product (qtl)</td><td class="text-end" t-out="'{:,.2f}'.format(d['byproduct_qtl'])"/></tr>
+                            <tr t-if="d['wheat_qtl']"><td>Extraction</td><td class="text-end" t-out="'{:.1%}'.format(d['flour_out_qtl'] / d['wheat_qtl'])"/></tr>
+                            <tr><td>Flour used (qtl)</td><td class="text-end" t-out="'{:,.2f}'.format(d['flour_qtl'])"/></tr>
+                            <tr t-if="d['batches']"><td>Batches</td><td class="text-end" t-out="'{:,.1f}'.format(d['batches'])"/></tr>
+                            <tr><td>Output per quintal of flour</td><td class="text-end" t-out="'{:,.2f}'.format(d['output_per_qtl'])"/></tr>
+                            <tr><td>Saleable breakage</td><td class="text-end" t-out="'{:,.2f}'.format(d['breakage'])"/></tr>
+                            <tr><td>Sweepings (kg)</td><td class="text-end" t-out="'{:,.2f}'.format(d['sweepings'])"/></tr>
+                            <tr><td>Disposed dough / product (kg)</td><td class="text-end" t-out="'{:,.2f}'.format(d['disposed'])"/></tr>
+                            <tr><td>Reworked scrap used (kg)</td><td class="text-end" t-out="'{:,.2f}'.format(d['rework'])"/></tr>
+                            <tr><td>Working hours</td><td class="text-end" t-out="'{:,.1f}'.format(d['working_hours'])"/></tr>
+                            <tr><td>Capacity (output per working hour)</td><td class="text-end" t-out="'{:,.2f}'.format(d['output_per_hour'])"/></tr>
+                        </table>
+
+                        <h5>D. Downtime</h5>
+                        <table class="table table-sm table-bordered" style="width: 70%;">
+                            <thead><tr><th>Reason</th><th class="text-end">Hours</th></tr></thead>
+                            <tbody>
+                                <tr t-foreach="d['downtime']" t-as="stop">
+                                    <td t-out="stop[0]"/><td class="text-end" t-out="'{:,.1f}'.format(stop[1])"/>
+                                </tr>
+                                <tr t-if="not d['downtime']"><td colspan="2">No stoppage recorded.</td></tr>
+                            </tbody>
+                        </table>
+
+                        <h5>E. Orders</h5>
+                        <table class="table table-sm table-bordered">
+                            <thead><tr><th>Day</th><th>Line</th><th>Shift</th><th>Order</th><th>Product</th>
+                                <th class="text-end">Output</th><th>Status</th></tr></thead>
+                            <tbody>
+                                <tr t-foreach="d['orders']" t-as="order">
+                                    <td t-out="order.ddfsc_production_date and order.ddfsc_production_date.strftime('%d/%m/%Y')"/>
+                                    <td t-out="order.ddfsc_line_id.name"/>
+                                    <td t-out="order.ddfsc_shift_id.name"/>
+                                    <td t-out="order.name"/>
+                                    <td t-out="order.product_id.display_name"/>
+                                    <td class="text-end" t-out="'{:,.2f}'.format(order.ddfsc_output_qty)"/>
+                                    <td t-out="dict(order._fields['state'].selection).get(order.state)"/>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <table style="width: 100%; margin-top: 18px;">
+                            <tr>
+                                <td style="border-top: 1px solid #000; padding-right: 30px;">Prepared by</td>
+                                <td style="width: 10%;"/>
+                                <td style="border-top: 1px solid #000;">Checked by</td>
+                                <td style="width: 10%;"/>
+                                <td style="border-top: 1px solid #000;">Approved by</td>
+                            </tr>
+                        </table>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+    <record id="action_report_department_production" model="ir.actions.report">
+        <field name="name">Department Production Report</field>
+        <field name="model">ddfsc.production.report.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">ddfsc_manufacturing.report_department_production</field>
+        <field name="report_file">ddfsc_manufacturing.report_department_production</field>
+    </record>
+
+    <menuitem id="menu_ddfsc_production_report" name="Department Production Report"
+              parent="mrp.menu_mrp_reporting" action="action_ddfsc_production_report" sequence="4"/>
+    <menuitem id="menu_ddfsc_stock_card_mrp" name="Stock Card (Floors &amp; Stores)"
+              parent="mrp.menu_mrp_reporting" action="action_ddfsc_stock_card" sequence="7"/>
+    <menuitem id="menu_ddfsc_stock_card" name="Stock Card (Bin Card)"
+              parent="stock.menu_warehouse_report" action="action_ddfsc_stock_card" sequence="5"/>
+    <menuitem id="menu_ddfsc_critical_items" name="Weekly Critical Items"
+              parent="stock.menu_warehouse_report" action="action_ddfsc_critical_items" sequence="6"/>
+</odoo>

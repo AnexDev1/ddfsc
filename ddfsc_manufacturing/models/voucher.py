@@ -8,7 +8,7 @@ module decides what each document prints.
 
 import pytz
 
-from odoo import _, models
+from odoo import _, fields, models
 
 from .ddfsc_department import DEPARTMENTS
 from .ddfsc_shift import factory_tz
@@ -64,6 +64,15 @@ FORMS = {
         'signatures': ['Prepared by', 'Checked & Received by', 'Approved by'],
         'price': True,
     },
+    'delivery_order': {
+        'title': 'Delivery Order',
+        'form_no': 'PAOF/PA/534',
+        'distribution': 'White – Original Customer · Pink 1st Copy – Account Stock Recording · '
+                        'Blue 2nd Copy – Store Recording Section · Green 3rd Copy – Gate Pass · '
+                        'Yellow 4th Copy – Property Admin · Pink 5th Copy – Pad Commercial Dep.',
+        'signatures': ['Delivered by', 'Checked by', 'Approved by', 'Received the above goods in good condition'],
+        'price': True,
+    },
     'transfer': {
         'title': 'Stock Transfer Voucher',
         'form_no': '',
@@ -90,8 +99,25 @@ def _date(record, value):
     return pytz.utc.localize(value).astimezone(factory_tz(record.env)).strftime('%d/%m/%Y')
 
 
+class StockMove(models.Model):
+    _inherit = 'stock.move'
+
+    ddfsc_bags = fields.Integer(string='No. of Bags', help='Bags counted at receiving or loading.')
+
+
 class StockPicking(models.Model):
     _inherit = 'stock.picking'
+
+    # Paper-document details the receiving and dispatch forms ask for.
+    ddfsc_supplier_invoice = fields.Char(string='Supplier Invoice No.')
+    ddfsc_supplier_delivery = fields.Char(string='Supplier Delivery Order No.')
+    ddfsc_vehicle_plate = fields.Char(string='Truck Plate / Wagon No.')
+    ddfsc_driver_name = fields.Char(string="Driver's Name")
+    ddfsc_receiver_name = fields.Char(string='Received by (Name)', help='Customer representative who collects the goods.')
+    ddfsc_receiver_identification = fields.Char(string='Receiver Identification', help='ID card or licence number.')
+    ddfsc_customer_reference = fields.Char(string='Customer / Cash Sales Ref.', help='e.g. CS-02302/26 or CRSVH-00481-26.')
+    ddfsc_paper_voucher = fields.Char(string='Paper Voucher No.',
+                                      help='Serial of the pre-printed pad, while paper and system run side by side.')
 
     def _ddfsc_voucher_kind(self):
         self.ensure_one()
@@ -101,6 +127,8 @@ class StockPicking(models.Model):
             if wheat and self.move_ids.product_id.product_tmpl_id == wheat:
                 return 'wheat_receiving'
             return 'goods_receiving'
+        if self.picking_type_code == 'outgoing':
+            return 'delivery_order'
         if doc == 'fg_receiving':
             return 'fg_receiving'
         if doc in ('byproduct_return', 'material_return'):
@@ -125,17 +153,28 @@ class StockPicking(models.Model):
         form = dict(FORMS[kind])
         request = self.ddfsc_store_request_id
         rows = [(_('Date'), _date(self, self.date_done or self.scheduled_date))]
+        if self.ddfsc_paper_voucher:
+            rows.append((_('Paper Voucher No.'), self.ddfsc_paper_voucher))
         if kind in ('wheat_receiving', 'goods_receiving'):
             ticket = self._ddfsc_weighbridge_ticket()
             rows += [
                 (_('Supplier'), self.partner_id.display_name or ''),
-                (_('Purchase Order No.'), self.purchase_id.name if 'purchase_id' in self._fields else ''),
-                (_('Supplier Delivery Order No.'), self.origin or ''),
-                (_('Truck Plate / Wagon No.'), ticket.vehicle_plate if ticket else ''),
-                (_("Driver's Name"), ticket.driver_name if ticket else ''),
+                (_('Supplier Invoice No.'), self.ddfsc_supplier_invoice or ''),
+                (_('Purchase Order No.'), self.purchase_id.name if 'purchase_id' in self._fields and self.purchase_id else ''),
+                (_('Supplier Delivery Order No.'), self.ddfsc_supplier_delivery or ''),
+                (_('Truck Plate / Wagon No.'), self.ddfsc_vehicle_plate or (ticket.vehicle_plate if ticket else '')),
+                (_("Driver's Name"), self.ddfsc_driver_name or (ticket.driver_name if ticket else '')),
             ]
             if ticket:
                 rows.append((_('Weighbridge Ticket / Net kg'), '%s / %s' % (ticket.name, ticket.net_weight)))
+        elif kind == 'delivery_order':
+            rows += [
+                (_('Customer (M/S)'), self.partner_id.display_name or ''),
+                (_("Customer's Ref. No."), self.ddfsc_customer_reference or self.origin or ''),
+                (_('Truck Plate No.'), self.ddfsc_vehicle_plate or ''),
+                (_('Receiver Name'), self.ddfsc_receiver_name or ''),
+                (_('Identification'), self.ddfsc_receiver_identification or ''),
+            ]
         else:
             rows += [
                 (_('From'), self.location_id.display_name),
@@ -155,6 +194,9 @@ class StockPicking(models.Model):
         for move in self.move_ids.filtered(lambda item: item.state != 'cancel'):
             quantity = move.quantity if self.state == 'done' else move.product_uom_qty
             price = move.product_id.uom_id._compute_price(move.product_id.standard_price, move.product_uom)
+            sale_line = move.sale_line_id if 'sale_line_id' in move._fields else False
+            if kind == 'delivery_order' and sale_line:
+                price = sale_line.price_unit
             lots = ', '.join(move.move_line_ids.lot_id.mapped('name'))
             lines.append({
                 'code': move.product_id.default_code or '',
@@ -163,6 +205,7 @@ class StockPicking(models.Model):
                 'quantity': quantity,
                 'price': price if form.get('price') else 0.0,
                 'total': price * quantity if form.get('price') else 0.0,
+                'bags': move.ddfsc_bags or '',
             })
         form.update({
             'company': COMPANY_NAME,

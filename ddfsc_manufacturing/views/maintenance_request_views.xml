@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="maintenance_request_form_ddfsc" model="ir.ui.view">
+        <field name="name">maintenance.request.form.ddfsc</field>
+        <field name="model">maintenance.request</field>
+        <field name="inherit_id" ref="maintenance.hr_equipment_request_view_form"/>
+        <field name="arch" type="xml">
+            <field name="maintenance_type" position="after">
+                <field name="ddfsc_pm_type" invisible="maintenance_type != 'preventive'"/>
+                <field name="ddfsc_workcenter_id"/>
+                <field name="ddfsc_shift_id"/>
+            </field>
+            <xpath expr="//notebook" position="inside">
+                <page string="Work &amp; Cost" name="ddfsc_work_cost">
+                    <group>
+                        <group>
+                            <field name="ddfsc_downtime_hours"/>
+                            <field name="ddfsc_mechanic_ids" widget="many2many_tags"/>
+                            <field name="ddfsc_manpower"/>
+                        </group>
+                        <group>
+                            <field name="ddfsc_labour_cost"/>
+                            <field name="ddfsc_spare_cost"/>
+                            <field name="ddfsc_total_cost"/>
+                            <field name="ddfsc_spare_picking_id" invisible="not ddfsc_spare_picking_id"/>
+                        </group>
+                    </group>
+                    <field name="ddfsc_work_done" placeholder="Fault found and corrective / preventive work done..."/>
+                    <field name="ddfsc_spare_line_ids" readonly="ddfsc_spare_picking_id">
+                        <list editable="bottom">
+                            <field name="product_id"/>
+                            <field name="quantity"/>
+                            <field name="uom_id"/>
+                            <field name="unit_cost"/>
+                            <field name="subtotal" sum="Total"/>
+                        </list>
+                    </field>
+                    <button name="action_issue_spare_parts" type="object" string="Issue Spare Parts from Store"
+                            class="btn-secondary" invisible="not ddfsc_spare_line_ids"/>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="maintenance_request_list_ddfsc" model="ir.ui.view">
+        <field name="name">maintenance.request.list.ddfsc</field>
+        <field name="model">maintenance.request</field>
+        <field name="inherit_id" ref="maintenance.hr_equipment_request_view_tree"/>
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="equipment_id" optional="show"/>
+                <field name="ddfsc_workcenter_id" optional="show"/>
+                <field name="maintenance_type" optional="show"/>
+                <field name="ddfsc_pm_type" optional="show"/>
+                <field name="schedule_date" optional="show"/>
+                <field name="ddfsc_downtime_hours" sum="Downtime" optional="show"/>
+                <field name="ddfsc_total_cost" sum="Cost" optional="show"/>
+            </field>
+        </field>
+    </record>
+
+    <!-- Daily corrective, weekly preventive and monthly maintenance reports. -->
+    <record id="maintenance_request_pivot_ddfsc" model="ir.ui.view">
+        <field name="name">maintenance.request.pivot.ddfsc</field>
+        <field name="model">maintenance.request</field>
+        <field name="arch" type="xml">
+            <pivot string="Maintenance Report">
+                <field name="ddfsc_workcenter_id" type="row"/>
+                <field name="schedule_date" interval="month" type="col"/>
+                <field name="ddfsc_downtime_hours" type="measure"/>
+                <field name="ddfsc_total_cost" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+    <record id="action_ddfsc_maintenance_report" model="ir.actions.act_window">
+        <field name="name">Maintenance Report</field>
+        <field name="res_model">maintenance.request</field>
+        <field name="view_mode">pivot,list,form</field>
+        <field name="view_id" ref="maintenance_request_pivot_ddfsc"/>
+    </record>
+    <menuitem id="menu_ddfsc_maintenance_report" name="Maintenance Report (Daily / Weekly / Monthly)"
+              parent="maintenance.maintenance_reporting" action="action_ddfsc_maintenance_report" sequence="1"/>
+</odoo>

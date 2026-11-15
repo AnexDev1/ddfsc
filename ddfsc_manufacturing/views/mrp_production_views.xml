@@ -121,6 +121,7 @@
                             <field name="currency_id" column_invisible="1"/>
                             <field name="is_unplanned" optional="hide"/>
                             <field name="is_rework" optional="hide"/>
+                            <field name="is_packing" optional="hide"/>
                             <field name="move_id" optional="hide"/>
                         </list>
                     </field>
@@ -157,6 +158,17 @@
                             <field name="byproduct_qtl"/>
                             <field name="extraction_ratio" widget="percentage"/>
                             <field name="mill_unaccounted_qtl"/>
+                            <field name="mill_scale_start" invisible="ddfsc_line_code != 'MILL'" readonly="state in ('done', 'cancel')"/>
+                            <field name="mill_scale_end" invisible="ddfsc_line_code != 'MILL'" readonly="state in ('done', 'cancel')"/>
+                            <field name="mill_scale_wheat_qtl" invisible="ddfsc_line_code != 'MILL'"/>
+                            <field name="mill_scale_gap_qtl" invisible="ddfsc_line_code != 'MILL'"/>
+                            <field name="mill_impurity_kg" invisible="ddfsc_line_code != 'MILL'" readonly="state in ('done', 'cancel')"/>
+                        </group>
+                        <group string="Packing Bags Used" invisible="ddfsc_line_code != 'MILL'">
+                            <field name="mill_bags_10" readonly="state in ('done', 'cancel')"/>
+                            <field name="mill_bags_25" readonly="state in ('done', 'cancel')"/>
+                            <field name="mill_bags_50" readonly="state in ('done', 'cancel')"/>
+                            <field name="mill_bags_100" readonly="state in ('done', 'cancel')"/>
                         </group>
                         <group string="Losses">
                             <field name="ddfsc_flour_request_qtl" invisible="ddfsc_line_code == 'MILL'"/>
