@@ -1,6 +1,6 @@
 {
     "name": "DDFSC Payroll Components",
-    "version": "19.0.1.1.0",
+    "version": "19.0.1.2.0",
     "summary": "Effective-dated recurring and one-off payroll components",
     "category": "Payroll",
     "license": "LGPL-3",
@@ -19,6 +19,7 @@
         "data/loan_sequence.xml",
         "data/ethiopian_salary_rules.xml",
         "data/time_off_sync.xml",
+        "data/ethiopian_leave_types.xml",
         "views/payroll_component_type_views.xml",
         "views/allowance_views.xml",
         "views/promotion_views.xml",

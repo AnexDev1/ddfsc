@@ -81,3 +81,15 @@ class TestTimeOffPay(TransactionCase):
     def test_overtime_uses_salary_in_force(self):
         payslip = self._payslip()
         self.assertEqual(payslip.get_effective_basic_salary(self.contract), 22000.0)
+
+    def test_ethiopian_leave_types(self):
+        ref = lambda name: self.env.ref("ddfsc_payroll.%s" % name)
+        self.assertEqual(ref("leave_type_et_annual").country_id.code, "ET")
+        self.assertTrue(ref("leave_type_et_annual").requires_allocation)
+        self.assertEqual([ref("leave_type_et_sick_%s" % tier).ddfsc_pay_percent for tier in ("full", "half", "unpaid")],
+                         [100.0, 50.0, 0.0])
+        self.assertTrue(ref("leave_type_et_sick_half").support_document)
+        self.assertEqual(ref("leave_type_et_special_unpaid").ddfsc_pay_percent, 0.0)
+        # Two days in the 50 % sick tier cost one day of basic salary (22 working days in June).
+        self._leave(ref("leave_type_et_sick_half"), date(2026, 6, 8), date(2026, 6, 9))
+        self.assertAlmostEqual(self._payslip().ddfsc_paid_ratio, 21 / 22, places=4)
