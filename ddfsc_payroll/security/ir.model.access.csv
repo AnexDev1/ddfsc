@@ -21,3 +21,5 @@ access_loan_hr,Loan HR,model_ddfsc_employee_loan,hr.group_hr_user,1,1,1,0
 access_loan_manager,Loan manager,model_ddfsc_employee_loan,payroll.group_payroll_manager,1,1,1,1
 access_loan_repayment_manager,Loan repayment manager,model_ddfsc_loan_repayment,payroll.group_payroll_manager,1,1,1,0
 
+access_nontaxable_limit_manager,Tax-exempt allowance limit manager,model_ddfsc_nontaxable_allowance_limit,payroll.group_payroll_manager,1,1,1,1
+access_nontaxable_limit_user,Tax-exempt allowance limit user,model_ddfsc_nontaxable_allowance_limit,payroll.group_payroll_user,1,0,0,0

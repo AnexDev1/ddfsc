@@ -3,3 +3,4 @@ from . import test_ethiopian_payroll
 from . import test_ethiopian_payroll
 
 from . import test_time_off_pay
+from . import test_payroll_rules

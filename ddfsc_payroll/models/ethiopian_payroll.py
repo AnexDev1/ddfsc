@@ -63,7 +63,7 @@ class EthiopianTaxBand(models.Model):
             return
         rule_xmlids = (
             "rule_basic_salary", "rule_taxable_allowance", "rule_pensionable_allowance",
-            "rule_non_taxable_allowance", "rule_overtime_pay", "rule_shift_differential", "rule_gross_tax_base", "rule_employee_pension",
+            "rule_non_taxable_allowance", "rule_nontaxable_excess", "rule_overtime_pay", "rule_shift_differential", "rule_gross_tax_base", "rule_employee_pension",
             "rule_income_tax", "rule_approved_deduction", "rule_net_pay", "rule_employer_pension",
         )
         rules = self.env["hr.salary.rule"]
