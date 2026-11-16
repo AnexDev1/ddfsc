@@ -27,10 +27,12 @@ class TestLocalPurchase(TransactionCase):
         self.AnalyticPlan = self.env['account.analytic.plan']
         self.analytic_plan = self.AnalyticPlan.create({'name': 'Test Plan'})
         self.AnalyticAccount = self.env['account.analytic.account']
+        cost_center_plan = self.env.company.get_cost_center_analytic_plan() or self.analytic_plan
         self.budget_category = self.AnalyticAccount.create({
             'name': 'Test Cost Center',
-            'plan_id': self.analytic_plan.id
+            'plan_id': cost_center_plan.id
         })
+        self.department = self.env['hr.department'].create({'name': 'Test Requesting Department'})
 
         # Create a budget post (Budgetary Position)
         self.BudgetPost = self.env['account.budget.post']
@@ -63,6 +65,8 @@ class TestLocalPurchase(TransactionCase):
         """Test local purchase requisition sequence generation."""
         requisition = self.Requisition.create({
             'procurement_method': 'po',
+            'department_id': self.department.id,
+            'cost_center_id': self.budget_category.id,
             'line_ids': [(0, 0, {
                 'product_id': self.product.id,
                 'quantity': 5,
@@ -73,13 +77,15 @@ class TestLocalPurchase(TransactionCase):
         })
 
         
-        self.assertTrue(requisition.name.startswith('PR-DL'), "Sequence should start with PR-DL")
+        self.assertTrue(requisition.name.startswith('PR-L'), "Sequence should start with PR-L")
         self.assertEqual(requisition.state, 'draft')
 
     def test_02_po_creation_from_requisition(self):
         """Test creation of PO from a local purchase requisition."""
         requisition = self.Requisition.create({
             'procurement_method': 'po',
+            'department_id': self.department.id,
+            'cost_center_id': self.budget_category.id,
             'line_ids': [(0, 0, {
                 'product_id': self.product.id,
                 'quantity': 5,
@@ -111,6 +117,6 @@ class TestLocalPurchase(TransactionCase):
         po = self.env['purchase.order'].create(po_vals)
         
         self.assertEqual(requisition.po_count, 1, "One PO should have been created manually")
-        self.assertTrue(po.name.startswith('PO-DL'), f"PO name {po.name} should start with local prefix PO-DL")
+        self.assertTrue(po.name.startswith('PO-L'), f"PO name {po.name} should start with local prefix PO-L")
         self.assertEqual(po.local_purchase_request_id.id, requisition.id)
         self.assertEqual(po.order_line[0].price_unit, 100.0, "The PO order line unit price should match the requisition line unit price")

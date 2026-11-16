@@ -3,3 +3,7 @@ from . import test_saleable_byproducts
 from . import test_department_flows
 from . import test_material_return
 from . import test_rework
+from . import test_vouchers
+from . import test_downtime
+from . import test_factory_extras
+from . import test_loss_correction

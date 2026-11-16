@@ -31,8 +31,9 @@ class TestForeignPurchase(TransactionCase):
         self.AnalyticAccount = self.env['account.analytic.account']
         self.budget_category = self.AnalyticAccount.create({
             'name': 'Test Cost Center',
-            'plan_id': self.analytic_plan.id
+            'plan_id': (self.env.company.get_cost_center_analytic_plan() or self.analytic_plan).id
         })
+        self.department = self.env['hr.department'].create({'name': 'Test Requesting Department'})
 
         # Create a budget post (Budgetary Position)
         self.BudgetPost = self.env['account.budget.post']
@@ -63,25 +64,31 @@ class TestForeignPurchase(TransactionCase):
     def test_01_foreign_purchase_requisition_sequence(self):
         """Test foreign purchase requisition sequence generation."""
         requisition = self.Requisition.create({
+            'department_id': self.department.id,
+            'cost_center_id': self.budget_category.id,
             'line_ids': [(0, 0, {
                 'product_id': self.product.id,
                 'quantity': 5,
                 'unit_price': 100.0,
+                'estimated_selling_price': 130.0,
                 'budget_category_id': self.budget_post.id,
                 'cost_center_id': self.budget_category.id
             })]
         })
         
-        self.assertTrue(requisition.name.startswith('PR-DF'), "Sequence should start with PR-DF")
+        self.assertTrue(requisition.name.startswith('PR-F'), "Sequence should start with PR-F")
         self.assertEqual(requisition.state, 'draft')
 
     def test_02_po_creation_from_requisition(self):
         """Test creation of PO from a foreign purchase requisition."""
         requisition = self.Requisition.create({
+            'department_id': self.department.id,
+            'cost_center_id': self.budget_category.id,
             'line_ids': [(0, 0, {
                 'product_id': self.product.id,
                 'quantity': 5,
                 'unit_price': 100.0,
+                'estimated_selling_price': 130.0,
                 'budget_category_id': self.budget_post.id,
                 'cost_center_id': self.budget_category.id
             })],
@@ -98,8 +105,9 @@ class TestForeignPurchase(TransactionCase):
             })]
         })
 
+        requisition.action_submit()
         requisition.action_approve()
-        
+
         # Test PO action context
         action = requisition.action_create_po()
         self.assertEqual(action['res_model'], 'purchase.order')
@@ -125,7 +133,7 @@ class TestForeignPurchase(TransactionCase):
         po = self.env['purchase.order'].create(po_vals)
         
         self.assertEqual(requisition.po_count, 1, "One PO should have been created manually")
-        self.assertTrue(po.name.startswith('PO-DF'), f"PO name {po.name} should start with foreign prefix PO-DF")
+        self.assertTrue(po.name.startswith('PO-F'), f"PO name {po.name} should start with foreign prefix PO-F")
         self.assertEqual(po.foreign_purchase_request_id.id, requisition.id)
 
     @classmethod

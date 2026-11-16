@@ -34,6 +34,7 @@
             <xpath expr="//field[@name='code']" position="after">
                 <field name="ddfsc_flour_request_qtl"/>
                 <field name="ddfsc_variance_tolerance"/>
+                <field name="ddfsc_batch_qtl"/>
             </xpath>
         </field>
     </record>

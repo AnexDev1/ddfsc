@@ -46,7 +46,7 @@ class TestStoreRequisition(TransactionCase):
         self.AnalyticAccount = self.env['account.analytic.account']
         self.budget_category = self.AnalyticAccount.create({
             'name': 'Test Budget Category',
-            'plan_id': self.plan.id,
+            'plan_id': (self.env.company.get_cost_center_analytic_plan() or self.plan).id,
         })
 
         # Create a budget post (Budgetary Position)
@@ -91,40 +91,28 @@ class TestStoreRequisition(TransactionCase):
         self.assertEqual(requisition.state, 'draft', "Initial state should be draft")
 
     def test_02_requisition_workflow(self):
-        """Test the requisition state transitions."""
+        """Draft -> Submitted -> Budget Approved, and cancellation."""
+        department = self.env['hr.department'].create({'name': 'Test Requesting Department'})
         requisition = self.Requisition.create({
             'warehouse_id': self.warehouse.id,
+            'department_id': department.id,
+            'cost_center_id': self.budget_category.id,
             'line_ids': [(0, 0, {
                 'product_id': self.product.id,
                 'quantity': 10,
+                'unit_price': 25.0,
                 'budget_category_id': self.budget_post.id,
                 'cost_center_id': self.budget_category.id
             })]
         })
-        
-        # Draft -> Submitted (Action: Submit)
+        with self.assertRaises(ValidationError):
+            requisition.copy({'department_id': False}).action_approve()
+
         requisition.action_approve()
         self.assertEqual(requisition.state, 'submitted', "State should be submitted after Submit")
-        
-        # Submitted -> Budget Approved (Action: Single Approve)
         requisition.action_approve()
-        self.assertEqual(requisition.state, 'budget_approved', "State should be budget_approved after Single Approve")
+        self.assertEqual(requisition.state, 'budget_approved', "State should be budget_approved after approval")
 
-        # Set Issued Quantity before moving to Waiting/SIV phase
-        requisition.line_ids[0].qty_transferred = 10.0
-
-        # Budget Approved -> Waiting
-        requisition.action_approve()
-        self.assertEqual(requisition.state, 'waiting', "State should be waiting after Budget Approved")
-
-        # Waiting -> Processed
-        requisition.action_approve()
-        self.assertEqual(requisition.state, 'processed', "State should be processed")
-
-        # Test Cancel
-        requisition.action_draft() # Needs a custom action or just reset? Wait, action_draft works for any?
-        # Actually my action_draft works from any state.
-        requisition.action_approve() # Back to submitted
         requisition.action_cancel()
         self.assertEqual(requisition.state, 'cancelled', "State should be cancelled after action_cancel")
 

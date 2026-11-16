@@ -49,6 +49,8 @@
                 <field name="mandatory"/>
                 <field name="result_type"/>
                 <field name="allowed_answers" invisible="result_type != 'qualitative'"/>
+                <field name="sample_count" invisible="result_type == 'qualitative'"/>
+                <field name="sample_rule" invisible="result_type == 'qualitative' or sample_count &lt;= 1"/>
             </xpath>
             <xpath expr="//field[@name='line_ids']/list/field[@name='limit_type']" position="attributes">
                 <attribute name="invisible">result_type == 'qualitative'</attribute>

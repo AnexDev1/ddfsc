@@ -505,8 +505,15 @@ class DdfscShift(models.Model):
         self._line_request('BISC-CN', 'Biscuit Line China', 100)
         self._line_request('BISC-OR', 'Biscuit Line Orland', 60)
         self._line_request('MILL', 'Flour Mill', 0)
+        # Biscuit mixes 1.5 qtl of flour per batch (biscuit daily report).
+        for code in ('BISC-CN', 'BISC-OR'):
+            line = self.env['mrp.workcenter'].search([('code', '=', code)], limit=1)
+            if line and not line.ddfsc_batch_qtl:
+                line.ddfsc_batch_qtl = 1.5
         self._sync_operations()
         self._sync_quality_control()
+        self._sync_mill_packing()
+        self._sync_store_structure()
 
     @api.model
     def _sync_quality_control(self):

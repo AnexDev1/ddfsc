@@ -6,7 +6,7 @@ class TestDdfscWeighbridgeTicket(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.product = cls.env["product.product"].create({"name": "Weighbridge Test Wheat", "type": "consu"})
+        cls.product = cls.env["product.product"].create({"name": "Weighbridge Test Wheat", "default_code": "WB-TEST-WHEAT", "type": "consu"})
         cls.picking = cls.env["stock.picking"].create({
             "picking_type_id": cls.env.ref("stock.picking_type_in").id,
             "location_id": cls.env.ref("stock.stock_location_suppliers").id,

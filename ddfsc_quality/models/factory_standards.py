@@ -64,33 +64,33 @@ FACTORY_STANDARDS = [
     # OF/QC/001 Biscuit production follow-up
     ('qc_std_biscuit_new_zebib', 'Biscuit Release – New Zebib (OF/QC/001)',
      'finished_goods', ['product_zebib'], False, [
-         ('dry_weight', (10.0, 10.5), 'g per piece', True),
+         ('dry_weight', (10.0, 10.5), 'g per piece', True, 5, 'average'),
          ('moisture', (None, 8), '% dry biscuit', True),
      ]),
     ('qc_std_biscuit_defense', 'Biscuit Release – Defense Biscuit (OF/QC/001)',
      'finished_goods', ['product_defense'], False, [
-         ('dry_weight', (27, 28), 'g per piece', True),
+         ('dry_weight', (27, 28), 'g per piece', True, 5, 'average'),
          ('moisture', (None, 10), '% dry biscuit', True),
      ]),
     # OF/QC/002 Bread baking analysis — weighed 30 minutes after the oven
     ('qc_std_bread_market', 'Bread Release – Market Bread 100 g (OF/QC/002)',
      'finished_goods', ['product_bread_market'], False, [
-         ('weight', (95, 105), 'g baked weight, 30 min after oven', True),
+         ('weight', (95, 105), 'g baked weight, 30 min after oven', True, 4, 'each'),
      ]),
     ('qc_std_bread_university', 'Bread Release – University Bread 120 g (OF/QC/002)',
      'finished_goods', ['product_bread_university'], False, [
-         ('weight', (114, 126), 'g baked weight, 30 min after oven', True),
+         ('weight', (114, 126), 'g baked weight, 30 min after oven', True, 4, 'each'),
      ]),
     # OF/QC/010 packing weight and OF/QC/009 packing moisture. Packing
     # moisture depends on the die; these are the limits for the main dies.
     ('qc_std_pasta_long', 'Pasta Release – Long Cut Pasta 500 g (OF/QC/009, OF/QC/010)',
      'finished_goods', ['product_pasta_long'], False, [
-         ('weight', (495, 505), 'g per pack', True),
+         ('weight', (495, 505), 'g per pack', True, 4, 'each'),
          ('moisture', (None, 12), '% at packing (die 96057)', True),
      ]),
     ('qc_std_pasta_short', 'Pasta Release – Short Cut Pasta 500 g (OF/QC/009, OF/QC/010)',
      'finished_goods', ['product_pasta_short'], False, [
-         ('weight', (495, 505), 'g per pack', True),
+         ('weight', (495, 505), 'g per pack', True, 2, 'each'),
          ('moisture', (None, 13), '% at packing (most dies; check the die limit)', True),
      ]),
 ]
@@ -128,17 +128,8 @@ class DdfscQualityPlan(models.Model):
                 'wheat_type': wheat_type,
                 'demo_specification': False,
                 'version': '1.0',
-                'line_ids': [Command.create({
-                    'sequence': index * 10,
-                    'check_type': check_type,
-                    'apply_min': minimum is not None,
-                    'standard_min': minimum or 0.0,
-                    'apply_max': maximum is not None,
-                    'standard_max': maximum or 0.0,
-                    'note': note,
-                    'mandatory': mandatory,
-                    'result_type': 'numeric',
-                }) for index, (check_type, (minimum, maximum), note, mandatory) in enumerate(lines, 1)],
+                'line_ids': [Command.create(self._factory_line_values(index, line))
+                             for index, line in enumerate(lines, 1)],
             })
             self.env['ir.model.data'].create({
                 'module': 'ddfsc_quality', 'name': xmlid, 'model': self._name,
@@ -148,6 +139,24 @@ class DdfscQualityPlan(models.Model):
         if created:
             self._retire_demo_plans(created)
         return created
+
+    @api.model
+    def _factory_line_values(self, index, line):
+        check_type, (minimum, maximum), note, mandatory = line[:4]
+        samples, rule = (line[4], line[5]) if len(line) > 4 else (1, 'average')
+        return {
+            'sequence': index * 10,
+            'check_type': check_type,
+            'apply_min': minimum is not None,
+            'standard_min': minimum or 0.0,
+            'apply_max': maximum is not None,
+            'standard_max': maximum or 0.0,
+            'note': note,
+            'mandatory': mandatory,
+            'result_type': 'numeric',
+            'sample_count': samples,
+            'sample_rule': rule,
+        }
 
     def _retire_demo_plans(self, factory_plans):
         demo_plans = self.search([

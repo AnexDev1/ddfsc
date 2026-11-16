@@ -52,6 +52,10 @@
                         invisible="state != 'done' or ddfsc_line_code != 'MILL' or ddfsc_fg_request_state"/>
                 <button name="action_request_finished_goods" type="object" string="Send to Finished Goods" class="btn-primary"
                         invisible="state != 'done' or ddfsc_line_code == 'MILL' or ddfsc_fg_request_state"/>
+                <field name="ddfsc_can_correct_losses" invisible="1"/>
+                <button name="action_ddfsc_correct_losses" type="object" string="Correct Losses"
+                        groups="ddfsc_manufacturing.group_ddfsc_operation_manager"
+                        invisible="not ddfsc_can_correct_losses"/>
                 <button name="action_view_finished_goods_transfer" type="object" string="View Finished Goods Transfer"
                         invisible="state != 'done' or not ddfsc_fg_request_state"/>
                 <button name="action_ddfsc_submit" type="object" string="Submit for Approval" class="btn-primary"
@@ -121,6 +125,7 @@
                             <field name="currency_id" column_invisible="1"/>
                             <field name="is_unplanned" optional="hide"/>
                             <field name="is_rework" optional="hide"/>
+                            <field name="is_packing" optional="hide"/>
                             <field name="move_id" optional="hide"/>
                         </list>
                     </field>
@@ -157,14 +162,32 @@
                             <field name="byproduct_qtl"/>
                             <field name="extraction_ratio" widget="percentage"/>
                             <field name="mill_unaccounted_qtl"/>
+                            <field name="mill_scale_start" invisible="ddfsc_line_code != 'MILL'" readonly="state in ('done', 'cancel')"/>
+                            <field name="mill_scale_end" invisible="ddfsc_line_code != 'MILL'" readonly="state in ('done', 'cancel')"/>
+                            <field name="mill_scale_wheat_qtl" invisible="ddfsc_line_code != 'MILL'"/>
+                            <field name="mill_scale_gap_qtl" invisible="ddfsc_line_code != 'MILL'"/>
+                            <field name="mill_impurity_kg" invisible="ddfsc_line_code != 'MILL'" readonly="state in ('done', 'cancel')"/>
+                            <field name="mill_silo_loss_pct" invisible="ddfsc_line_code != 'MILL'" readonly="state in ('done', 'cancel')"/>
+                            <field name="mill_moisture_added_qtl" invisible="ddfsc_line_code != 'MILL'"/>
+                            <field name="mill_conditioned_wheat_qtl" invisible="ddfsc_line_code != 'MILL'"/>
+                            <field name="mill_cer" invisible="ddfsc_line_code != 'MILL'"/>
+                            <field name="mill_ter" invisible="ddfsc_line_code != 'MILL'"/>
+                            <field name="mill_ep" invisible="ddfsc_line_code != 'MILL'"/>
+                        </group>
+                        <group string="Packing Bags Used" invisible="ddfsc_line_code != 'MILL'">
+                            <field name="mill_bags_10" readonly="state in ('done', 'cancel')"/>
+                            <field name="mill_bags_25" readonly="state in ('done', 'cancel')"/>
+                            <field name="mill_bags_50" readonly="state in ('done', 'cancel')"/>
+                            <field name="mill_bags_100" readonly="state in ('done', 'cancel')"/>
                         </group>
                         <group string="Losses">
                             <field name="ddfsc_flour_request_qtl" invisible="ddfsc_line_code == 'MILL'"/>
-                            <field name="downtime_hours"/>
-                            <field name="downtime_reason"/>
+                            <field name="ddfsc_batches" invisible="not ddfsc_batches"/>
+                            <field name="downtime_hours" string="Total Downtime (hours)"/>
+                            <field name="ddfsc_has_equipment_downtime" invisible="1"/>
                             <field name="ddfsc_maintenance_request_id" readonly="1"/>
                             <button name="action_log_downtime" type="object" string="Log maintenance"
-                                    invisible="downtime_reason not in ('mixer', 'die', 'oven', 'packing')"/>
+                                    invisible="not ddfsc_has_equipment_downtime"/>
                             <label for="scrap_qty" string="Saleable Breakage" invisible="ddfsc_line_code == 'MILL'"/>
                             <div class="o_row" invisible="ddfsc_line_code == 'MILL'">
                                 <field name="scrap_qty" nolabel="1"
@@ -182,6 +205,13 @@
                             <field name="bread_scrap_high" invisible="ddfsc_line_code != 'BREAD'"/>
                         </group>
                     </group>
+                    <field name="ddfsc_downtime_line_ids" readonly="state in ('done', 'cancel')">
+                        <list editable="bottom" string="Stoppages">
+                            <field name="reason"/>
+                            <field name="hours" sum="Total"/>
+                            <field name="note"/>
+                        </list>
+                    </field>
                 </page>
             </xpath>
         </field>

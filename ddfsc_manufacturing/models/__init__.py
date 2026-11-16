@@ -14,3 +14,10 @@ from . import stock_lot
 from . import stock_picking
 from . import department_products
 from . import rework
+from . import voucher
+from . import downtime
+from . import mill
+from . import store_structure
+from . import stock_reports
+from . import maintenance_request
+from . import loss_correction

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="ddfsc_loss_correction_wizard_form" model="ir.ui.view">
+        <field name="name">ddfsc.loss.correction.wizard.form</field>
+        <field name="model">ddfsc.loss.correction.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Correct Losses">
+                <p class="text-muted">Sweepings and disposed dough are loss figures: correcting them moves no stock.
+                    Allowed until QC decides on the lot or the output is sent to finished goods.</p>
+                <group>
+                    <field name="production_id"/>
+                    <field name="show_disposed" invisible="1"/>
+                    <field name="sweeping_qty"/>
+                    <field name="disposed_qty" invisible="not show_disposed"/>
+                    <field name="reason" placeholder="e.g. Sweepings weighed after the floor was cleaned"/>
+                </group>
+                <footer>
+                    <button name="action_apply" type="object" string="Apply Correction" class="btn-primary"/>
+                    <button special="cancel" string="Cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>
