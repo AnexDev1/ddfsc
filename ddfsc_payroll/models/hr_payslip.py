@@ -162,8 +162,10 @@ class HrPayslip(models.Model):
             contract = contracts[:1]
             if not contract:
                 return result
+            # Overtime is paid on the salary in force for the period (promotions
+            # and revisions in the compensation history), not the raw contract wage.
             amount = self.get_approved_overtime_payment(
-                sum(approved_overtime.mapped("approved_hours")), contract.wage
+                sum(approved_overtime.mapped("approved_hours")), self.get_effective_basic_salary(contract)
             )
             overtime_values = {
                 "name": self.env._("Approved Overtime"), "code": "OT_PAY", "amount": amount,

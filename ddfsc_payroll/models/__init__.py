@@ -7,3 +7,4 @@ from . import allowance
 from . import promotion
 from . import loan
 
+from . import time_off
