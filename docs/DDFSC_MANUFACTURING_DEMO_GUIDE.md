@@ -245,8 +245,11 @@ Quality status: Pending, Passed, On Hold, Released by Exception, Rejected. Butto
 *Release by Exception* (QC Manager, reason required — prints as OF/QC/018A), *Reject Lot*.
 Wheat lots: **Wheat Type** (Imported Hard / Local White Hard / Local Red Mixed) and **Wheat Code**
 (IRS, HBL, HML, HP, IHM, WS) — the type selects the receiving standard.
-**Stock gate**: a held or rejected lot cannot leave its location; flour cannot leave Flour Temp
-Finished or a flour silo until it passes; nothing leaves a Temp Finished location before QC.
+**Stock gate**: QC checks flour **once**, in Flour Temp Finished, before it enters the Flour Store.
+After that, departments request and receive flour from the Flour Store (or the pasta/macaroni
+flour silos) with **no QC step**. Products that need a QC release (wheat, flour, pasta, biscuit)
+cannot leave their Temp Finished location before QC passes; bread needs no release. A lot QC has
+explicitly put on hold or rejected cannot move anywhere until QC releases it.
 
 ---
 
@@ -406,8 +409,10 @@ Recipe: 1 qtl Grade 1 flour + 55 kg water (open item: no yeast, salt, sugar, imp
 1. Order → Request Ingredients (flour G1 from Flour Store) → produce.
 2. Shift report shows *Expected scrap from / to* (10–20 % of flour) as a guide; breakage, sweepings,
    disposed dough, stoppages.
-3. QC (OF/QC/002): baked weight 95–105 g (100 g) / 114–126 g (120 g), weighed 30 min after the
-   oven, **4 samples, every one within limits** (fresh install).
+3. **No QC release for bread** (factory decision): bread lots get no inspection. After *Produce All*,
+   **Send to Finished Goods** works straight away → Bread Store. The product setting *QC Release
+   Required* (product form) is unticked for both breads; tick it again if QC ever wants to release
+   bread (the OF/QC/002 weight plans stay available).
 4. Send to Finished Goods → Bread Store.
 5. Water hardness for bread proofing (80–120 mg/l) is on the OF/QC/013 daily log.
 

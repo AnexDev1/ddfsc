@@ -73,7 +73,7 @@ class StockLot(models.Model):
         """The wheat type picks the plan, so open the tests of the new plan."""
         self.filtered('quality_plan_id').action_prepare_quality_checks()
 
-    @api.depends('product_id', 'ddfsc_wheat_type')
+    @api.depends('product_id', 'product_id.ddfsc_qc_required', 'ddfsc_wheat_type')
     def _compute_quality_plan(self):
         today = fields.Date.today()
         domain = [('active', '=', True)]
@@ -89,6 +89,9 @@ class StockLot(models.Model):
         order = 'effective_from desc, id desc' if 'effective_from' in plan_fields else 'sequence, id'
         plans = self.env['ddfsc.quality.plan'].search(domain, order=order)
         for lot in self:
+            if not lot.product_id.ddfsc_qc_required:
+                lot.quality_plan_id = False  # released without QC (bread)
+                continue
             candidates = plans.filtered(
                 lambda plan: lot.product_id in plan.product_ids
                 and (not plan.wheat_type or plan.wheat_type == lot.ddfsc_wheat_type)

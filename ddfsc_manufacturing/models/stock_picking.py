@@ -170,8 +170,9 @@ class StockPicking(models.Model):
                     for xmlid in ('loc_wheat_dock', 'loc_flour_finished', 'loc_pasta_finished',
                                   'loc_macaroni_finished', 'loc_bread_finished', 'loc_biscuit_finished')
                 ]
-                if picking.location_id in controlled_sources and lot.ddfsc_quality_state not in ('pass', 'released') \
-                        and not lot.sudo().quality_plan_id:
+                qc_required = lot.product_id.ddfsc_qc_required
+                if qc_required and picking.location_id in controlled_sources \
+                        and lot.ddfsc_quality_state not in ('pass', 'released') and not lot.sudo().quality_plan_id:
                     picking._ddfsc_quality_redirect(lot, _(
                         'Lot %(lot)s cannot leave %(location)s: no approved QC plan covers %(product)s yet, '
                         'so there is nothing for the laboratory to fill in. A Quality Manager must approve '
@@ -179,7 +180,8 @@ class StockPicking(models.Model):
                         lot=lot.name, location=picking.location_id.display_name,
                         product=lot.product_id.display_name,
                     ))
-                if picking.location_id in controlled_sources and lot.ddfsc_quality_state not in ('pass', 'released'):
+                if qc_required and picking.location_id in controlled_sources \
+                        and lot.ddfsc_quality_state not in ('pass', 'released'):
                     picking._ddfsc_quality_redirect(lot, _(
                         'Lot %(lot)s cannot leave %(location)s while QC status is %(status)s. '
                         'Complete every required check, or record an authorized exception.',
