@@ -336,14 +336,37 @@ class PurchaseOrderLine(models.Model):
         readonly=True,
     )
 
+    @api.model
+    def _ddfsc_add_branch_distribution(self, distribution, order):
+        """Add the order warehouse's Branch / Location account to an analytic
+        distribution when no account from the branch plan is present yet.
+        The Branch plan is mandatory on purchase orders and bills."""
+        from odoo.addons.ddfsc_product.models.res_company import merge_analytic_distribution
+        if not order:
+            return distribution
+        branch_account = order.picking_type_id.warehouse_id.analytic_account_id
+        if not branch_account:
+            return distribution
+        dist = dict(distribution or {})
+        branch_ids = set(self.env['account.analytic.account'].search(
+            [('plan_id', '=', branch_account.plan_id.id)]).ids)
+        has_branch = any(
+            int(acc) in branch_ids
+            for key in dist for acc in str(key).split(',') if acc.isdigit()
+        )
+        if has_branch:
+            return dist
+        return merge_analytic_distribution(dist, branch_account)
+
     @api.onchange('product_id')
     def _onchange_product_id_set_analytic_dimension(self):
+        from odoo.addons.ddfsc_product.models.res_company import merge_analytic_distribution
+        dist = self.analytic_distribution
         if self.product_id and self.product_id.analytic_account_id:
-            from odoo.addons.ddfsc_product.models.res_company import merge_analytic_distribution
-            self.analytic_distribution = merge_analytic_distribution(
-                self.analytic_distribution,
-                self.product_id.analytic_account_id,
-            )
+            dist = merge_analytic_distribution(dist, self.product_id.analytic_account_id)
+        if self.product_id:
+            dist = self._ddfsc_add_branch_distribution(dist, self.order_id)
+        self.analytic_distribution = dist
 
     def _prepare_account_move_line(self, move=False):
         res = super()._prepare_account_move_line(move=move)
@@ -365,6 +388,13 @@ class PurchaseOrderLine(models.Model):
                             dist,
                             product.analytic_account_id,
                         )
+                    if vals.get('order_id'):
+                        order = self.env['purchase.order'].browse(vals['order_id'])
+                        dist = self._ddfsc_add_branch_distribution(
+                            vals.get('analytic_distribution'), order,
+                        )
+                        if dist:
+                            vals['analytic_distribution'] = dist
         return super().create(vals_list)
 
 

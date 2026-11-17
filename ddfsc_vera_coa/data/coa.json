@@ -97,6 +97,33 @@
       "replaces": "1107"
     },
     {
+      "code": "1091",
+      "name": "Outstanding Receipts - Cheques & Transfers Received",
+      "account_type": "asset_current",
+      "normal_balance": "Debit",
+      "required_dimensions": "-",
+      "replaces": "101403 (Odoo Outstanding Receipts)",
+      "reconcile": true
+    },
+    {
+      "code": "1092",
+      "name": "Outstanding Payments - Cheques Issued",
+      "account_type": "asset_current",
+      "normal_balance": "Credit (contra)",
+      "required_dimensions": "-",
+      "replaces": "101404 (Odoo Outstanding Payments)",
+      "reconcile": true
+    },
+    {
+      "code": "1093",
+      "name": "Internal Liquidity Transfer",
+      "account_type": "asset_current",
+      "normal_balance": "Debit",
+      "required_dimensions": "-",
+      "replaces": "101701 (Odoo Liquidity Transfer)",
+      "reconcile": true
+    },
+    {
       "code": "1100",
       "name": "Trade Accounts Receivable - Control",
       "account_type": "asset_receivable",

@@ -2,4 +2,5 @@
 <odoo>
     <function model="account.analytic.account" name="_ddfsc_share_product_line_dimension"/>
     <function model="account.move.line" name="_ddfsc_migrate_vera_draft_lines"/>
+    <function model="account.account" name="_ddfsc_sync_payment_accounts"/>
 </odoo>

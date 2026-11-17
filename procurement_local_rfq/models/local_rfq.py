@@ -147,7 +147,13 @@ class LocalRFQ(models.Model):
                 company_id = vals.get('company_id') or self.env.company.id
                 self._ensure_company_sequence(company_id)
                 vals['name'] = self.env['ir.sequence'].with_company(company_id).next_by_code('local.rfq') or 'New'
+        # Committee members are hr.employee records, which procurement users
+        # usually cannot access; write them with sudo.
+        committee_vals = [vals.pop('committee_ids', None) for vals in vals_list]
         records = super().create(vals_list)
+        for rec, committee in zip(records, committee_vals):
+            if committee is not None:
+                super(LocalRFQ, rec.sudo()).write({'committee_ids': committee})
         for rec in records:
             vendors = rec.vendor_ids | rec.quote_ids.mapped('partner_id')
             zero_rank = vendors.filtered(lambda p: p.supplier_rank == 0)
@@ -156,7 +162,10 @@ class LocalRFQ(models.Model):
         return records
 
     def write(self, vals):
-        res = super().write(vals)
+        if 'committee_ids' in vals:
+            vals = dict(vals)
+            super(LocalRFQ, self.sudo()).write({'committee_ids': vals.pop('committee_ids')})
+        res = super().write(vals) if vals else True
         for rec in self:
             vendors = rec.vendor_ids | rec.quote_ids.mapped('partner_id')
             zero_rank = vendors.filtered(lambda p: p.supplier_rank == 0)

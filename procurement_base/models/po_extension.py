@@ -52,6 +52,24 @@ class PurchaseOrder(models.Model):
                     'name': f"{template.name} ({self.env['res.company'].browse(company_id).name})"
                 })
 
+    def _ddfsc_fill_branch_distribution(self):
+        """Fill the missing Branch / Location analytic account on product lines
+        (covers lines created before the branch default existed)."""
+        Line = self.env['purchase.order.line']
+        for order in self:
+            for line in order.order_line.filtered(lambda l: not l.display_type and l.product_id):
+                dist = Line._ddfsc_add_branch_distribution(line.analytic_distribution, order)
+                if dist and dist != (line.analytic_distribution or {}):
+                    line.analytic_distribution = dist
+
+    @api.onchange('picking_type_id')
+    def _onchange_picking_type_id_branch_analytic(self):
+        self._ddfsc_fill_branch_distribution()
+
+    def button_confirm(self):
+        self._ddfsc_fill_branch_distribution()
+        return super().button_confirm()
+
     def _prepare_picking(self):
         res = super()._prepare_picking()
         if self.company_id.set_po_date_as_receipt_date and self.date_planned:
