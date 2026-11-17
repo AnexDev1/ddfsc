@@ -53,20 +53,6 @@ class MrpProduction(models.Model):
     conditioning_2_hours = fields.Float(string='2nd Conditioning (hours)', copy=False)
     moisture_initial = fields.Float(string='Initial Moisture %', copy=False)
     moisture_final = fields.Float(string='Final Moisture %', copy=False)
-    downtime_hours = fields.Float(string='Downtime (hours)', copy=False)
-    downtime_reason = fields.Selection(
-        [
-            ('power', 'Power cut'),
-            ('film', 'Short of film'),
-            ('mixer', 'Mixer'),
-            ('die', 'Die'),
-            ('oven', 'Oven'),
-            ('packing', 'Packing machine'),
-            ('other', 'Other'),
-        ],
-        string='Downtime Reason',
-        copy=False,
-    )
     scrap_qty = fields.Float(string='Saleable Breakage', copy=False)
     ddfsc_breakage_uom = fields.Char(string='Breakage Unit', compute='_compute_ddfsc_breakage_uom')
     ddfsc_maintenance_request_id = fields.Many2one(
@@ -210,7 +196,7 @@ class MrpProduction(models.Model):
         lines = self.sudo().ddfsc_variance_line_ids
         # Reworked scrap is planned reuse recorded on the order, not over-use.
         return lines.filtered(
-            lambda line: not line.is_rework and (
+            lambda line: not line.is_rework and not line.is_packing and (
                 (line.is_unplanned and line.actual_qty)
                 or (not line.is_unplanned and abs(line.variance_percent) > tolerance + 1e-9)
             )
@@ -856,6 +842,7 @@ class MrpProduction(models.Model):
                     'expected_qty': expected,
                     'is_unplanned': not bool(move.bom_line_id),
                     'is_rework': move in production._ddfsc_rework_moves(),
+                    'is_packing': move in production._ddfsc_packing_moves(),
                     'unit_cost': move.product_id.uom_id._compute_price(
                         move.product_id.standard_price, move.product_uom),
                 }
@@ -1005,43 +992,6 @@ class MrpProduction(models.Model):
         })
         move._action_done()
 
-    def action_log_downtime(self):
-        """Open a corrective request for mixer, die, oven, or packing downtime."""
-        self.ensure_one()
-        if self.ddfsc_maintenance_request_id:
-            return self._maintenance_request_action(self.ddfsc_maintenance_request_id)
-        equipment_reasons = ('mixer', 'die', 'oven', 'packing')
-        if self.downtime_reason not in equipment_reasons:
-            raise UserError(_(
-                'A maintenance request is opened for mixer, die, oven, or packing downtime. '
-                'Power cuts and film shortages stay on the shift report.'
-            ))
-        if not self.ddfsc_line_id:
-            raise UserError(_('Choose the production line before logging this downtime.'))
-        equipment = self.env['maintenance.equipment'].search([
-            ('ddfsc_workcenter_id', '=', self.ddfsc_line_id.id),
-            ('ddfsc_downtime_code', '=', self.downtime_reason),
-        ], limit=1)
-        if not equipment:
-            raise UserError(_(
-                'No %(reason)s is registered on %(line)s.',
-                reason=dict(self._fields['downtime_reason'].selection).get(self.downtime_reason),
-                line=self.ddfsc_line_id.display_name,
-            ))
-        reason = dict(self._fields['downtime_reason'].selection).get(self.downtime_reason)
-        request = self.env['maintenance.request'].create({
-            'name': '%s downtime on %s' % (reason, self.name),
-            'equipment_id': equipment.id,
-            'maintenance_team_id': equipment.maintenance_team_id.id,
-            'maintenance_type': 'corrective',
-            'description': '<p>%s hours. Shift %s.</p>' % (
-                self.downtime_hours or 0,
-                self.ddfsc_shift_id.name or '',
-            ),
-        })
-        self.ddfsc_maintenance_request_id = request
-        return self._maintenance_request_action(request)
-
     def _maintenance_request_action(self, request):
         return {
             'type': 'ir.actions.act_window',
@@ -1089,6 +1039,7 @@ class DdfscProductionVarianceLine(models.Model):
     )
     is_unplanned = fields.Boolean(string='Not in Recipe', readonly=True)
     is_rework = fields.Boolean(string='Reworked Scrap', readonly=True)
+    is_packing = fields.Boolean(string='Packing Bags', readonly=True)
     department = fields.Selection(related='production_id.ddfsc_department', store=True, string='Department')
     line_id = fields.Many2one(related='production_id.ddfsc_line_id', store=True, string='Production Line')
     shift_id = fields.Many2one(related='production_id.ddfsc_shift_id', store=True, string='Shift')
@@ -1103,11 +1054,11 @@ class DdfscProductionVarianceLine(models.Model):
         'Each consumption move can appear only once in the production variance register.',
     )
 
-    @api.depends('planned_qty', 'expected_qty', 'actual_qty', 'unit_cost', 'is_unplanned', 'is_rework', 'uom_id')
+    @api.depends('planned_qty', 'expected_qty', 'actual_qty', 'unit_cost', 'is_unplanned', 'is_rework', 'is_packing', 'uom_id')
     def _compute_variance(self):
         for line in self:
             standard = line.expected_qty if line.expected_qty or line.is_unplanned else line.planned_qty
-            if line.is_rework:
+            if line.is_rework or line.is_packing:
                 # The standard for rework is what the order says was reused.
                 standard = line.actual_qty
             line.variance_qty = line.actual_qty - standard

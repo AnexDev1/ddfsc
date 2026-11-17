@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Details the paper receiving / dispatch notes ask for (GRN, Wheat
+         Receiving Note, Delivery Order with gate pass). -->
+    <record id="stock_picking_form_plant_document" model="ir.ui.view">
+        <field name="name">stock.picking.form.plant.document</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.view_picking_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='extra']" position="before">
+                <page string="Plant Document" name="ddfsc_plant_document">
+                    <group>
+                        <group string="Receiving" invisible="picking_type_code != 'incoming'">
+                            <field name="ddfsc_supplier_invoice"/>
+                            <field name="ddfsc_supplier_delivery"/>
+                        </group>
+                        <group string="Dispatch" invisible="picking_type_code != 'outgoing'">
+                            <field name="ddfsc_customer_reference"/>
+                            <field name="ddfsc_receiver_name"/>
+                            <field name="ddfsc_receiver_identification"/>
+                        </group>
+                        <group string="Vehicle">
+                            <field name="ddfsc_vehicle_plate"/>
+                            <field name="ddfsc_driver_name"/>
+                            <field name="ddfsc_paper_voucher"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+            <xpath expr="//page[@name='operations']//field[@name='description_picking']" position="after">
+                <field name="ddfsc_bags" optional="show" column_invisible="parent.picking_type_code == 'internal'"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

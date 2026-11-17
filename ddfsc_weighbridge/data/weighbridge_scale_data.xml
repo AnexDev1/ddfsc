@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="weighbridge_scale_default" model="ddfsc.weighbridge.scale">
+        <field name="name">Main Weighbridge (Master-K IDé 500)</field>
+        <field name="code">WB1</field>
+    </record>
+</odoo>

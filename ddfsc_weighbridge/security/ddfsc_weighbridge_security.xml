@@ -20,4 +20,9 @@
         <field name="implied_ids" eval="[(4, ref('group_ddfsc_weighbridge_user'))]"/>
         <field name="user_ids" eval="[(4, ref('base.user_root')), (4, ref('base.user_admin'))]"/>
     </record>
+    <!-- Technical account used only by the scale bridge program to send readings. -->
+    <record id="group_ddfsc_weighbridge_device" model="res.groups">
+        <field name="name">Scale Device (bridge program only)</field>
+        <field name="privilege_id" ref="privilege_ddfsc_weighbridge"/>
+    </record>
 </odoo>

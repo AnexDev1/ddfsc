@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!-- Rows and standards copied from the signed QC forms (Issue No. 01, Feb 2026). -->
+    <record id="qc_log_dryer_115288" model="ddfsc.qc.log.template">
+        <field name="name">Moisture on Dryers – Short Cut Die 115288</field>
+        <field name="form_no">OF/QC/004</field>
+        <field name="sequence">10</field>
+        <field name="frequency">shift</field>
+        <field name="area">Pasta and Macaroni Production</field>
+        <field name="instruction">Analyse every shift. The QC head checks the compliance of the results before the product is released.</field>
+        <field name="line_ids" eval="[
+            (0, 0, {'sequence': 10, 'subject': 'Pre-dryer', 'unit': '%', 'apply_min': True, 'standard_min': 24.5, 'apply_max': True, 'standard_max': 27.5}),
+            (0, 0, {'sequence': 20, 'subject': 'A1', 'unit': '%', 'apply_min': True, 'standard_min': 17.4, 'apply_max': True, 'standard_max': 21.0}),
+            (0, 0, {'sequence': 30, 'subject': 'S1', 'unit': '%', 'apply_min': True, 'standard_min': 12.0, 'apply_max': True, 'standard_max': 14.9}),
+            (0, 0, {'sequence': 40, 'subject': 'S2', 'unit': '%', 'apply_min': True, 'standard_min': 11.6, 'apply_max': True, 'standard_max': 14.0}),
+            (0, 0, {'sequence': 50, 'subject': 'Cooler', 'unit': '%', 'apply_min': True, 'standard_min': 12.0, 'apply_max': True, 'standard_max': 13.8}),
+            (0, 0, {'sequence': 60, 'subject': 'Packing', 'unit': '%', 'apply_min': True, 'standard_min': 10.0, 'apply_max': True, 'standard_max': 12.5}),
+        ]"/>
+    </record>
+    <record id="qc_log_magnet" model="ddfsc.qc.log.template">
+        <field name="name">Magnetic Separator Monitoring (1700 µm sieve)</field>
+        <field name="form_no">OF/QC/005</field>
+        <field name="sequence">20</field>
+        <field name="frequency">shift</field>
+        <field name="area">Pasta and Macaroni Production</field>
+        <field name="instruction">Check every shift. Any metal found must be reported in the remark with the action taken.</field>
+        <field name="line_ids" eval="[
+            (0, 0, {'sequence': 10, 'subject': 'Long cut pasta flour', 'result_type': 'qualitative', 'allowed_answers': 'Absent'}),
+            (0, 0, {'sequence': 20, 'subject': 'Short cut pasta flour', 'result_type': 'qualitative', 'allowed_answers': 'Absent'}),
+            (0, 0, {'sequence': 30, 'subject': 'Rework powder', 'result_type': 'qualitative', 'allowed_answers': 'Absent'}),
+        ]"/>
+    </record>
+    <record id="qc_log_calibration" model="ddfsc.qc.log.template">
+        <field name="name">Moisture Tester and Balance Calibration</field>
+        <field name="form_no">OF/QC/006</field>
+        <field name="sequence">30</field>
+        <field name="frequency">shift</field>
+        <field name="area">Quality Control Laboratory</field>
+        <field name="instruction">Calibrate at the beginning of each shift. The QC head checks the calibration.</field>
+        <field name="line_ids" eval="[
+            (0, 0, {'sequence': 10, 'subject': 'Precision balance', 'result_type': 'qualitative', 'allowed_answers': 'Calibrated'}),
+            (0, 0, {'sequence': 20, 'subject': 'Analytical balance', 'result_type': 'qualitative', 'allowed_answers': 'Calibrated'}),
+            (0, 0, {'sequence': 30, 'subject': 'Rapid moisture tester', 'result_type': 'qualitative', 'allowed_answers': 'Calibrated'}),
+        ]"/>
+    </record>
+    <record id="qc_log_water" model="ddfsc.qc.log.template">
+        <field name="name">Chlorine Residue and Water Hardness</field>
+        <field name="form_no">OF/QC/013</field>
+        <field name="sequence">40</field>
+        <field name="frequency">day</field>
+        <field name="area">Boiler and Utility Division</field>
+        <field name="instruction">Analyse after every chlorination and once a day when there is production.</field>
+        <field name="line_ids" eval="[
+            (0, 0, {'sequence': 10, 'subject': 'Reservoir 1 – chlorine residue', 'unit': 'g/l', 'apply_max': True, 'standard_max': 0.5}),
+            (0, 0, {'sequence': 20, 'subject': 'Reservoir 2 – chlorine residue', 'unit': 'g/l', 'apply_max': True, 'standard_max': 0.5}),
+            (0, 0, {'sequence': 30, 'subject': 'Pasta mixer (old) – hardness', 'unit': 'mg/l', 'apply_min': True, 'standard_min': 80.0, 'apply_max': True, 'standard_max': 150.0}),
+            (0, 0, {'sequence': 40, 'subject': 'Pasta mixer (new) – hardness', 'unit': 'mg/l', 'apply_min': True, 'standard_min': 80.0, 'apply_max': True, 'standard_max': 150.0}),
+            (0, 0, {'sequence': 50, 'subject': 'Boiler feed – hardness', 'unit': 'mg/l', 'apply_min': True, 'standard_min': 0.0, 'apply_max': True, 'standard_max': 10.0}),
+            (0, 0, {'sequence': 60, 'subject': 'Bread proofing humidifier – hardness', 'unit': 'mg/l', 'apply_min': True, 'standard_min': 80.0, 'apply_max': True, 'standard_max': 120.0}),
+        ]"/>
+    </record>
+    <record id="qc_log_wheat_transfer" model="ddfsc.qc.log.template">
+        <field name="name">Physical Characteristics of Wheat at Transfer</field>
+        <field name="form_no">OF/QC/011</field>
+        <field name="sequence">50</field>
+        <field name="frequency">day</field>
+        <field name="area">Flour Production Main Division</field>
+        <field name="instruction">Analyse every morning shift for each mixing bin in use. Gluten is optional.</field>
+        <field name="line_ids" eval="[
+            (0, 0, {'sequence': 10, 'subject': 'Mixing bin 1 – moisture', 'unit': '%'}),
+            (0, 0, {'sequence': 20, 'subject': 'Mixing bin 1 – hectoliter weight', 'unit': 'kg/hl'}),
+            (0, 0, {'sequence': 30, 'subject': 'Mixing bin 2 – moisture', 'unit': '%'}),
+            (0, 0, {'sequence': 40, 'subject': 'Mixing bin 2 – hectoliter weight', 'unit': 'kg/hl'}),
+            (0, 0, {'sequence': 50, 'subject': 'Mixing bin 3 – moisture', 'unit': '%'}),
+            (0, 0, {'sequence': 60, 'subject': 'Mixing bin 3 – hectoliter weight', 'unit': 'kg/hl'}),
+            (0, 0, {'sequence': 70, 'subject': 'Mixing bin 4 – moisture', 'unit': '%'}),
+            (0, 0, {'sequence': 80, 'subject': 'Mixing bin 4 – hectoliter weight', 'unit': 'kg/hl'}),
+        ]"/>
+    </record>
+    <record id="qc_log_granulation" model="ddfsc.qc.log.template">
+        <field name="name">Wheat Milling Granulation – Pasta Flour</field>
+        <field name="form_no">OF/QC/014</field>
+        <field name="sequence">60</field>
+        <field name="frequency">event</field>
+        <field name="area">Flour Production Main Division</field>
+        <field name="instruction">Analyse whenever pasta wheat is milled. Granulation for short cut pasta is optional.</field>
+        <field name="line_ids" eval="[
+            (0, 0, {'sequence': 10, 'subject': 'Above 300 µm', 'unit': '%', 'apply_min': True, 'standard_min': 2.0, 'apply_max': True, 'standard_max': 6.0}),
+            (0, 0, {'sequence': 20, 'subject': 'Above 250 µm', 'unit': '%', 'apply_min': True, 'standard_min': 2.0, 'apply_max': True, 'standard_max': 5.0}),
+            (0, 0, {'sequence': 30, 'subject': 'Above 180 µm', 'unit': '%', 'apply_min': True, 'standard_min': 7.0, 'apply_max': True, 'standard_max': 12.0}),
+            (0, 0, {'sequence': 40, 'subject': 'Above 106 µm', 'unit': '%', 'apply_min': True, 'standard_min': 18.0, 'apply_max': True, 'standard_max': 27.0}),
+            (0, 0, {'sequence': 50, 'subject': 'Below 106 µm', 'unit': '%', 'apply_min': True, 'standard_min': 56.0, 'apply_max': True, 'standard_max': 63.0}),
+            (0, 0, {'sequence': 60, 'subject': 'Wet gluten content', 'unit': '%'}),
+            (0, 0, {'sequence': 70, 'subject': 'Initial wheat moisture', 'unit': '%'}),
+            (0, 0, {'sequence': 80, 'subject': 'Final wheat moisture', 'unit': '%'}),
+        ]"/>
+    </record>
+    <record id="qc_log_wheat_store" model="ddfsc.qc.log.template">
+        <field name="name">Physical Characteristics of Wheat at Warehouse</field>
+        <field name="form_no">OF/QC/016</field>
+        <field name="sequence">70</field>
+        <field name="frequency">week</field>
+        <field name="area">Property Administration</field>
+        <field name="instruction">The quality controller records the stored wheat; the QC head checks the results.</field>
+        <field name="line_ids" eval="[
+            (0, 0, {'sequence': 10, 'subject': 'Moisture content', 'unit': '%', 'apply_max': True, 'standard_max': 12.0}),
+            (0, 0, {'sequence': 20, 'subject': 'Hectoliter weight', 'unit': 'kg/hl'}),
+            (0, 0, {'sequence': 30, 'subject': 'Protein content at 12.5 % mc', 'unit': '%'}),
+            (0, 0, {'sequence': 40, 'subject': 'Gluten content (optional)', 'unit': '%'}),
+            (0, 0, {'sequence': 50, 'subject': 'Temperature', 'unit': '°C'}),
+            (0, 0, {'sequence': 60, 'subject': 'Relative humidity', 'unit': '%'}),
+        ]"/>
+    </record>
+    <record id="seq_ddfsc_qc_log" model="ir.sequence">
+        <field name="name">DDFSC QC Log Sheet</field>
+        <field name="code">ddfsc.qc.log</field>
+        <field name="prefix">QCL/%(year)s/</field>
+        <field name="padding">5</field>
+    </record>
+</odoo>

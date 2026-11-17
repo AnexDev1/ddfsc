@@ -106,6 +106,9 @@
                                     <field name="categ_id" optional="show"/>
                                     <field name="description" readonly="state != 'draft'"/>
                                     <field name="product_uom_id" readonly="state != 'draft'"/>
+                                    <field name="store_qty_on_hand" optional="show"/>
+                                    <field name="store_min_qty" optional="show"/>
+                                    <field name="store_annual_consumption" optional="show"/>
                                     <field name="quantity" readonly="state != 'draft'"/>
                                     <field name="company_id" column_invisible="True"/>
                                     <field name="cost_center_plan_id" column_invisible="True"/>

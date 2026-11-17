@@ -1,6 +1,6 @@
 {
     "name": "Local Procurement",
-    "version": "19.0.1.5",
+    "version": "19.0.1.6",
     "category": "Inventory/Procurement",
     "summary": "Local purchase requisition for procurement process",
     "author": "Mehbuba",

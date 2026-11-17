@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="paperformat_ddfsc_voucher" model="report.paperformat">
+        <field name="name">DDFSC Voucher (A5 landscape)</field>
+        <field name="format">A5</field>
+        <field name="orientation">Landscape</field>
+        <field name="margin_top">8</field>
+        <field name="margin_bottom">8</field>
+        <field name="margin_left">8</field>
+        <field name="margin_right">8</field>
+        <field name="header_spacing">0</field>
+        <field name="dpi">96</field>
+    </record>
+
+    <!-- One layout for every plant voucher: header box, info rows, items,
+         signatures and the copy distribution printed on the paper pads. -->
+    <template id="voucher_body">
+        <div class="page" style="font-size: 11px; font-family: Arial, sans-serif;">
+            <table style="width: 100%; border-collapse: collapse; border: 1.5px solid #000;">
+                <tr>
+                    <td rowspan="2" style="width: 14%; border: 1px solid #000; text-align: center; padding: 4px;">
+                        <img t-if="company.logo" t-att-src="image_data_uri(company.logo)" style="max-height: 46px; max-width: 90px;"/>
+                    </td>
+                    <td style="border: 1px solid #000; text-align: center; padding: 3px;">
+                        <div style="font-size: 9px;">Company Name</div>
+                        <div style="font-weight: bold; font-size: 13px;" t-out="v['company']"/>
+                    </td>
+                    <td style="width: 20%; border: 1px solid #000; padding: 3px;">
+                        Form No: <b t-out="v['form_no'] or '—'"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #000; text-align: center; padding: 4px; font-weight: bold; font-size: 15px;" t-out="v['title']"/>
+                    <td style="border: 1px solid #000; padding: 3px;">
+                        Issue No. 1<br/>Voucher No.
+                        <b style="color: #b00020; font-size: 13px;" t-out="v['voucher_no']"/>
+                    </td>
+                </tr>
+            </table>
+
+            <table style="width: 100%; margin: 6px 0;">
+                <t t-foreach="v['rows']" t-as="row">
+                    <tr>
+                        <td style="width: 26%; padding: 1px 0;" t-out="row[0]"/>
+                        <td style="border-bottom: 1px dotted #555; padding: 1px 4px;" t-out="row[1]"/>
+                    </tr>
+                </t>
+            </table>
+
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: #eee;">
+                        <th style="border: 1px solid #000; padding: 3px; width: 6%;">No.</th>
+                        <th style="border: 1px solid #000; padding: 3px; width: 12%;">Item Code</th>
+                        <th style="border: 1px solid #000; padding: 3px;">Description</th>
+                        <th style="border: 1px solid #000; padding: 3px; width: 10%;">Unit of Measure</th>
+                        <th t-if="v.get('bags')" style="border: 1px solid #000; padding: 3px; width: 8%;">No. of Bags</th>
+                        <th style="border: 1px solid #000; padding: 3px; width: 11%;">Quantity</th>
+                        <th t-if="v.get('price')" style="border: 1px solid #000; padding: 3px; width: 11%;">Unit Price</th>
+                        <th t-if="v.get('price')" style="border: 1px solid #000; padding: 3px; width: 12%;">Total Value</th>
+                        <th style="border: 1px solid #000; padding: 3px; width: 14%;" t-out="'Reasons' if v.get('reason') else 'Remark'"/>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr t-foreach="v['lines']" t-as="line">
+                        <td style="border: 1px solid #000; padding: 2px; text-align: center;" t-out="line_index + 1"/>
+                        <td style="border: 1px solid #000; padding: 2px;" t-out="line['code']"/>
+                        <td style="border: 1px solid #000; padding: 2px;" t-out="line['description']"/>
+                        <td style="border: 1px solid #000; padding: 2px; text-align: center;" t-out="line['uom']"/>
+                        <td t-if="v.get('bags')" style="border: 1px solid #000; padding: 2px; text-align: right;" t-out="line.get('bags')"/>
+                        <td style="border: 1px solid #000; padding: 2px; text-align: right;" t-out="'%.3f' % line['quantity']"/>
+                        <td t-if="v.get('price')" style="border: 1px solid #000; padding: 2px; text-align: right;" t-out="'{:,.2f}'.format(line['price'])"/>
+                        <td t-if="v.get('price')" style="border: 1px solid #000; padding: 2px; text-align: right;" t-out="'{:,.2f}'.format(line['total'])"/>
+                        <td style="border: 1px solid #000; padding: 2px;" t-out="v['reason'] if v.get('reason') else ''"/>
+                    </tr>
+                    <!-- Empty rows keep the pad look and leave room for corrections. -->
+                    <tr t-foreach="range(max(0, 6 - len(v['lines'])))" t-as="blank">
+                        <td style="border: 1px solid #000; height: 16px;"/><td style="border: 1px solid #000;"/>
+                        <td style="border: 1px solid #000;"/><td style="border: 1px solid #000;"/>
+                        <td t-if="v.get('bags')" style="border: 1px solid #000;"/>
+                        <td style="border: 1px solid #000;"/>
+                        <td t-if="v.get('price')" style="border: 1px solid #000;"/>
+                        <td t-if="v.get('price')" style="border: 1px solid #000;"/>
+                        <td style="border: 1px solid #000;"/>
+                    </tr>
+                    <tr t-if="v.get('price')">
+                        <td t-att-colspan="7 if v.get('bags') else 6" style="border: 1px solid #000; padding: 2px; text-align: right; font-weight: bold;">Total</td>
+                        <td style="border: 1px solid #000; padding: 2px; text-align: right; font-weight: bold;" t-out="'{:,.2f}'.format(v['grand_total'])"/>
+                        <td style="border: 1px solid #000;"/>
+                    </tr>
+                </tbody>
+            </table>
+
+            <table style="width: 100%; margin-top: 14px;">
+                <tr>
+                    <t t-foreach="v['signatures']" t-as="label">
+                        <td style="padding: 0 6px; vertical-align: bottom;">
+                            <div style="min-height: 14px;" t-out="v['names'].get(label, '')"/>
+                            <div style="border-top: 1px solid #000; padding-top: 1px;" t-out="label"/>
+                            <div style="font-size: 9px; color: #555;">Signature / Date</div>
+                        </td>
+                    </t>
+                </tr>
+            </table>
+
+            <div style="margin-top: 8px; font-size: 9px;">
+                <b>Distribution:</b> <span t-out="v['distribution']"/>
+            </div>
+        </div>
+    </template>
+
+    <template id="report_picking_voucher">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="web.basic_layout">
+                    <t t-set="company" t-value="o.company_id"/>
+                    <t t-set="v" t-value="o._ddfsc_voucher()"/>
+                    <t t-call="ddfsc_manufacturing.voucher_body"/>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <template id="report_store_request_voucher">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="web.basic_layout">
+                    <t t-set="company" t-value="o.company_id"/>
+                    <t t-set="v" t-value="o._ddfsc_voucher()"/>
+                    <t t-call="ddfsc_manufacturing.voucher_body"/>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <record id="action_report_picking_voucher" model="ir.actions.report">
+        <field name="name">Plant Voucher</field>
+        <field name="model">stock.picking</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">ddfsc_manufacturing.report_picking_voucher</field>
+        <field name="report_file">ddfsc_manufacturing.report_picking_voucher</field>
+        <field name="print_report_name">'Voucher - %s' % object.name</field>
+        <field name="paperformat_id" ref="paperformat_ddfsc_voucher"/>
+        <field name="binding_model_id" ref="stock.model_stock_picking"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <record id="action_report_store_request_voucher" model="ir.actions.report">
+        <field name="name">Store Requisition</field>
+        <field name="model">ddfsc.store.request</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">ddfsc_manufacturing.report_store_request_voucher</field>
+        <field name="report_file">ddfsc_manufacturing.report_store_request_voucher</field>
+        <field name="print_report_name">'Requisition - %s' % object.name</field>
+        <field name="paperformat_id" ref="paperformat_ddfsc_voucher"/>
+        <field name="binding_model_id" ref="model_ddfsc_store_request"/>
+        <field name="binding_type">report</field>
+    </record>
+    <template id="report_lot_hold_release">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="web.basic_layout">
+                    <t t-set="company" t-value="o.company_id or o.env.company"/>
+                    <t t-set="h" t-value="o._ddfsc_hold_release()"/>
+                    <div class="page" style="font-size: 12px; font-family: Arial, sans-serif;">
+                        <table style="width: 100%; border-collapse: collapse; border: 1.5px solid #000;">
+                            <tr>
+                                <td style="width: 14%; border: 1px solid #000; text-align: center; padding: 4px;">
+                                    <img t-if="company.logo" t-att-src="image_data_uri(company.logo)" style="max-height: 46px; max-width: 90px;"/>
+                                </td>
+                                <td style="border: 1px solid #000; text-align: center; padding: 4px;">
+                                    <div style="font-weight: bold; font-size: 13px;" t-out="h['company']"/>
+                                    <div style="font-weight: bold; font-size: 15px;" t-out="h['title']"/>
+                                </td>
+                                <td style="width: 20%; border: 1px solid #000; padding: 3px;">
+                                    Form No: <b t-out="h['form_no']"/><br/>Issue No. 01
+                                </td>
+                            </tr>
+                        </table>
+                        <h3 style="margin: 10px 0 6px;" t-out="'Hold' if h['held'] else 'Release'"/>
+                        <table style="width: 100%;">
+                            <tr t-foreach="h['rows']" t-as="row">
+                                <td style="width: 26%; padding: 3px 0;" t-out="row[0]"/>
+                                <td style="border-bottom: 1px dotted #555; padding: 3px 4px;" t-out="row[1]"/>
+                            </tr>
+                        </table>
+                        <table style="width: 100%; margin-top: 24px;">
+                            <tr>
+                                <td style="padding: 0 8px; vertical-align: bottom;">
+                                    <div t-out="h['by_name']"/>
+                                    <div style="border-top: 1px solid #000;" t-out="h['by_label']"/>
+                                    <div style="font-size: 9px; color: #555;">Date / Signature</div>
+                                </td>
+                                <td style="padding: 0 8px; vertical-align: bottom;">
+                                    <div style="min-height: 14px;"/>
+                                    <div style="border-top: 1px solid #000;">Approved by</div>
+                                    <div style="font-size: 9px; color: #555;">Date / Signature</div>
+                                </td>
+                            </tr>
+                        </table>
+                        <div style="margin-top: 10px; font-size: 9px;">Prepared by: QC · Reviewed by: FSMST · Approved by: GM · Date: Feb 2026</div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <record id="action_report_lot_hold_release" model="ir.actions.report">
+        <field name="name">QC Hold / Release Form</field>
+        <field name="model">stock.lot</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">ddfsc_manufacturing.report_lot_hold_release</field>
+        <field name="report_file">ddfsc_manufacturing.report_lot_hold_release</field>
+        <field name="print_report_name">'QC Hold-Release - %s' % object.name</field>
+        <field name="paperformat_id" ref="paperformat_ddfsc_voucher"/>
+        <field name="binding_model_id" ref="stock.model_stock_lot"/>
+        <field name="binding_type">report</field>
+    </record>
+</odoo>

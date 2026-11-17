@@ -32,7 +32,10 @@ class MaintenanceEquipment(models.Model):
             ('Dough Thickness Roller', 'ROLLER', False),
             ('Die', 'DIE', 'die'),
             ('Scrap Return', 'SCRAP', False),
+            ('Oven Feeder', 'FEEDER', False),
             ('Oven', 'OVEN', 'oven'),
+            ('180° Turning Conveyor', 'TURN', False),
+            ('Cooling Belt Conveyor', 'COOLING', False),
             ('Conveyor', 'CONVEYOR', False),
             ('Packing Machine', 'PACK', 'packing'),
         ]
@@ -67,7 +70,10 @@ class MaintenanceEquipment(models.Model):
             ('PASTA',),
             [
                 ('Extruder', 'EXTRUDER', 'die'),
+                ('Pre-dryer', 'PREDRYER', False),
                 ('Dryer', 'DRYER', False),
+                ('Rothoterm', 'ROTHOTERM', False),
+                ('Cooler', 'COOLER', False),
                 ('Packing Scale', 'PACK', 'packing'),
             ],
         )
@@ -78,7 +84,9 @@ class MaintenanceEquipment(models.Model):
             ('MAC',),
             [
                 ('Extruder', 'EXTRUDER', 'die'),
+                ('Pre-dryer', 'PREDRYER', False),
                 ('Dryer', 'DRYER', False),
+                ('Cooler', 'COOLER', False),
                 ('Packing Scale', 'PACK', 'packing'),
             ],
         )
@@ -108,22 +116,30 @@ class MaintenanceEquipment(models.Model):
                     equipment.write(vals)
                 else:
                     equipment = self.create(vals)
-                for unit, label in (('week', 'Weekly'), ('month', 'Monthly')):
+                # Annual plan (PL/MTD/002): I = inspection, L = lubrication, S = service.
+                for unit, interval, label, pm_type in (
+                        ('week', 1, 'Weekly inspection', 'inspection'),
+                        ('month', 1, 'Monthly lubrication', 'lubrication'),
+                        ('month', 3, 'Quarterly service', 'service')):
                     existing = self.env['maintenance.request'].search([
                         ('equipment_id', '=', equipment.id),
                         ('maintenance_type', '=', 'preventive'),
                         ('repeat_unit', '=', unit),
+                        ('repeat_interval', '=', interval),
                         ('archive', '=', False),
                     ], limit=1)
                     if existing:
+                        if not existing.ddfsc_pm_type:
+                            existing.ddfsc_pm_type = pm_type
                         continue
                     self.env['maintenance.request'].create({
-                        'name': '%s check: %s' % (label, equipment.name),
+                        'name': '%s: %s' % (label, equipment.name),
                         'equipment_id': equipment.id,
                         'maintenance_team_id': team.id,
                         'maintenance_type': 'preventive',
+                        'ddfsc_pm_type': pm_type,
                         'recurring_maintenance': True,
-                        'repeat_interval': 1,
+                        'repeat_interval': interval,
                         'repeat_unit': unit,
                         'repeat_type': 'forever',
                         'schedule_date': fields.Datetime.now(),
