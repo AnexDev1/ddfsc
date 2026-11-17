@@ -72,7 +72,7 @@
                         <p class="text-muted">Manual Phase 1 ticket. Capture the weights from the printed scale slip; this record does not validate stock or bypass QC.</p>
                     </div>
                     <div class="alert alert-info" role="alert" invisible="state != 'weighed'">
-                        <strong>One final step:</strong> attach a photo or scan of the printed weighbridge slip in the chatter, then select <em>Complete Ticket</em>.
+                        <strong>One final step:</strong> check the DSD number from the printed slip is entered, then select <em>Complete Ticket</em>.
                     </div>
                     <group>
                         <group string="Vehicle and Goods">
@@ -92,7 +92,7 @@
                         </group>
                     </group>
                     <div class="alert alert-warning" role="alert" invisible="not scale_id or scale_online or state not in ('draft', 'first_recorded')">
-                        The scale is not sending readings. Start the scale bridge on the weighbridge PC, or type the weight and attach the printed slip.
+                        The scale is not sending readings. Type the weights from the printed slip together with its DSD number.
                     </div>
                     <group string="Scale">
                         <group>
@@ -101,9 +101,9 @@
                         </group>
                         <group>
                             <field name="first_weight_source" invisible="not first_weight_source"/>
-                            <field name="first_dsd" invisible="not first_dsd"/>
+                            <field name="first_dsd" placeholder="e.g. 013882" readonly="state != 'draft' or first_weight_source == 'scale'" invisible="state not in ('draft', 'first_recorded') and not first_dsd"/>
                             <field name="second_weight_source" invisible="not second_weight_source"/>
-                            <field name="second_dsd" invisible="not second_dsd"/>
+                            <field name="second_dsd" placeholder="e.g. 013883" readonly="state not in ('draft', 'first_recorded') or second_weight_source == 'scale'"/>
                         </group>
                     </group>
                     <group string="Weight Capture (kilograms)">
@@ -146,7 +146,7 @@
         <field name="context">{'search_default_to_weigh': 1}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">Create the first weighbridge ticket.</p>
-            <p>Link it to the receipt or delivery, record gross and tare weights from the scale’s printed slip, then attach that slip before completing it.</p>
+            <p>Link it to the receipt or delivery, record gross and tare weights and the DSD number from the scale’s printed slip, then complete it.</p>
         </field>
     </record>
 </odoo>

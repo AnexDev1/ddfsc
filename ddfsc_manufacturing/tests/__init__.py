@@ -7,3 +7,4 @@ from . import test_vouchers
 from . import test_downtime
 from . import test_factory_extras
 from . import test_loss_correction
+from . import test_qc_scope

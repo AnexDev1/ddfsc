@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="nontaxable_limit_transport" model="ddfsc.nontaxable.allowance.limit">
+        <field name="name">Transport allowance exemption (confirm with Finance)</field>
+        <field name="date_from">2025-07-08</field>
+        <field name="percent_of_basic">25</field>
+        <field name="maximum_amount">2200</field>
+    </record>
+</odoo>

@@ -118,7 +118,7 @@ class HrPayslip(models.Model):
     @api.model
     def get_inputs(self, contracts, date_from, date_to):
         result = super().get_inputs(contracts, date_from, date_to)
-        if not contracts or not self.employee_id or not self.employee_id.payroll_eligible:
+        if not contracts or not self.employee_id or not self._ddfsc_payroll_allowed():
             return result
         components = self.env["ddfsc.employee.payroll.component"].search([
             ("employee_id", "=", self.employee_id.id), ("company_id", "=", self.company_id.id),
@@ -162,8 +162,12 @@ class HrPayslip(models.Model):
             contract = contracts[:1]
             if not contract:
                 return result
-            amount = self.get_approved_overtime_payment(
-                sum(approved_overtime.mapped("approved_hours")), contract.wage
+            # Overtime is paid on the salary in force for the period (promotions
+            # and revisions in the compensation history), not the raw contract wage.
+            # Art. 68 rates: day 1.5x, night 1.75x, rest day 2x, public holiday 2.5x.
+            amount = self.env["ddfsc.overtime.pay.rate"].calculate_split_payment(
+                approved_overtime._ddfsc_hours_split(), self.get_effective_basic_salary(contract),
+                self.date_to or self.date_from, self.company_id,
             )
             overtime_values = {
                 "name": self.env._("Approved Overtime"), "code": "OT_PAY", "amount": amount,

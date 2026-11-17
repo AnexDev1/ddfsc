@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="hr_leave_type_form_salary_paid" model="ir.ui.view">
+        <field name="name">hr.leave.type.form.salary.paid</field>
+        <field name="model">hr.leave.type</field>
+        <field name="inherit_id" ref="hr_holidays.edit_holiday_status_form"/>
+        <field name="arch" type="xml">
+            <field name="time_type" position="after">
+                <field name="ddfsc_pay_percent"/>
+            </field>
+        </field>
+    </record>
+    <record id="hr_leave_type_list_salary_paid" model="ir.ui.view">
+        <field name="name">hr.leave.type.list.salary.paid</field>
+        <field name="model">hr.leave.type</field>
+        <field name="inherit_id" ref="hr_holidays.view_holiday_status_normal_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//list" position="inside">
+                <field name="ddfsc_pay_percent" optional="show"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

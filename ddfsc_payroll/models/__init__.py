@@ -7,3 +7,6 @@ from . import allowance
 from . import promotion
 from . import loan
 
+from . import time_off
+from . import overtime_rates
+from . import payroll_controls

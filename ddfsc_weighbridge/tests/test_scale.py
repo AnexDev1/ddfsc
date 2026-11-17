@@ -56,15 +56,19 @@ class TestWeighbridgeScale(TransactionCase):
         ticket.action_complete()
         self.assertEqual(ticket.state, "completed")
 
-    def test_typed_weights_still_need_the_slip(self):
+    def test_typed_weights_need_the_slip_dsd_number(self):
         ticket = self._ticket()
         ticket.gross_weight = 20000
         ticket.action_record_first_weight()
         self.assertEqual(ticket.first_weight_source, "manual")
         ticket.tare_weight = 8000
-        ticket.action_record_second_weight()
         with self.assertRaises(UserError):
-            ticket.action_complete()
+            ticket.action_record_second_weight()
+        ticket.second_dsd = "013884"
+        ticket.action_record_second_weight()
+        self.assertEqual((ticket.second_weight_source, ticket.second_dsd), ("manual", "013884"))
+        ticket.action_complete()
+        self.assertEqual(ticket.state, "completed")
 
     def test_refuses_moving_old_or_empty_readings(self):
         ticket = self._ticket()
@@ -85,3 +89,31 @@ class TestWeighbridgeScale(TransactionCase):
             self.env["ddfsc.weighbridge.scale"].with_user(self.operator).push_reading("TST", 1000)
         with self.assertRaises(UserError):
             self.env["ddfsc.weighbridge.scale"].with_user(self.device).push_reading("NOPE", 1000)
+
+    def test_indicator_ticket_fills_the_odoo_ticket(self):
+        Scale = self.env["ddfsc.weighbridge.scale"].with_user(self.device)
+        values = {"weighing_no": "000004", "weighing_type": "IO", "dsd_no": "013883", "vehicle": "3-98673",
+                  "weighing_date": "2026-11-16 10:52:00", "gross": 38760.0, "tare": 15240.0, "net": 23520.0,
+                  "raw": "WEIGHING No : 000004-IO"}
+        first_id = Scale.push_indicator_ticket("TST", values)
+        self.assertEqual(Scale.push_indicator_ticket("TST", values), first_id, "A resent ticket is not duplicated")
+        source = self.env["ddfsc.weighbridge.indicator.ticket"].browse(first_id)
+        self.assertEqual(source.weighing_date.hour, 7, "Indicator local time is stored in UTC")
+
+        ticket = self._ticket()
+        ticket.vehicle_plate = "3 98673"
+        ticket.action_fill_from_indicator()
+        self.assertEqual((ticket.gross_weight, ticket.tare_weight, ticket.net_weight), (38760, 15240, 23520))
+        self.assertEqual((ticket.first_weight_source, ticket.second_weight_source), ("scale", "scale"))
+        self.assertEqual(ticket.second_dsd, "013883")
+        self.assertEqual(source.ticket_id, ticket)
+        ticket.action_complete()
+        self.assertEqual(ticket.state, "completed")
+
+        other = self._ticket()
+        with self.assertRaises(UserError):
+            other.action_fill_from_indicator()
+
+    def test_operator_cannot_send_indicator_tickets(self):
+        with self.assertRaises(AccessError):
+            self.env["ddfsc.weighbridge.scale"].with_user(self.operator).push_indicator_ticket("TST", {"gross": 1})

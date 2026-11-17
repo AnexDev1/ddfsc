@@ -1,11 +1,18 @@
 #!/usr/bin/env python3
 """DDFSC scale bridge: weighbridge indicator -> Odoo.
 
-Runs on the PC next to the weighbridge indicator (Master-K IDé 500). It reads
-the weight the indicator sends on its serial port (COM1/COM2, RS-232), its USB
-port (virtual COM port) or its Ethernet option, and pushes each reading to
-Odoo (model ``ddfsc.weighbridge.scale``, method ``push_reading``). Operators
-then press "Capture … from Scale" on the weighbridge ticket.
+Runs headless (no screen needed) on a PC next to the weighbridge indicator
+(Master-K IDé 500), or anywhere on the network when a serial-to-Ethernet
+converter sits next to the indicator. Two modes:
+
+* ticket (recommended for the IDé 500): the indicator's COM1 is set to a
+  printer driver, so every weighing ticket it prints is also sent as text.
+  The bridge reads WEIGHING No, DSD No, VEHICLE No, dates and GROSS / TARE /
+  NET and sends the ticket to Odoo (``push_indicator_ticket``). The operator
+  weighs on the indicator exactly as before; Odoo fills the weighbridge
+  ticket from it.
+* weight: the port is set to "weight repeater" and streams the live weight
+  (``push_reading``); operators press "Capture … from Scale".
 
 Usage
   python scale_bridge.py --config scale_bridge.ini            # run
@@ -39,6 +46,10 @@ DEFAULTS = {
         "scale_code": "WB1",
     },
     "indicator": {
+        # ticket | weight
+        "mode": "ticket",
+        # Seconds without new text that close a ticket (when no NET line ends it).
+        "ticket_idle_seconds": "3",
         # serial | tcp
         "connection": "serial",
         "port": "COM1",
@@ -97,6 +108,17 @@ class Odoo:
             raise RuntimeError(data.get("message") or answer["error"].get("message"))
         return answer["result"]
 
+    def push_ticket(self, ticket):
+        self._login()
+        return self._call("object", "execute_kw", self.db, self.uid, self.key,
+                          "ddfsc.weighbridge.scale", "push_indicator_ticket", [self.code, ticket])
+
+    def _login(self):
+        if not self.uid:
+            self.uid = self._call("common", "authenticate", self.db, self.login, self.key, {})
+            if not self.uid:
+                raise RuntimeError("Odoo refused the login %s (check login and API key)" % self.login)
+
     def push(self, weight, stable, raw, dsd):
         if not self.uid:
             self.uid = self._call("common", "authenticate", self.db, self.login, self.key, {})
@@ -148,6 +170,167 @@ class FrameParser:
             match = self.dsd_regex.search(text)
             dsd = match.group(1) if match else None
         return weight, stable, dsd
+
+
+class TicketParser:
+    """Assemble the printed weighing ticket of the IDé 500 and read its fields.
+
+    Layout from the IDé 500 weigh-bridge manual (section 2.8):
+        DATE : 17/05/2005       TIME : 09h45
+        WEIGHING No : 000004-IO
+        DSD No       : 000001
+        VEHICLE No   :1245ACC69
+        GROSS :             46720kg
+        TARE :              11660kg
+        NET :               35060kg
+    French labels (PESEE, No DSD, VEHICULE, BRUT) are accepted too.
+    """
+
+    WEIGHT = re.compile(r"^\s*(GROSS|BRUT|TARE|NET|P1|P2)\s*[:=]\s*([-+]?[\d\s.,]*\d)\s*(kg|t)\b", re.I)
+    WEIGHING = re.compile(r"(?:WEIGHING|PES[EÉ]E)\s*N[o°]?\s*:\s*(\d+)\s*-?\s*([A-Z]{2})?", re.I)
+    DSD = re.compile(r"(?:DSD\s*N[o°]?|N[o°]?\s*DSD)\s*[:=]\s*(\d+)", re.I)
+    VEHICLE = re.compile(r"(?:VEHICLE|V[EÉ]HICULE)\s*N[o°]?\s*:\s*(.+)$", re.I)
+    DATE = re.compile(r"DATE\s*:\s*(\d{2})/(\d{2})/(\d{4})\s+(?:TIME|HEURE)\s*:\s*(\d{1,2})\s*[hH:.]\s*(\d{2})", re.I)
+
+    def __init__(self):
+        self.reset()
+
+    def reset(self):
+        self.lines, self.values, self.dates = [], {}, []
+
+    @staticmethod
+    def _kg(number, unit):
+        value = float(number.replace(" ", "").replace(",", "."))
+        return value * 1000.0 if unit.lower() == "t" else value
+
+    def feed(self, line):
+        """Add one printed line; return a finished ticket dict or None."""
+        line = line.replace("\x00", "").rstrip()
+        if not line.strip():
+            return None
+        self.lines.append(line)
+        match = self.WEIGHT.search(line)
+        if match:
+            key = {"BRUT": "gross", "GROSS": "gross", "TARE": "tare", "NET": "net",
+                   "P1": "first_weight", "P2": "second_weight"}[match.group(1).upper()]
+            self.values[key] = self._kg(match.group(2), match.group(3))
+        for pattern, key in ((self.WEIGHING, "weighing_no"), (self.DSD, "dsd_no"), (self.VEHICLE, "vehicle")):
+            found = pattern.search(line)
+            if found:
+                self.values[key] = found.group(1).strip()
+                if key == "weighing_no" and found.group(2):
+                    self.values["weighing_type"] = found.group(2).upper()
+        found = self.DATE.search(line)
+        if found:
+            day, month, year, hour, minute = found.groups()
+            self.dates.append("%s-%s-%s %02d:%s:00" % (year, month, day, int(hour), minute))
+        if "net" in self.values and "gross" in self.values:
+            return self.flush()
+        return None
+
+    def flush(self):
+        """Close the current ticket (form feed, idle time or NET line)."""
+        ticket = None
+        if "gross" in self.values or "net" in self.values or "first_weight" in self.values:
+            ticket = dict(self.values)
+            if self.dates:
+                ticket["weighing_date"] = self.dates[-1]
+                if len(self.dates) > 1:
+                    ticket["first_date"] = self.dates[0]
+            ticket["raw"] = "\n".join(self.lines)[-2000:]
+        self.reset()
+        return ticket
+
+
+def ticket_lines(source, idle_seconds):
+    """Yield printed lines; yield None after ``idle_seconds`` of silence or a form feed."""
+    buffer, last_data = "", time.time()
+    while True:
+        chunk = source.read(256)
+        if not chunk:
+            if time.time() - last_data >= idle_seconds:
+                if buffer.strip():
+                    yield buffer
+                    buffer = ""
+                yield None
+                last_data = time.time()
+            continue
+        last_data = time.time()
+        for char in chunk.decode("latin-1", "replace"):
+            if char in "\r\n":
+                if buffer:
+                    yield buffer
+                buffer = ""
+            elif char == "\x0c":
+                if buffer:
+                    yield buffer
+                buffer = ""
+                yield None
+            elif char >= " " or char == "\t":
+                buffer += char
+
+
+def simulated_ticket_lines():
+    """A printed entry/exit ticket every 15 seconds (demo without hardware)."""
+    number = 100
+    while True:
+        number += 1
+        stamp = time.strftime("%d/%m/%Y       TIME : %Hh%M")
+        for line in ("MASTER-K ARPEGE", "DATE : %s" % stamp, "WEIGHING No : %06d-IO" % number,
+                     "DSD No       : %06d" % (13000 + number), "VEHICLE No   :3-98673",
+                     "GROSS :             38760kg", "TARE :              15240kg",
+                     "NET :               23520kg", "Signature :"):
+            yield line
+            time.sleep(0.2)
+        yield None
+        time.sleep(15)
+
+
+def run_tickets(cfg, odoo, sniff=False, simulate=False):
+    parser = TicketParser()
+    idle = float(cfg["indicator"]["ticket_idle_seconds"])
+    while True:
+        source = None
+        try:
+            if simulate:
+                lines = simulated_ticket_lines()
+                LOG.info("Simulating printed weighbridge tickets (no hardware).")
+            else:
+                source = open_source(cfg["indicator"])
+                lines = ticket_lines(source, idle)
+                LOG.info("Connected to the indicator printer port (%s).", cfg["indicator"]["connection"])
+            for line in lines:
+                if sniff:
+                    if line is not None:
+                        print(repr(line))
+                    continue
+                ticket = parser.flush() if line is None else parser.feed(line)
+                if not ticket:
+                    continue
+                for attempt in range(3):
+                    try:
+                        odoo.push_ticket(ticket)
+                        LOG.info("Ticket %s DSD %s %s: gross %s tare %s net %s", ticket.get("weighing_no"),
+                                 ticket.get("dsd_no"), ticket.get("vehicle"), ticket.get("gross"),
+                                 ticket.get("tare"), ticket.get("net"))
+                        break
+                    except Exception as error:
+                        odoo.uid = None
+                        LOG.warning("Could not send ticket to Odoo (attempt %s): %s", attempt + 1, error)
+                        time.sleep(5)
+                else:
+                    LOG.error("Ticket NOT sent, keep the paper slip: %s", ticket.get("raw"))
+        except KeyboardInterrupt:
+            return
+        except Exception as error:
+            LOG.error("Indicator connection lost: %s — retrying in 5 s", error)
+            time.sleep(5)
+        finally:
+            if source:
+                try:
+                    source.close()
+                except Exception:
+                    pass
 
 
 def open_source(cfg):
@@ -223,8 +406,10 @@ def run(config_path, sniff=False, simulate=False):
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s",
         filename=cfg["bridge"]["log_file"] or None)
-    parser = FrameParser(cfg["indicator"])
     odoo = Odoo(cfg["odoo"])
+    if cfg["indicator"]["mode"] == "ticket":
+        return run_tickets(cfg, odoo, sniff=sniff, simulate=simulate)
+    parser = FrameParser(cfg["indicator"])
     heartbeat = float(cfg["bridge"]["heartbeat_seconds"])
     while True:
         source = None

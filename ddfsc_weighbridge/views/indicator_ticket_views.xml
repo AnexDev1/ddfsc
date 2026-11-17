@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="indicator_ticket_list" model="ir.ui.view">
+        <field name="name">ddfsc.weighbridge.indicator.ticket.list</field>
+        <field name="model">ddfsc.weighbridge.indicator.ticket</field>
+        <field name="arch" type="xml">
+            <list create="0" edit="0" decoration-muted="ticket_id">
+                <field name="weighing_date"/>
+                <field name="weighing_no"/>
+                <field name="weighing_type" optional="hide"/>
+                <field name="dsd_no"/>
+                <field name="vehicle"/>
+                <field name="gross" sum="Gross"/>
+                <field name="tare"/>
+                <field name="net" sum="Net"/>
+                <field name="ticket_id"/>
+                <field name="scale_id" optional="hide"/>
+            </list>
+        </field>
+    </record>
+    <record id="indicator_ticket_form" model="ir.ui.view">
+        <field name="name">ddfsc.weighbridge.indicator.ticket.form</field>
+        <field name="model">ddfsc.weighbridge.indicator.ticket</field>
+        <field name="arch" type="xml">
+            <form create="0" edit="0">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="weighing_no"/>
+                            <field name="weighing_type"/>
+                            <field name="dsd_no"/>
+                            <field name="vehicle"/>
+                            <field name="scale_id"/>
+                        </group>
+                        <group>
+                            <field name="first_date"/>
+                            <field name="weighing_date"/>
+                            <field name="gross"/>
+                            <field name="tare"/>
+                            <field name="net"/>
+                            <field name="ticket_id"/>
+                        </group>
+                    </group>
+                    <field name="raw" widget="text" class="font-monospace"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="indicator_ticket_search" model="ir.ui.view">
+        <field name="name">ddfsc.weighbridge.indicator.ticket.search</field>
+        <field name="model">ddfsc.weighbridge.indicator.ticket</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="vehicle"/>
+                <field name="dsd_no"/>
+                <field name="weighing_no"/>
+                <filter name="unused" string="Not Used Yet" domain="[('ticket_id', '=', False)]"/>
+            </search>
+        </field>
+    </record>
+    <record id="action_indicator_ticket" model="ir.actions.act_window">
+        <field name="name">Indicator Tickets</field>
+        <field name="res_model">ddfsc.weighbridge.indicator.ticket</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_unused': 1}</field>
+        <field name="help" type="html">
+            <p>Tickets printed by the weighbridge indicator appear here as soon as the scale bridge receives them.</p>
+        </field>
+    </record>
+    <menuitem id="menu_ddfsc_indicator_tickets" name="Indicator Tickets" parent="menu_ddfsc_weighbridge_root"
+              action="action_indicator_ticket" sequence="20" groups="ddfsc_weighbridge.group_ddfsc_weighbridge_user"/>
+
+    <record id="weighbridge_ticket_form_indicator" model="ir.ui.view">
+        <field name="name">ddfsc.weighbridge.ticket.form.indicator</field>
+        <field name="model">ddfsc.weighbridge.ticket</field>
+        <field name="inherit_id" ref="ddfsc_weighbridge.view_ddfsc_weighbridge_ticket_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header/button[@name='action_capture_first_weight']" position="before">
+                <button name="action_fill_from_indicator" string="Fill from Indicator Ticket" type="object"
+                        class="btn-primary" icon="fa-file-text-o"
+                        invisible="state not in ('draft', 'first_recorded') or not scale_id"/>
+            </xpath>
+            <field name="scale_online" position="after">
+                <field name="indicator_ticket_id" readonly="state not in ('draft', 'first_recorded')"
+                       options="{'no_create': True}"/>
+            </field>
+        </field>
+    </record>
+</odoo>

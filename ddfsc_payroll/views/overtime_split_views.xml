@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="overtime_request_form_rate_split" model="ir.ui.view">
+        <field name="name">ddfsc.overtime.request.form.rate.split</field>
+        <field name="model">ddfsc.overtime.request</field>
+        <field name="inherit_id" ref="ddfsc_hr_attendance.view_overtime_request_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='attendance_ids']/.." position="after">
+                <group string="Paid As (Proclamation 1156/2019 Art. 68)">
+                    <group>
+                        <field name="ot_day_hours"/>
+                        <field name="ot_night_hours"/>
+                    </group>
+                    <group>
+                        <field name="ot_rest_day_hours"/>
+                        <field name="ot_holiday_hours"/>
+                    </group>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>
