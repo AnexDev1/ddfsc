@@ -1,93 +1,138 @@
-# Weighbridge Scale Integration — Master-K IDé 500 → Odoo
+# Weighbridge Integration — Master-K IDé 500 → Odoo
 
-The indicator stays the legal weighing instrument (its printer and DSD alibi memory keep working).
-A small program, the **scale bridge**, runs on a PC next to the indicator, reads the weight the
-indicator sends, and pushes it to Odoo. On the weighbridge ticket the operator presses
-**Capture First Weight from Scale** / **Capture Second Weight from Scale** instead of typing.
+Source: *IDe 500 Weigh Bridge / Scale Software technical manual* (Master-K / Arpège, 03/02/09)
+and the IDé 500 data sheet, both in `Downloads/AyuGram Desktop/`.
+
+## How it works (no screen needed)
+
+The indicator does not run software that a PC "opens" and it has no display output to a computer —
+that is what the server-room colleague meant. What it **does** have are serial ports that send
+**text**. Nothing is shown on the PC; a small background program (the *scale bridge*) listens on
+the port and forwards what arrives to Odoo.
 
 ```
-IDé 500 ──RS-232 (COM1/COM2) or USB──► weighbridge PC: scale_bridge.py ──HTTP (LAN)──► Odoo server
-   └── parallel port ──► existing slip printer (unchanged)
+ IDé 500 ── COM1 (RS-232, DB9) ──► weighbridge PC: scale_bridge.py (background) ── LAN ──► Odoo
+    └── LPT ──► existing slip printer (unchanged)
 ```
 
-## What Odoo does
+Alternative without a PC at the weighbridge: a **serial-to-Ethernet converter** (e.g. Moxa NPort
+5110, USR-TCP232) plugged into COM1 gives the port an IP address; the bridge then runs on the Odoo
+server with `connection = tcp`.
 
-- **Weighbridge ▸ Scales** (managers): one record per weighbridge — code `WB1` is created on
-  install ("Main Weighbridge (Master-K IDé 500)"). Shows *Online*, last weight, stable, time, DSD
-  number and the raw frame. *Reading valid for* (10 s) and *minimum weight* (20 kg) are set here.
-- **Ticket**: Scale field, *Scale Online* indicator, capture buttons, and for each weighing its
-  **source** (From Scale / Typed) and **DSD number**.
-  - Capture refuses a reading that is older than the validity, not stable, or below the minimum
-    (empty platform).
-  - Typed weights are still possible (bridge down, power cut) but are marked *Typed*, noted in the
-    chatter, and the ticket still needs the photo of the printed slip before completion.
-  - When **both** weights come from the scale, the ticket can be completed without the slip photo:
-    the DSD numbers tie Odoo to the indicator's alibi memory.
-- Only a user in the group **Weighbridge ▸ Scale Device (bridge program only)** can send readings.
+### Recommended mode: the indicator "prints" each ticket to the PC (ticket mode)
 
-## Hardware connection (what we saw on the back of the indicator)
+The manual (§3.3.6) lets each port COM1/COM2/LPT use a **printer driver**. Set COM1 to a printer
+driver and every weighing ticket the indicator prints is also sent as text, in the layout of §2.8:
 
-| Port on the IDé 500 | Use |
-|---|---|
-| **COM1 / COM2** (DB9, RS-232) | Recommended. Connect to the PC with a null-modem RS-232 cable, or through a USB–RS-232 adapter (FTDI/Prolific) if the PC has no COM port. |
-| **USB** (type B) | Often appears on the PC as a virtual COM port — try it if the driver is available. |
-| ETHERNET (blank plate) | Option card not fitted; only usable if Master-K installs it (`connection = tcp`). |
-| Parallel (printer) | Keep for the slip printer. |
-| 1 MASTER CAN 6 | Not used. |
+```
+DATE : 16/11/2026       TIME : 10h52
+WEIGHING No : 000004-IO
+DSD No       : 013883
+VEHICLE No   :3-98673
+GROSS :             38760kg
+TARE :              15240kg
+NET :               23520kg
+```
 
-In the indicator's **F6 Management menu**, set the serial port used by the PC to **continuous
-transmission** of the gross/net weight (or *on request*), and note the speed and format
-(typically **9600 baud, 8 data bits, no parity, 1 stop bit**). If the menu is locked, the Master-K
-technician or the weights-and-measures seal holder sets it — the metrological settings are not
-touched, only the communication port.
+The bridge reads weighing number, **DSD number** (the legal alibi-memory number), vehicle, dates and
+gross/tare/net, and sends the ticket to Odoo (*Weighbridge ▸ Indicator Tickets*). The operator keeps
+weighing on the indicator exactly as today (F1 entry, F2 exit). In Odoo, on the weighbridge ticket,
+**Fill from Indicator Ticket** takes the indicator ticket of the same truck plate (spaces/dashes
+ignored, last 2 days) and records gross, tare, net and DSD as weights *From Scale*; the ticket can
+then be completed without the slip photo. The indicator ticket can also be chosen by hand.
 
-## Set-up on the weighbridge PC (Windows)
+Why this mode: it uses only what the manual documents, needs no Master-K protocol licence, keeps
+the operator's routine, and Odoo gets the same figures and DSD number as the paper slip.
+
+### Optional: live weight (weight mode)
+
+Driver **1 = Weight repeater** streams the live weight (for a remote display). Its frame format
+is not in the manual; run `--sniff` to see it, then `mode = weight` and tune `weight_regex` /
+`motion_marker`. Drivers 2 (FDE Computer) and 4 (ERIC protocol) are Master-K PC protocols: ask
+Master-K for their documentation if ever needed.
+
+## Step 1 — Settings on the indicator (F6 Management menu ▸ F6 = PARAMETER COM1/COM2/LPT)
+
+The management menu may be protected by a code; the communication settings are not metrological
+(the weighing calibration is not touched). For **COM1**:
+
+| Parameter | Value | Meaning (manual §3.3.6) |
+|---|---|---|
+| DRIVER | **8** | ILA410/ILA800 printer, 80 columns (use **7** = IBA40, 40 columns, if lines arrive cut) |
+| TYPE | **0** | RS-232 without DTR test (so the PC needs no handshake wiring) |
+| SPEED | **9** | 9600 bauds |
+| BITS | **8** | 8 data bits |
+| PARITY | **0** | none |
+| STOP | **1** | 1 stop bit |
+
+Leave **LPT** as it is (the slip printer). After saving, do one test weighing and check both that
+the paper slip still prints and that text arrives on the PC (Step 3). If the indicator prints to
+only one printer port, keep paper on LPT and ask Master-K how to send a duplicate to COM1, or
+use F7 ▸ DSD ▸ F3 transmission (below) as a daily import.
+
+Also check *F6 Management ▸ operation mode* (manual §3.3.2) that tickets are printed at the exit
+weighing ("1: weigh in / weigh out validated and output ticket" or "2: … input and output ticket").
+
+## Step 2 — Cable and PC
+
+- COM1 is a **DB9 RS-232** port, **10 m maximum** (COM2 is a current loop for long distances).
+- PC with a COM port, or a **USB-to-RS232 adapter** (FTDI chip recommended), and a **null-modem**
+  DB9 cable (TX/RX crossed). If nothing arrives, try a straight DB9 cable.
+- The indicator's USB port only offers the FDE/ERIC protocols, not the printer text — use COM1.
+- The PC needs network access to the Odoo server (port 8069). A keyboard and screen are only needed
+  for the set-up; afterwards it can run without anyone logged in.
+
+## Step 3 — Install the bridge on the PC (Windows)
 
 1. Install Python 3 (python.org, tick "Add to PATH"), then `pip install pyserial`.
-2. Copy the folder `ddfsc_weighbridge/tools/` to `C:\DDFSC\scale\`.
-3. In Odoo (admin): create a user **weighbridge.device**, groups: only *Weighbridge ▸ Scale Device*;
-   log in as it once and create an **API key** (My Profile ▸ Account Security ▸ New API Key).
-   Odoo limits API keys of normal users to **90 days**: renew the key before it expires (or ask the
-   administrator to raise the limit for this account), otherwise the bridge stops with
-   "Odoo refused the login".
-4. Copy `scale_bridge.ini.example` to `scale_bridge.ini`, set `url` (Odoo server address on the
-   LAN), `api_key`, the COM `port` and the serial settings.
-5. Find the port: `python scale_bridge.py --list-ports`.
-6. **Sniff** the frames (nothing is sent to Odoo):
-   `python scale_bridge.py --config scale_bridge.ini --sniff`
-   Put a known weight on the bridge (or watch the empty platform). You should see lines such as
-   `'ST,GS,+0038760kg'`. Then:
-   - the weight is taken as the **last number** in the frame; if that is wrong, set `weight_regex`
-     (one group around the number);
-   - if the frame has a motion flag (e.g. `US` unstable / `ST` stable) set `motion_marker = US`,
-     otherwise stability = the same value 3 times in a row (`stable_repeats`);
-   - if the frame carries the DSD number, `dsd_regex` picks it up;
-   - if nothing arrives, the port only answers on request: set `poll_command` (from the indicator
-     manual, e.g. `\x05` or `P\r\n`).
-   Send the sniff output to the developer if in doubt — tuning is a one-line change.
-7. Run it: `python scale_bridge.py --config scale_bridge.ini`. In Odoo, Weighbridge ▸ Scales shows
-   **Online** and the live weight.
-8. Start it automatically: Task Scheduler ▸ *Create Task* ▸ trigger *At startup*, action
+2. Copy `ddfsc_weighbridge/tools/` to `C:\DDFSC\scale\`.
+3. Odoo account: user **weighbridge.device** exists in `ddfsc` (group *Weighbridge ▸ Scale Device*
+   only). Its API key is in `Claude outputs/scale_bridge.ini` (valid 89 days; Odoo limits API keys
+   of normal users to 90 days — create a new one before it expires: log in as that user ▸ My
+   Profile ▸ Account Security ▸ New API Key).
+4. Copy `scale_bridge.ini.example` to `scale_bridge.ini`: `url` = the Odoo server address on the
+   LAN, `api_key`, `port` (find it with `python scale_bridge.py --list-ports`), `mode = ticket`.
+5. **Sniff first**: `python scale_bridge.py --config scale_bridge.ini --sniff`, then do a test
+   weighing (or reprint a ticket). The printed lines must appear. Send the output to the developer
+   if the labels differ from the manual — tuning is a one-line change.
+6. Run: `python scale_bridge.py --config scale_bridge.ini`. Each ticket is logged
+   ("Ticket 000004 DSD 013883 3-98673: gross … tare … net …") and appears in Odoo under
+   *Weighbridge ▸ Indicator Tickets*.
+7. Auto-start: Task Scheduler ▸ Create Task ▸ trigger *At startup*, action
    `pythonw.exe C:\DDFSC\scale\scale_bridge.py --config C:\DDFSC\scale\scale_bridge.ini`,
-   "Run whether user is logged on or not", restart on failure every minute.
+   "Run whether user is logged on or not", restart every minute on failure. Set `log_file` in the ini.
 
-The bridge reconnects by itself when the cable, the indicator or Odoo goes away, and keeps the
-scale "online" with a reading every 2 s while the weight does not change.
+The bridge reconnects by itself after cable, indicator or network interruptions. A ticket that
+cannot be sent after 3 attempts is written to the log with its full text — keep the paper slip.
+
+## Using it in Odoo
+
+1. Weighbridge ▸ Tickets ▸ New: operation, plate (as typed on the indicator), product, PO/receipt.
+2. The truck is weighed on the indicator (entry, then exit). When the exit ticket prints, it arrives
+   in Odoo.
+3. On the Odoo ticket: **Fill from Indicator Ticket** → gross, tare, net and DSD are filled,
+   both weighings marked *From Scale*. **Complete Ticket**.
+4. Typed weights remain possible when the link is down; they are marked *Typed* and need the slip photo.
+
+## Historical data: DSD transmission (manual §2.6.3)
+
+F7 (DSD) ▸ F3 sends the alibi memory between two dates to COM1 at 9600 8N1. Capture it with
+`python scale_bridge.py --config scale_bridge.ini --sniff > dsd_export.txt` while the indicator
+transmits — useful to reconcile past weighings.
 
 ## Demo without hardware
 
-`python scale_bridge.py --config scale_bridge.ini --simulate` sends a simulated truck
-(0 → 38 760 kg loaded → 15 240 kg empty → 0, settling each time). Open a ticket, press
-*Capture First Weight from Scale* while it shows 38 760 kg, then *Capture Second Weight* at
-15 240 kg: net 23 520 kg.
+`python scale_bridge.py --config scale_bridge.ini --simulate` (with `mode = ticket`) sends a printed
+ticket for truck 3-98673 every 15 seconds; create an Odoo ticket for plate 3-98673 and press
+*Fill from Indicator Ticket*. With `mode = weight`, `--simulate` streams a live weight instead.
 
 ## Troubleshooting
 
 | Symptom | Check |
 |---|---|
-| Ticket says "No recent reading" | Bridge running? PC on the LAN? `url` right? Look at the log file. |
-| "Odoo refused the login" | Device login / API key; the user must be active. |
-| "The weight is not stable yet" | Wait for the indicator's stability sign; or tune `motion_marker` / `stable_repeats`. |
-| Wrong numbers (×10, decimals) | `scale_factor`, or `weight_regex`. |
-| Nothing in `--sniff` | Port, cable (null-modem), baud rate, or the port is set to "on request" (`poll_command`). |
-| Negative values (e.g. −20 kg) | Normal zero drift on an empty platform; readings below *minimum weight* are refused. |
+| Nothing in `--sniff` | COM1 DRIVER = 8 and saved? 9600-8-N-1 both sides? Null-modem vs straight cable; COM port number. |
+| Garbled characters | Speed/bits/parity differ between indicator and ini. |
+| Lines cut at 40 characters | Use DRIVER 8 (80 columns). |
+| "No indicator ticket … for vehicle" | Plate typed differently on the indicator and in Odoo; pick the ticket by hand in *Indicator Ticket*. |
+| "Odoo refused the login" | API key expired or wrong; device user archived. |
+| Ticket on paper but not in Odoo | Look in the bridge log: it holds the full ticket text when Odoo was unreachable. |

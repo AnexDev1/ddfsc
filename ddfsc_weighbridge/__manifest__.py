@@ -1,6 +1,6 @@
 {
     "name": "DDFSC Weighbridge",
-    "version": "19.0.1.1.0",
+    "version": "19.0.1.2.0",
     "category": "Inventory/Operations",
     "summary": "Controlled weighbridge tickets for DDFSC receipts and dispatches",
     "description": """
@@ -25,6 +25,7 @@ post quantities, or release QC-controlled inventory.
         "views/weighbridge_scale_views.xml",
         "views/weighbridge_ticket_views.xml",
         "views/weighbridge_menus.xml",
+        "views/indicator_ticket_views.xml",
     ],
     "installable": True,
     "application": True,
