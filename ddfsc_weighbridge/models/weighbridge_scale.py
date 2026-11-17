@@ -10,7 +10,7 @@ indicator's DSD (alibi memory) number, so the printed slip and Odoo match.
 from datetime import timedelta
 
 from odoo import _, api, fields, models
-from odoo.exceptions import AccessError, UserError
+from odoo.exceptions import AccessError, UserError, ValidationError
 
 
 class DdfscWeighbridgeScale(models.Model):
@@ -85,8 +85,19 @@ class DdfscWeighbridgeTicket(models.Model):
     scale_online = fields.Boolean(related="scale_id.is_online", string="Scale Online")
     first_weight_source = fields.Selection([("scale", "From Scale"), ("manual", "Typed")], readonly=True, copy=False)
     second_weight_source = fields.Selection([("scale", "From Scale"), ("manual", "Typed")], readonly=True, copy=False)
-    first_dsd = fields.Char(string="First Weighing DSD No.", readonly=True, copy=False)
-    second_dsd = fields.Char(string="Second Weighing DSD No.", readonly=True, copy=False)
+    # Filled from the indicator, or typed from the printed slip for typed weights.
+    first_dsd = fields.Char(string="Entry DSD No. (from slip)", copy=False,
+                            help="DSD number printed on the entry slip, if one was printed.")
+    second_dsd = fields.Char(string="DSD No. (from slip)", copy=False,
+                             help="DSD number printed on the weighing slip. Required when the weight is typed: "
+                                  "it ties the typed weight to the indicator's sealed memory.")
+
+    @api.constrains("first_dsd", "second_dsd")
+    def _check_dsd_digits(self):
+        for ticket in self:
+            for value in (ticket.first_dsd, ticket.second_dsd):
+                if value and not value.strip().isdigit():
+                    raise ValidationError(_("A DSD number has digits only, as printed on the slip (e.g. 013883)."))
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -127,7 +138,10 @@ class DdfscWeighbridgeTicket(models.Model):
     def action_record_first_weight(self):
         result = super().action_record_first_weight()
         source = self.env.context.get("ddfsc_weight_source", "manual")
-        self.write({"first_weight_source": source, "first_dsd": self.env.context.get("ddfsc_weight_dsd") or False})
+        values = {"first_weight_source": source}
+        if source == "scale":
+            values["first_dsd"] = self.env.context.get("ddfsc_weight_dsd") or False
+        self.write(values)
         if source == "manual":
             for ticket in self:
                 ticket.message_post(body=_("First weight typed manually: %(weight)s kg.",
@@ -135,9 +149,16 @@ class DdfscWeighbridgeTicket(models.Model):
         return result
 
     def action_record_second_weight(self):
-        result = super().action_record_second_weight()
         source = self.env.context.get("ddfsc_weight_source", "manual")
-        self.write({"second_weight_source": source, "second_dsd": self.env.context.get("ddfsc_weight_dsd") or False})
+        if source == "manual":
+            missing = self.filtered(lambda ticket: not (ticket.second_dsd or "").strip())
+            if missing:
+                raise UserError(_("Type the DSD number printed on the weighing slip before recording a typed weight."))
+        result = super().action_record_second_weight()
+        values = {"second_weight_source": source}
+        if source == "scale":
+            values["second_dsd"] = self.env.context.get("ddfsc_weight_dsd") or False
+        self.write(values)
         if source == "manual":
             for ticket in self:
                 ticket.message_post(body=_("Second weight typed manually: %(weight)s kg.",
@@ -145,19 +166,25 @@ class DdfscWeighbridgeTicket(models.Model):
         return result
 
     def action_complete(self):
-        # Both weights read from the indicator (with their DSD numbers) are the
-        # record; a photo of the printed slip is only needed for typed weights.
-        captured = self.filtered(lambda ticket: ticket.first_weight_source == "scale"
-                                 and ticket.second_weight_source == "scale")
-        for ticket in captured:
+        """Complete without a slip photo: the DSD number ties the weights to the indicator.
+
+        Weights from the scale carry the indicator's DSD number; typed weights
+        carry the DSD number typed from the printed slip. A photo may still be
+        attached but is no longer required.
+        """
+        for ticket in self:
+            ticket._require_open_ticket()
             if ticket.state != "weighed":
                 raise UserError(_("Record both gross and tare weights before completing the ticket."))
             if ticket.net_weight <= 0:
                 raise UserError(_("Net weight must be greater than zero."))
+            if ticket.second_weight_source != "scale" and not (ticket.second_dsd or "").strip():
+                raise UserError(_("Type the DSD number printed on the weighing slip before completing the ticket."))
             ticket.write({"state": "completed", "completed_by_id": self.env.user.id})
             ticket.message_post(body=_(
-                "Weighbridge ticket completed from the scale. Gross: %(gross).3f kg; Tare: %(tare).3f kg; "
-                "Net: %(net).3f kg. DSD %(first)s / %(second)s.",
+                "Weighbridge ticket completed (%(source)s). Gross: %(gross).3f kg; Tare: %(tare).3f kg; "
+                "Net: %(net).3f kg. DSD %(dsd)s.",
+                source=_("from the scale") if ticket.second_weight_source == "scale" else _("typed from the slip"),
                 gross=ticket.gross_weight, tare=ticket.tare_weight, net=ticket.net_weight,
-                first=ticket.first_dsd or "-", second=ticket.second_dsd or "-"))
-        return super(DdfscWeighbridgeTicket, self - captured).action_complete() if self - captured else True
+                dsd=ticket.second_dsd or "-"))
+        return True

@@ -264,12 +264,14 @@ by-product store.*
      `--simulate` on your laptop): *Capture First Weight from Scale* while the truck is on the
      bridge (gross 38 760 kg), then *Capture Second Weight from Scale* when it comes back empty
      (tare 15 240 kg) → net 23 520 kg. Each weighing stores its source (From Scale) and the
-     indicator's **DSD number**; *Complete Ticket* needs no slip photo.
+     indicator's **DSD number**.
    - Refusals to show: weight still moving ("not stable yet"), empty platform, or no reading for
      10 s ("start the scale bridge").
-   - **Typed** fallback (power cut, bridge down): type the weight, *Record Typed First/Second
-     Weight* — marked *Typed* in the ticket and the chatter, and the printed slip photo is required
-     before completion. Cancelling needs a reason.
+   - **Typed** (current way of working, and the fallback later): type the gross and tare from the
+     printed slip and the slip's **DSD No.** (digits, e.g. 013883), then *Record Typed First /
+     Second Weight*. The DSD number is required for a typed weight — it ties the figure to the
+     indicator's sealed memory so it can be checked later (F7 ▸ DSD export). No photo is needed.
+     Typed weights are marked *Typed* in the ticket and the chatter. Cancelling needs a reason.
    - Set-up and wiring: `ddfsc_weighbridge/docs/SCALE_INTEGRATION.md`.
 2. Inventory ▸ Receipts (from the PO, or new): product Wheat, quantity in **quintals**, lot name
    (e.g. `IRS-RUS-0907`; created automatically if left empty). *Plant Document* tab: supplier

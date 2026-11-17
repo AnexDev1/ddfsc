@@ -38,8 +38,7 @@ The bridge reads weighing number, **DSD number** (the legal alibi-memory number)
 gross/tare/net, and sends the ticket to Odoo (*Weighbridge ▸ Indicator Tickets*). The operator keeps
 weighing on the indicator exactly as today (F1 entry, F2 exit). In Odoo, on the weighbridge ticket,
 **Fill from Indicator Ticket** takes the indicator ticket of the same truck plate (spaces/dashes
-ignored, last 2 days) and records gross, tare, net and DSD as weights *From Scale*; the ticket can
-then be completed without the slip photo. The indicator ticket can also be chosen by hand.
+ignored, last 2 days) and records gross, tare, net and DSD as weights *From Scale*. The indicator ticket can also be chosen by hand.
 
 Why this mode: it uses only what the manual documents, needs no Master-K protocol licence, keeps
 the operator's routine, and Odoo gets the same figures and DSD number as the paper slip.
@@ -112,7 +111,8 @@ cannot be sent after 3 attempts is written to the log with its full text — kee
    in Odoo.
 3. On the Odoo ticket: **Fill from Indicator Ticket** → gross, tare, net and DSD are filled,
    both weighings marked *From Scale*. **Complete Ticket**.
-4. Typed weights remain possible when the link is down; they are marked *Typed* and need the slip photo.
+4. Typed weights remain possible (today's way of working): type the weights and the **DSD No.** printed on
+   the slip; the DSD number is required for typed weights, no photo is needed. They are marked *Typed*.
 
 ## Historical data: DSD transmission (manual §2.6.3)
 

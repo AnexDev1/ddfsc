@@ -1,6 +1,6 @@
 {
     "name": "DDFSC Weighbridge",
-    "version": "19.0.1.2.0",
+    "version": "19.0.1.3.0",
     "category": "Inventory/Operations",
     "summary": "Controlled weighbridge tickets for DDFSC receipts and dispatches",
     "description": """

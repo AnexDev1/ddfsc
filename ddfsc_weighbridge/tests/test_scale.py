@@ -56,15 +56,19 @@ class TestWeighbridgeScale(TransactionCase):
         ticket.action_complete()
         self.assertEqual(ticket.state, "completed")
 
-    def test_typed_weights_still_need_the_slip(self):
+    def test_typed_weights_need_the_slip_dsd_number(self):
         ticket = self._ticket()
         ticket.gross_weight = 20000
         ticket.action_record_first_weight()
         self.assertEqual(ticket.first_weight_source, "manual")
         ticket.tare_weight = 8000
-        ticket.action_record_second_weight()
         with self.assertRaises(UserError):
-            ticket.action_complete()
+            ticket.action_record_second_weight()
+        ticket.second_dsd = "013884"
+        ticket.action_record_second_weight()
+        self.assertEqual((ticket.second_weight_source, ticket.second_dsd), ("manual", "013884"))
+        ticket.action_complete()
+        self.assertEqual(ticket.state, "completed")
 
     def test_refuses_moving_old_or_empty_readings(self):
         ticket = self._ticket()
