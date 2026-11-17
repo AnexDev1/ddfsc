@@ -67,7 +67,7 @@ orders, requests and floors. A user without a Department (managers, QC, planning
 **Shifts** (Manufacturing ▸ Configuration ▸ Shifts): Shift 1 06–14, Shift 2 14–22, Shift 3 22–06.
 Shift 3 after midnight belongs to the **previous production day** (a 02:00 order on the 16th is the
 15th's night shift). Times are always factory time (Africa/Addis_Ababa), whatever the user's own
-timezone. **Only one order per line per shift per day** is allowed.
+timezone. A line may run **several orders in the same shift** (e.g. a second batch or a product change).
 
 **Stores** (Inventory ▸ Configuration ▸ Locations) — matches the Property Administration store list:
 
@@ -348,7 +348,7 @@ department, separate floors and temp-finished locations. Recipes: 1 qtl LCP/SCP 
 of 500 g (assumes 0 % loss — open item to confirm).
 
 1. (pasta.op) New order: Long Cut Pasta 500 g, line *Pasta Line*, shift. Confirm.
-   Try the same line + shift twice → refused (one order per line per shift).
+   A second order on the same line and shift is allowed (extra batch or product change).
 2. Request Ingredients → flour from the **Flour Store** → Print gives the **Daily Wheat Flour
    Transfer Voucher** (because the source is the Flour Store). Flour lots that have not passed QC
    cannot leave the flour store/silos.
@@ -535,7 +535,8 @@ are in the Print menus.
   explanation, or correct the figures. Tolerance is per line (Production Line ▸ Variance Tolerance).
 - *I changed a number after approval and now it is "waiting approval" again.* Approval is on the
   figures; any change withdraws it (listed in the chatter).
-- *Two orders for one shift?* Not allowed per line; use another shift or adjust the order.
+- *Two orders for one shift?* Yes — a line can run several orders in a shift; each has its own
+  shift report, approval and QC lot, and the reports add them up per shift and day.
 - *Night shift after midnight?* Belongs to the previous day automatically.
 - *Where do breakage, sweepings, disposed dough go?* Breakage = saleable stock (By-products Temp →
   By-product Store, sellable). Sweepings and disposed dough = loss figures (kg), not stock.

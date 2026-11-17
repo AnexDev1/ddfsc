@@ -126,9 +126,11 @@ class TestDepartmentFlows(TransactionCase):
         night = self.env.ref('ddfsc_manufacturing.shift_3')
         self.pasta_user.tz = 'Africa/Addis_Ababa'
         start = datetime(2026, 12, 1, 20, 0)                 # 23:00 local
-        self._mo(self.pasta_user, 'PASTA', 'product_pasta_long', 10, night, start)
-        with self.assertRaises(ValidationError):
-            self._mo(self.pasta_user, 'PASTA', 'product_pasta_long', 10, night, start + timedelta(hours=2))
+        first = self._mo(self.pasta_user, 'PASTA', 'product_pasta_long', 10, night, start)
+        # A line may run several orders in one shift (factory decision 2026-11-17).
+        second = self._mo(self.pasta_user, 'PASTA', 'product_pasta_long', 10, night, start + timedelta(hours=2))
+        self.assertEqual(first.ddfsc_production_date, second.ddfsc_production_date,
+                         'An order at 01:00 belongs to the night shift that started the evening before')
 
     def test_ingredient_request_follows_the_order_floor(self):
         """A Macaroni order's flour must arrive on the Macaroni floor, not Pasta's."""

@@ -273,34 +273,6 @@ class MrpProduction(models.Model):
                 if wheat_qty else 0.0
             )
 
-    @api.constrains('ddfsc_line_id', 'ddfsc_shift_id', 'date_start', 'state', 'ddfsc_production_date')
-    def _check_one_order_per_line_shift(self):
-        for production in self:
-            if production.state == 'cancel' or not production.ddfsc_line_id or not production.ddfsc_shift_id or not production.date_start:
-                continue
-            day = production.ddfsc_production_date or production._ddfsc_production_day()
-            # sudo: the clash must be found even on an order another user cannot see.
-            others = self.sudo().search([
-                ('id', '!=', production.id),
-                ('state', '!=', 'cancel'),
-                ('ddfsc_line_id', '=', production.ddfsc_line_id.id),
-                ('ddfsc_shift_id', '=', production.ddfsc_shift_id.id),
-                ('date_start', '>=', production.date_start - timedelta(days=2)),
-                ('date_start', '<=', production.date_start + timedelta(days=2)),
-            ])
-            for other in others:
-                if production.production_group_id and other.production_group_id == production.production_group_id:
-                    continue  # a backorder of the same order, not a second order
-                if (other.ddfsc_production_date or other._ddfsc_production_day()) == day:
-                    raise ValidationError(_(
-                        '%(line)s already has %(shift)s on %(day)s (%(order)s). '
-                        'Use another shift or cancel that order.',
-                        line=production.ddfsc_line_id.display_name,
-                        shift=production.ddfsc_shift_id.display_name,
-                        day=day,
-                        order=other.display_name,
-                    ))
-
     @api.depends('date_start', 'ddfsc_shift_id', 'ddfsc_shift_id.hour_from', 'ddfsc_shift_id.hour_to',
                  'company_id')
     def _compute_ddfsc_production_date(self):
