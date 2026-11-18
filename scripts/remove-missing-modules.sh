@@ -20,6 +20,9 @@
 #   sudo bash remove-missing-modules.sh DBNAME mod1 mod2 # retire exactly these modules
 # Environment overrides: DB_CONTAINER (odoo-db-1), ODOO_CONTAINER (odoo-odoo-1), PGUSER (odoo).
 #
+# To also remove their groups, menus, fields and their line in Apps, use
+# purge-missing-modules.sh instead.
+#
 # Undo: restore the backup printed at step 3:
 #   docker exec -i odoo-db-1 pg_restore -U odoo -c -d DBNAME < BACKUP_FILE
 set -euo pipefail
