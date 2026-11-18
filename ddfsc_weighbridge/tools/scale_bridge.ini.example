@@ -13,8 +13,8 @@ scale_code = WB1
 mode = ticket
 ticket_idle_seconds = 3
 # serial: COM1 / COM2 (RS-232, through a USB-RS232 adapter if the PC has no COM port)
-#         or the indicator's USB port, which appears as a COM port on the PC.
-# tcp:    only if the indicator has the Ethernet option card installed.
+#         (the indicator's USB port only speaks the Master-K FDE/ERIC protocols: not usable here).
+# tcp:    a serial-to-Ethernet converter on COM1, or the Ethernet option card on COM2.
 connection = serial
 port = COM3
 baudrate = 9600
