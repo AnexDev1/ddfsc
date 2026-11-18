@@ -26,8 +26,11 @@ class HrEmployee(models.Model):
         "UNIQUE(biometric_user_id, company_id)",
         "Biometric User ID must be unique per company.",
     )
+    # "New" is replaced by the next number on save; HR may type an existing
+    # staff number instead when registering current employees.
     employee_number = fields.Char(
         string="Employee Number", copy=False, index=True, tracking=True,
+        default=lambda self: _("New"),
     )
     _employee_number_company_unique = models.Constraint(
         "UNIQUE(employee_number, company_id)",
@@ -37,7 +40,7 @@ class HrEmployee(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
-            if vals.get("employee_number", _("New")) == _("New"):
+            if not vals.get("employee_number") or vals.get("employee_number") in ("New", _("New")):
                 vals["employee_number"] = self.env["ir.sequence"].next_by_code(
                     "ddfsc.hr.employee"
                 ) or _("New")

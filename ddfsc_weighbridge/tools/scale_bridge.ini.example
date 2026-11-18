@@ -9,6 +9,9 @@ api_key =
 scale_code = WB1
 
 [indicator]
+# ticket: COM1 of the IDe 500 set to a printer driver (recommended). weight: weight-repeater stream.
+mode = ticket
+ticket_idle_seconds = 3
 # serial: COM1 / COM2 (RS-232, through a USB-RS232 adapter if the PC has no COM port)
 #         or the indicator's USB port, which appears as a COM port on the PC.
 # tcp:    only if the indicator has the Ethernet option card installed.

@@ -67,7 +67,7 @@ orders, requests and floors. A user without a Department (managers, QC, planning
 **Shifts** (Manufacturing ▸ Configuration ▸ Shifts): Shift 1 06–14, Shift 2 14–22, Shift 3 22–06.
 Shift 3 after midnight belongs to the **previous production day** (a 02:00 order on the 16th is the
 15th's night shift). Times are always factory time (Africa/Addis_Ababa), whatever the user's own
-timezone. **Only one order per line per shift per day** is allowed.
+timezone. A line may run **several orders in the same shift** (e.g. a second batch or a product change).
 
 **Stores** (Inventory ▸ Configuration ▸ Locations) — matches the Property Administration store list:
 
@@ -245,8 +245,11 @@ Quality status: Pending, Passed, On Hold, Released by Exception, Rejected. Butto
 *Release by Exception* (QC Manager, reason required — prints as OF/QC/018A), *Reject Lot*.
 Wheat lots: **Wheat Type** (Imported Hard / Local White Hard / Local Red Mixed) and **Wheat Code**
 (IRS, HBL, HML, HP, IHM, WS) — the type selects the receiving standard.
-**Stock gate**: a held or rejected lot cannot leave its location; flour cannot leave Flour Temp
-Finished or a flour silo until it passes; nothing leaves a Temp Finished location before QC.
+**Stock gate**: QC checks flour **once**, in Flour Temp Finished, before it enters the Flour Store.
+After that, departments request and receive flour from the Flour Store (or the pasta/macaroni
+flour silos) with **no QC step**. Products that need a QC release (wheat, flour, pasta, biscuit)
+cannot leave their Temp Finished location before QC passes; bread needs no release. A lot QC has
+explicitly put on hold or rejected cannot move anywhere until QC releases it.
 
 ---
 
@@ -264,12 +267,14 @@ by-product store.*
      `--simulate` on your laptop): *Capture First Weight from Scale* while the truck is on the
      bridge (gross 38 760 kg), then *Capture Second Weight from Scale* when it comes back empty
      (tare 15 240 kg) → net 23 520 kg. Each weighing stores its source (From Scale) and the
-     indicator's **DSD number**; *Complete Ticket* needs no slip photo.
+     indicator's **DSD number**.
    - Refusals to show: weight still moving ("not stable yet"), empty platform, or no reading for
      10 s ("start the scale bridge").
-   - **Typed** fallback (power cut, bridge down): type the weight, *Record Typed First/Second
-     Weight* — marked *Typed* in the ticket and the chatter, and the printed slip photo is required
-     before completion. Cancelling needs a reason.
+   - **Typed** (current way of working, and the fallback later): type the gross and tare from the
+     printed slip and the slip's **DSD No.** (digits, e.g. 013883), then *Record Typed First /
+     Second Weight*. The DSD number is required for a typed weight — it ties the figure to the
+     indicator's sealed memory so it can be checked later (F7 ▸ DSD export). No photo is needed.
+     Typed weights are marked *Typed* in the ticket and the chatter. Cancelling needs a reason.
    - Set-up and wiring: `ddfsc_weighbridge/docs/SCALE_INTEGRATION.md`.
 2. Inventory ▸ Receipts (from the PO, or new): product Wheat, quantity in **quintals**, lot name
    (e.g. `IRS-RUS-0907`; created automatically if left empty). *Plant Document* tab: supplier
@@ -346,7 +351,7 @@ department, separate floors and temp-finished locations. Recipes: 1 qtl LCP/SCP 
 of 500 g (assumes 0 % loss — open item to confirm).
 
 1. (pasta.op) New order: Long Cut Pasta 500 g, line *Pasta Line*, shift. Confirm.
-   Try the same line + shift twice → refused (one order per line per shift).
+   A second order on the same line and shift is allowed (extra batch or product change).
 2. Request Ingredients → flour from the **Flour Store** → Print gives the **Daily Wheat Flour
    Transfer Voucher** (because the source is the Flour Store). Flour lots that have not passed QC
    cannot leave the flour store/silos.
@@ -404,8 +409,10 @@ Recipe: 1 qtl Grade 1 flour + 55 kg water (open item: no yeast, salt, sugar, imp
 1. Order → Request Ingredients (flour G1 from Flour Store) → produce.
 2. Shift report shows *Expected scrap from / to* (10–20 % of flour) as a guide; breakage, sweepings,
    disposed dough, stoppages.
-3. QC (OF/QC/002): baked weight 95–105 g (100 g) / 114–126 g (120 g), weighed 30 min after the
-   oven, **4 samples, every one within limits** (fresh install).
+3. **No QC release for bread** (factory decision): bread lots get no inspection. After *Produce All*,
+   **Send to Finished Goods** works straight away → Bread Store. The product setting *QC Release
+   Required* (product form) is unticked for both breads; tick it again if QC ever wants to release
+   bread (the OF/QC/002 weight plans stay available).
 4. Send to Finished Goods → Bread Store.
 5. Water hardness for bread proofing (80–120 mg/l) is on the OF/QC/013 daily log.
 
@@ -533,7 +540,8 @@ are in the Print menus.
   explanation, or correct the figures. Tolerance is per line (Production Line ▸ Variance Tolerance).
 - *I changed a number after approval and now it is "waiting approval" again.* Approval is on the
   figures; any change withdraws it (listed in the chatter).
-- *Two orders for one shift?* Not allowed per line; use another shift or adjust the order.
+- *Two orders for one shift?* Yes — a line can run several orders in a shift; each has its own
+  shift report, approval and QC lot, and the reports add them up per shift and day.
 - *Night shift after midnight?* Belongs to the previous day automatically.
 - *Where do breakage, sweepings, disposed dough go?* Breakage = saleable stock (By-products Temp →
   By-product Store, sellable). Sweepings and disposed dough = loss figures (kg), not stock.

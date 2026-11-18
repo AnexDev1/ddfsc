@@ -233,8 +233,14 @@ class DdfscShift(models.Model):
         self._ensure_product('product_scotch', 'Scotch Tape', unit)
         self._ensure_product('product_bran', 'Wheat Bran', quintal)
         self._ensure_product('product_water', 'Process Water', kg)
+        bread_xmlids = ('product_bread_market', 'product_bread_university')
+        new_bread = [xmlid for xmlid in bread_xmlids
+                     if not self.env.ref('ddfsc_manufacturing.%s' % xmlid, raise_if_not_found=False)]
         self._ensure_product('product_bread_market', 'Bread Market 100g', unit)
         self._ensure_product('product_bread_university', 'Bread University 120g', unit)
+        # Bread is released without a QC inspection (factory decision 2026-11-17).
+        for xmlid in new_bread:
+            self.env.ref('ddfsc_manufacturing.%s' % xmlid).ddfsc_qc_required = False
         self._ensure_product('product_pasta_long', 'Long Cut Pasta 500g', unit)
         self._ensure_product('product_pasta_short', 'Short Cut Pasta 500g', unit)
 
@@ -293,7 +299,7 @@ class DdfscShift(models.Model):
                 'location_id': parent.id,
                 'usage': 'internal',
             })
-            silo.ddfsc_flour_hold = True
+            silo.ddfsc_flour_hold = False
         self._ensure_record('loc_macaroni', 'stock.location', {
             'name': 'Macaroni Floor',
             'location_id': parent.id,

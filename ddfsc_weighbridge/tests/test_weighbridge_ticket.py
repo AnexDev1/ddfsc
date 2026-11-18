@@ -27,23 +27,19 @@ class TestDdfscWeighbridgeTicket(TransactionCase):
             "gross_weight": 20000,
         })
 
-    def test_ticket_calculates_net_and_requires_paper_slip(self):
+    def test_ticket_calculates_net_and_requires_slip_dsd(self):
         ticket = self._ticket()
         ticket.action_record_first_weight()
         self.assertEqual(ticket.state, "first_recorded")
         ticket.tare_weight = 8000
+        with self.assertRaises(UserError):
+            ticket.action_record_second_weight()  # typed weight without the slip's DSD number
+        with self.assertRaises(ValidationError):
+            ticket.second_dsd = "DSD-12"
+        ticket.second_dsd = "013883"
         ticket.action_record_second_weight()
         self.assertEqual(ticket.net_weight, 12000)
-        with self.assertRaises(UserError):
-            ticket.action_complete()
-        self.env["ir.attachment"].create({
-            "name": "printed-slip.jpg",
-            "type": "binary",
-            "datas": b"dGVzdA==",
-            "res_model": ticket._name,
-            "res_id": ticket.id,
-        })
-        ticket.action_complete()
+        ticket.action_complete()  # no photo of the slip needed
         self.assertEqual(ticket.state, "completed")
         self.assertEqual(ticket.completed_by_id, self.env.user)
 
@@ -63,6 +59,6 @@ class TestDdfscWeighbridgeTicket(TransactionCase):
             "tare_weight": 7000,
         })
         ticket.action_record_first_weight()
-        ticket.gross_weight = 19500
+        ticket.write({"gross_weight": 19500, "second_dsd": "013900"})
         ticket.action_record_second_weight()
         self.assertEqual(ticket.net_weight, 12500)

@@ -8,6 +8,7 @@
         <page string="DDFSC Payroll Summary" name="ddfsc_payroll_summary">
             <group string="Earnings">
                 <field name="ddfsc_basic_pay" readonly="1"/>
+                <field name="ddfsc_paid_ratio" readonly="1" widget="percentage"/>
                 <field name="ddfsc_taxable_earnings" readonly="1" help="Basic pay plus taxable allowances and approved overtime."/>
                 <field name="ddfsc_non_taxable_earnings" readonly="1"/>
             </group>

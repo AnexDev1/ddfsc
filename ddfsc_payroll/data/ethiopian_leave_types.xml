@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Time-off types of the Ethiopian Labour Proclamation No. 1156/2019.
+     Created once (noupdate): HR may rename them or adjust the rules afterwards. -->
+<odoo noupdate="1">
+    <!-- Art. 77-79: 16 working days in the first year of service, plus one day for every
+         two years of service. Days are given to each employee by allocation. -->
+    <record id="leave_type_et_annual" model="hr.leave.type">
+        <field name="name">Annual Leave (ET)</field>
+        <field name="sequence">1</field>
+        <field name="country_id" ref="base.et"/>
+        <field name="requires_allocation" eval="True"/>
+        <field name="request_unit">day</field>
+        <field name="time_type">leave</field>
+        <field name="ddfsc_pay_percent">100</field>
+    </record>
+
+    <!-- Art. 85: up to six months of sick leave in a twelve-month period, on a medical
+         certificate: the first month with 100 % pay, the next two months with 50 %, the
+         last three months without pay. -->
+    <record id="leave_type_et_sick_full" model="hr.leave.type">
+        <field name="name">Sick Leave – Month 1 (100 %)</field>
+        <field name="sequence">2</field>
+        <field name="country_id" ref="base.et"/>
+        <field name="requires_allocation" eval="False"/>
+        <field name="support_document" eval="True"/>
+        <field name="request_unit">day</field>
+        <field name="time_type">leave</field>
+        <field name="ddfsc_pay_percent">100</field>
+    </record>
+    <record id="leave_type_et_sick_half" model="hr.leave.type">
+        <field name="name">Sick Leave – Months 2-3 (50 %)</field>
+        <field name="sequence">3</field>
+        <field name="country_id" ref="base.et"/>
+        <field name="requires_allocation" eval="False"/>
+        <field name="support_document" eval="True"/>
+        <field name="request_unit">day</field>
+        <field name="time_type">leave</field>
+        <field name="ddfsc_pay_percent">50</field>
+    </record>
+    <record id="leave_type_et_sick_unpaid" model="hr.leave.type">
+        <field name="name">Sick Leave – Months 4-6 (Unpaid)</field>
+        <field name="sequence">4</field>
+        <field name="country_id" ref="base.et"/>
+        <field name="requires_allocation" eval="False"/>
+        <field name="support_document" eval="True"/>
+        <field name="unpaid" eval="True"/>
+        <field name="request_unit">day</field>
+        <field name="time_type">leave</field>
+        <field name="ddfsc_pay_percent">0</field>
+    </record>
+
+    <!-- Art. 88: 30 days paid prenatal leave and 90 consecutive days paid postnatal leave. -->
+    <record id="leave_type_et_maternity" model="hr.leave.type">
+        <field name="name">Maternity Leave (120 days)</field>
+        <field name="sequence">5</field>
+        <field name="country_id" ref="base.et"/>
+        <field name="requires_allocation" eval="False"/>
+        <field name="support_document" eval="True"/>
+        <field name="request_unit">day</field>
+        <field name="time_type">leave</field>
+        <field name="ddfsc_pay_percent">100</field>
+    </record>
+
+    <!-- Art. 81: leave with pay for 3 working days for paternity, marriage and the death
+         of a close relative. -->
+    <record id="leave_type_et_paternity" model="hr.leave.type">
+        <field name="name">Paternity Leave (3 days)</field>
+        <field name="sequence">6</field>
+        <field name="country_id" ref="base.et"/>
+        <field name="requires_allocation" eval="False"/>
+        <field name="request_unit">day</field>
+        <field name="time_type">leave</field>
+        <field name="ddfsc_pay_percent">100</field>
+    </record>
+    <record id="leave_type_et_marriage" model="hr.leave.type">
+        <field name="name">Marriage Leave (3 days)</field>
+        <field name="sequence">7</field>
+        <field name="country_id" ref="base.et"/>
+        <field name="requires_allocation" eval="False"/>
+        <field name="request_unit">day</field>
+        <field name="time_type">leave</field>
+        <field name="ddfsc_pay_percent">100</field>
+    </record>
+    <record id="leave_type_et_bereavement" model="hr.leave.type">
+        <field name="name">Bereavement Leave (3 days)</field>
+        <field name="sequence">8</field>
+        <field name="country_id" ref="base.et"/>
+        <field name="requires_allocation" eval="False"/>
+        <field name="request_unit">day</field>
+        <field name="time_type">leave</field>
+        <field name="ddfsc_pay_percent">100</field>
+    </record>
+
+    <!-- Art. 81(2): leave without pay of up to 5 consecutive days, twice a year, for an
+         exceptional and serious event. -->
+    <record id="leave_type_et_special_unpaid" model="hr.leave.type">
+        <field name="name">Special Leave Without Pay (up to 5 days)</field>
+        <field name="sequence">9</field>
+        <field name="country_id" ref="base.et"/>
+        <field name="requires_allocation" eval="False"/>
+        <field name="unpaid" eval="True"/>
+        <field name="request_unit">day</field>
+        <field name="time_type">leave</field>
+        <field name="ddfsc_pay_percent">0</field>
+    </record>
+</odoo>

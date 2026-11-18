@@ -150,7 +150,8 @@ class Production(models.Model):
         self.ensure_one()
         if kind == 'finished_goods' and self.state == 'done':
             blocked = self.ddfsc_quality_lot_ids.filtered(
-                lambda lot: lot.ddfsc_quality_state not in ('pass', 'released')
+                lambda lot: lot.product_id.ddfsc_qc_required
+                and lot.ddfsc_quality_state not in ('pass', 'released')
             )
             unplanned = blocked.filtered(lambda lot: not lot.sudo().quality_plan_id)
             if unplanned:
