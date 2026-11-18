@@ -304,7 +304,8 @@ class SaleOrder(models.Model):
         if not discount_product:
             discount_product = self.env['product.product'].search([('default_code', '=', 'DISC')], limit=1)
             if not discount_product:
-                discount_product = self.env['product.product'].create({
+                # System product: exempt from the analytic account asked at product registration.
+                discount_product = self.env['product.product'].with_context(ddfsc_system_product=True).create({
                     'name': 'Discount',
                     'type': 'service',
                     'default_code': 'DISC',

@@ -16,6 +16,23 @@ def next_service_code(env, prefix, taken=()):
         number += 1
     return '%s-%04d' % (prefix, number)
 
+
+def registration_rules_apply(env):
+    """Whether the "required for product registration" rules (Product Code,
+    Analytic Account) apply to a product being created.
+
+    They are for people registering products. Products that Odoo itself
+    creates while modules install or upgrade (data files, set-up functions,
+    migrations) are exempt, so installing a module never fails on them; so are
+    system products created with the ``ddfsc_system_product`` context key.
+    """
+    return bool(
+        env.registry.ready
+        and not env.context.get('install_mode')
+        and not env.context.get('ddfsc_system_product')
+    )
+
+
 class ProductTemplate(models.Model):
     _inherit = 'product.template'
 
@@ -117,9 +134,9 @@ class ProductTemplate(models.Model):
                 continue
 
             if not is_landed_cost:
-                if not vals.get('default_code') and not self.env.context.get('install_mode'):
+                if not vals.get('default_code') and registration_rules_apply(self.env):
                     raise ValidationError(_("Product Code is required for product registration!"))
-            if not vals.get('analytic_account_id') and not self.env.context.get('install_mode'):
+            if not vals.get('analytic_account_id') and registration_rules_apply(self.env):
                 raise ValidationError(_("Analytic Account is required for product registration!"))
         return super().create(vals_list)
 

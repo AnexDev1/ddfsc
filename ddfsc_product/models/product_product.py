@@ -3,7 +3,7 @@ from odoo import api, fields, models, _
 from odoo.exceptions import ValidationError
 
 
-from .product_template import next_service_code
+from .product_template import next_service_code, registration_rules_apply
 
 
 class ProductProduct(models.Model):
@@ -71,7 +71,7 @@ class ProductProduct(models.Model):
                         self.env, prefix, [v.get('default_code') for v in vals_list])
             code = vals.get('default_code') or (tmpl and tmpl.default_code)
             if not is_landed_cost:
-                if not code and not self.env.context.get('install_mode'):
+                if not code and registration_rules_apply(self.env):
                     raise ValidationError(_("Product Code is required for product registration!"))
         return super().create(vals_list)
 

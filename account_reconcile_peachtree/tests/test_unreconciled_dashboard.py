@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from datetime import date
+
 from odoo.tests import common
 from odoo.tests.common import TransactionCase, tagged
 from odoo import fields, Command

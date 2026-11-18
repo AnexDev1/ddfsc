@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'DDFSC Product & Inventory Customizations',
-    'version': '19.0.1.0.1',
+    'version': '19.0.1.0.2',
     'category': 'Inventory/Inventory',
     'summary': 'Product Code, Part Number, Wholesale Price, Warehouse Analytics, Location Transfers, and Warehouse User Access',
     'description': """
