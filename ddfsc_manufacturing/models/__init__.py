@@ -21,3 +21,4 @@ from . import store_structure
 from . import stock_reports
 from . import maintenance_request
 from . import loss_correction
+from . import ir_ui_menu
