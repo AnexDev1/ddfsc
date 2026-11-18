@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 from pathlib import Path
 
 from odoo import Command
@@ -296,6 +297,90 @@ def _ensure_accounts(env, company, design, codes):
     _upsert_accounts(env, company, {"accounts": items})
 
 
+LEGACY_CODE_PATTERN = re.compile(r"^\d{6}$")
+
+
+def _referenced_account_ids(env, company, accounts):
+    """Return the ids of `accounts` still used by configuration or open
+    documents (journals, payment methods, company settings, taxes, fiscal
+    positions, product/partner defaults, payments...). Journal items and
+    analytic lines are history and handled separately."""
+    used = set()
+    fields = env["ir.model.fields"].sudo().search([
+        ("relation", "=", "account.account"),
+        ("ttype", "in", ("many2one", "many2many")),
+        ("store", "=", True),
+    ])
+    for field in fields:
+        if field.model in HISTORY_MODELS or field.model == "account.account" or field.model not in env:
+            continue
+        model = env[field.model].sudo().with_company(company).with_context(active_test=False)
+        if not model._auto or field.name not in model._fields:
+            continue
+        try:
+            records = model.search([(field.name, "in", accounts.ids)])
+        except Exception:
+            _logger.debug("Cannot search %s.%s during COA cleanup", field.model, field.name, exc_info=True)
+            continue
+        if records:
+            used.update((records.mapped(field.name) & accounts).ids)
+    defaults = env["ir.default"].sudo().search([
+        ("company_id", "in", [company.id, False]),
+        ("field_id.relation", "=", "account.account"),
+    ])
+    for default in defaults:
+        if default.json_value and default.json_value.isdigit():
+            used.add(int(default.json_value))
+    return used & set(accounts.ids)
+
+
+def _purge_legacy_accounts(env, company, design):
+    """Delete the 6-digit accounts of the previous chart once the Vera chart is
+    in place. Accounts Odoo still uses stay active, accounts with journal items
+    (which Odoo cannot delete) are archived, everything else is deleted."""
+    vera_codes = {item["code"] for item in design["accounts"]}
+    Account = env["account.account"].sudo().with_company(company).with_context(active_test=False)
+    accounts = Account.search([("company_ids", "in", company.id)]).filtered(
+        lambda a: a.code and LEGACY_CODE_PATTERN.match(a.code) and a.code not in vera_codes
+    )
+    if not accounts:
+        return
+    used_ids = _referenced_account_ids(env, company, accounts)
+    with_moves = {
+        account.id
+        for account, _count in env["account.move.line"].sudo()._read_group(
+            [("account_id", "in", accounts.ids)], ["account_id"], ["__count"]
+        )
+    }
+    deleted, archived, kept = [], [], []
+    for account in accounts:
+        code = account.code
+        if account.id in used_ids:
+            if not account.active:
+                account.active = True
+            kept.append(code)
+            continue
+        if account.id not in with_moves:
+            try:
+                with env.cr.savepoint():
+                    account.unlink()
+                deleted.append(code)
+                continue
+            except Exception:
+                _logger.warning("Could not delete legacy account %s, archiving it", code, exc_info=True)
+        try:
+            with env.cr.savepoint():
+                account.active = False
+            archived.append(code)
+        except Exception:
+            _logger.warning("Could not archive legacy account %s", code, exc_info=True)
+            kept.append(code)
+    _logger.info(
+        "Vera COA cleanup for %s: deleted %s, archived (has journal items) %s, kept (still used) %s",
+        company.name, deleted, archived, kept,
+    )
+
+
 def sync_payment_accounts(env):
     """Upgrade step: add the outstanding/transfer accounts, one bank journal per
     bank account, and wire the payment methods to the outstanding accounts."""
@@ -310,6 +395,7 @@ def sync_payment_accounts(env):
         _remap_legacy_accounts(scoped_env, company, accounts)
         _ensure_bank_journals(scoped_env, company, accounts)
         _setup_payment_accounts(scoped_env, company, accounts)
+        _purge_legacy_accounts(scoped_env, company, design)
 
 
 def post_init_hook(env):
@@ -322,6 +408,7 @@ def post_init_hook(env):
         _remap_legacy_accounts(scoped_env, company, accounts)
         _ensure_bank_journals(scoped_env, company, accounts)
         _setup_payment_accounts(scoped_env, company, accounts)
+        _purge_legacy_accounts(scoped_env, company, design)
     _logger.info(
         "Vera COA migration complete: %s accounts, %s analytic plans",
         len(design["accounts"]), len(design["dimensions"]),

@@ -20,7 +20,7 @@ DDFSC Sales Customizations:
     """,
     'author': 'DDFSC',
     'license': 'LGPL-3',
-    'depends': ['sale', 'sale_stock', 'account', 'base_accounting_kit', 'ddfsc_product'],
+    'depends': ['sale', 'sale_stock', 'account', 'base_accounting_kit', 'ddfsc_product', 'procurement_local_purchase'],
     'data': [
         'security/sales_security.xml',
         'security/ir.model.access.csv',
