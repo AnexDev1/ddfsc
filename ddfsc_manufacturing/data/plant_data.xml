@@ -96,31 +96,37 @@
 
     <record id="product_wheat" model="product.template">
         <field name="name">Wheat</field>
+        <field name="default_code">MFG-WHEAT</field>
         <field name="is_storable" eval="True"/>
         <field name="uom_id" ref="uom_quintal"/>
     </record>
     <record id="product_flour_g1" model="product.template">
         <field name="name">Wheat Flour Grade 1</field>
+        <field name="default_code">MFG-FLOUR-G1</field>
         <field name="is_storable" eval="True"/>
         <field name="uom_id" ref="uom_quintal"/>
     </record>
     <record id="product_flour_g2" model="product.template">
         <field name="name">Wheat Flour Grade 2</field>
+        <field name="default_code">MFG-FLOUR-G2</field>
         <field name="is_storable" eval="True"/>
         <field name="uom_id" ref="uom_quintal"/>
     </record>
     <record id="product_sugar" model="product.template">
         <field name="name">Sugar</field>
+        <field name="default_code">MFG-SUGAR</field>
         <field name="is_storable" eval="True"/>
         <field name="uom_id" ref="uom.product_uom_kgm"/>
     </record>
     <record id="product_shortening" model="product.template">
         <field name="name">Shortening</field>
+        <field name="default_code">MFG-SHORTENING</field>
         <field name="is_storable" eval="True"/>
         <field name="uom_id" ref="uom.product_uom_kgm"/>
     </record>
     <record id="product_zebib" model="product.template">
         <field name="name">New Zebib Biscuit 78x4</field>
+        <field name="default_code">MFG-ZEBIB</field>
         <field name="is_storable" eval="True"/>
         <field name="uom_id" ref="uom.product_uom_unit"/>
     </record>

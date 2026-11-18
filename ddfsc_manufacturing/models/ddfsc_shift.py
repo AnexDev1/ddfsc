@@ -113,12 +113,24 @@ class DdfscShift(models.Model):
             return record.product_variant_id
         return record
 
+    def _ddfsc_free_product_code(self, xmlid):
+        """Plant product code from its XML id (product_bag_thread -> MFG-BAG-THREAD), unique."""
+        base = 'MFG-' + xmlid.removeprefix('product_').upper().replace('_', '-')
+        Product = self.env['product.product'].with_context(active_test=False).sudo()
+        code, number = base, 1
+        while Product.search_count([('default_code', '=ilike', code)], limit=1):
+            number += 1
+            code = '%s-%d' % (base, number)
+        return code
+
     def _ensure_product(self, xmlid, name, uom_xmlid, tracking='none'):
         record = self.env.ref('ddfsc_manufacturing.%s' % xmlid, raise_if_not_found=False)
         if record:
             return record
         product = self.env['product.template'].create({
             'name': name,
+            # ddfsc_product requires a unique Product Code on every product.
+            'default_code': self._ddfsc_free_product_code(xmlid),
             'is_storable': True,
             'tracking': tracking,
             'uom_id': self.env.ref(uom_xmlid).id,

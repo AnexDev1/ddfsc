@@ -74,7 +74,9 @@ weighing ("1: weigh in / weigh out validated and output ticket" or "2: … input
 
 ## Step 2 — Cable and PC
 
-- COM1 is a **DB9 RS-232** port, **10 m maximum** (COM2 is a current loop for long distances).
+- COM1 is **RS-232**, **10 m maximum** (COM2 is a current loop for long distances). Check whether
+  its connector is a DB9 or screw terminals before buying the cable; full shopping list and network
+  options in [WEIGHBRIDGE_PC_SETUP.md](WEIGHBRIDGE_PC_SETUP.md).
 - PC with a COM port, or a **USB-to-RS232 adapter** (FTDI chip recommended), and a **null-modem**
   DB9 cable (TX/RX crossed). If nothing arrives, try a straight DB9 cable.
 - The indicator's USB port only offers the FDE/ERIC protocols, not the printer text — use COM1.

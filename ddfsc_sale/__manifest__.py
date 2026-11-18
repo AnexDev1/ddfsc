@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'DDFSC Sales Customizations',
-    'version': '19.0.1.0.0',
+    'version': '19.0.1.0.1',
     'category': 'Sales/Sales',
     'summary': 'Quotation Approvals, Cash/Credit Sales, Global Discounts, Order Line Part Numbers, Customer Credit Management, Daily/Customer/Product Reports',
     'description': """
